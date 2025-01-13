@@ -29,7 +29,8 @@ Spreadsheet Engine Design (20 pts)
 D1.  [3pts] Briefly describe the high-level design abstractions (e.g. classes
      and/or submodules) in your spreadsheet engine, and what purposes these
      various abstractions fulfill.
-
+- Class for Sheet, and the Workbook class owns a list of Sheets
+- Class for Cell, and the Sheet class owns a matrix of Cells
 
 D2.  [4pts] Why did you choose the design you chose?  Describe other designs
      (or perhaps earlier versions of the above design) that you considered,
@@ -39,16 +40,21 @@ D2.  [4pts] Why did you choose the design you chose?  Describe other designs
 D3.  [4pts] At a high level (e.g. pseudocode or higher), enumerate the steps
      that your spreadsheet engine goes through when a caller sets a cell's
      contents.
-
+- Accesses the correct sheet according to the argument (via getter method in Workbook)
+- Accesses the correct cell in the sheet according to the argument (via getter method in Sheet)
+- Modify the cell contents (via setter method)
+     - Try to parse, then look for cycles, etc.
 
 D4.  [3pts] How does your spreadsheet engine identify what other cells need
      updating when a cell's contents are changed, and what order to update them?
-
+- Each Sheet has a directed graph between cells that reference each other
+- Start from the origin cell supposed to be updated, then follow edges in a BFS
 
 D5.  [3pts] How does your spreadsheet engine identify cycles between cells when
      a cell update is performed?  Are cells in a cycle processed any differently
      from other cells outside of the cycle?
-
+- Can detect cycles with DFS
+- Must propagate errors
 
 D6.  [3pts] What steps does your spreadsheet engine go through when a sheet is
      deleted from a workbook?  How does it identify cells that may need to be
