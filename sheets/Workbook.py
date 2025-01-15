@@ -148,6 +148,7 @@ class Workbook:
         #
         # This method will never return a zero-length string; instead, empty
         # cells are indicated by a value of None.
+        
         pass
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:

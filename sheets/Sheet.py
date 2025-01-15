@@ -9,7 +9,7 @@ class Sheet:
         self.num_cols = 0
         self.cells = [[]]
     
-    def str_to_index(column: str) -> int:
+    def str_to_index(self, column: str) -> int:
         index = 0
         for i in range(len(column)):
             index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('A') + 1)
@@ -46,4 +46,7 @@ class Sheet:
         self.resize_sheet(updated_num_rows, updated_num_cols)
 
         self.cells[row_idx][col_idx] = Cell(contents) # TODO: maybe change this
+    
+    def get_cell_contents(self, location: str) -> Optional[str]:
+        pass
     
