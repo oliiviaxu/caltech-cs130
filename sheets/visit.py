@@ -1,9 +1,12 @@
 import lark
 
-class CellRefFiner(lark.Visitor):
+class CellRefFinder(lark.Visitor):
+    # TODO: normalize all the cell references to the same case, convert them all to uppercase
+
     def __init__(self, sheet_name: str):
+        self.sheet_name = sheet_name
         self.refs = set()
-    
+
     def cell(self, tree):
         # print(tree.children)
 
