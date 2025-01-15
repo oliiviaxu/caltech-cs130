@@ -23,7 +23,7 @@ class BasicTests(unittest.TestCase):
     def test_set_cell_contents(self):
         wb = sheets.Workbook()
         wb.new_sheet()
-        wb.set_cell_contents('Sheet1', 'D5', 'test')
+        wb.set_cell_contents('Sheet1', 'd5', 'test')
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (4, 5))
         wb.set_cell_contents('Sheet1', 'C6', 'test')
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (4, 6)) # test adding rows

@@ -102,7 +102,7 @@ class Workbook:
 
     def is_valid_location(self, location: str) -> bool:
         # Checks if a given location string is a valid spreadsheet cell location.
-        pattern = r'^[A-Z]{1,4}[1-9][0-9]{0,3}$'
+        pattern = r'^[A-Za-z]{1,4}[1-9][0-9]{0,3}$'
         return bool(re.match(pattern, location))
 
     def set_cell_contents(self, sheet_name: str, location: str,

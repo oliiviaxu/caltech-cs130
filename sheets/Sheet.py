@@ -10,6 +10,7 @@ class Sheet:
         self.cells = [[]]
     
     def str_to_index(self, column: str) -> int:
+        column = column.upper()
         index = 0
         for i in range(len(column)):
             index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('A') + 1)
