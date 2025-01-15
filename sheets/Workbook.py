@@ -9,7 +9,7 @@ class Workbook:
     # values should cause the workbook's contents to be updated properly.
 
     def __init__(self):
-        self.sheets = {}
+        self.sheets = {} # lowercase keys  
         pass
 
     def num_sheets(self) -> int:
@@ -27,7 +27,10 @@ class Workbook:
         #
         # A user should be able to mutate the return-value without affecting the
         # workbook's internal state.
-        return list(self.sheets.keys())
+        lst = []
+        for _, sheet in self.sheets.items():
+            lst.append(sheet.sheet_name)
+        return lst # preserves case 
 
     def new_sheet(self, sheet_name: Optional[str] = None) -> Tuple[int, str]:
         # Add a new sheet to the workbook.  If the sheet name is specified, it
@@ -68,7 +71,7 @@ class Workbook:
             if (sheet_name.lower() in sheet_names_lower):
                 raise ValueError('Spreadsheet names must be unique.')
 
-        self.sheets[sheet_name] = Sheet(sheet_name)
+        self.sheets[sheet_name.lower()] = Sheet(sheet_name)
 
 
     def del_sheet(self, sheet_name: str) -> None:
@@ -92,6 +95,11 @@ class Workbook:
         # If the specified sheet name is not found, a KeyError is raised.
         pass
 
+    def is_valid_location(self, location: str) -> bool:
+        # Checks if a given location string is a valid spreadsheet cell location.
+        pattern = r'^[A-Z]{1,4}[1-9][0-9]{0,3}$'
+        return bool(re.match(pattern, location))
+
     def set_cell_contents(self, sheet_name: str, location: str,
                           contents: Optional[str]) -> None:
         # Set the contents of the specified cell on the specified sheet.
@@ -113,8 +121,16 @@ class Workbook:
         # If the cell contents appear to be a formula, and the formula is
         # invalid for some reason, this method does not raise an exception;
         # rather, the cell's value will be a CellError object indicating the
-        # naure of the issue.
-        pass
+        # nature of the issue.
+
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        if not self.is_valid_location(location):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
+        
+        contents = contents.strip()
+        self.sheets[sheet_name.lower()].set_cell_contents(location, contents)
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
