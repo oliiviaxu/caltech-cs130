@@ -5,3 +5,4 @@ class Cell:
         self.value = ''
         self.outgoing = []
         self.ingoing = []
+    
