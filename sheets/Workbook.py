@@ -9,11 +9,11 @@ class Workbook:
     # values should cause the workbook's contents to be updated properly.
 
     def __init__(self):
-        self.sheets = []
+        self.sheets = {}
         pass
 
     def num_sheets(self) -> int:
-        return len(self.sheets)
+        return len(self.sheets.keys())
 
     def list_sheets(self) -> List[str]:
         # Return a list of the spreadsheet names in the workbook, with the
@@ -27,10 +27,7 @@ class Workbook:
         #
         # A user should be able to mutate the return-value without affecting the
         # workbook's internal state.
-        names = []
-        for sheet in self.sheets:
-            names.append(sheet.sheet_name)
-        return names
+        return list(self.sheets.keys())
 
     def new_sheet(self, sheet_name: Optional[str] = None) -> Tuple[int, str]:
         # Add a new sheet to the workbook.  If the sheet name is specified, it
@@ -71,7 +68,7 @@ class Workbook:
             if (sheet_name.lower() in sheet_names_lower):
                 raise ValueError('Spreadsheet names must be unique.')
 
-        self.sheets.append(Sheet(sheet_name))
+        self.sheets[sheet_name] = Sheet(sheet_name)
 
 
     def del_sheet(self, sheet_name: str) -> None:
