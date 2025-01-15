@@ -93,7 +93,12 @@ class Workbook:
         # case does not have to.
         #
         # If the specified sheet name is not found, a KeyError is raised.
-        pass
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        sheet = self.sheets[sheet_name.lower()]
+        num_cols, num_rows = sheet.num_cols, sheet.num_rows
+        return num_cols, num_rows
 
     def is_valid_location(self, location: str) -> bool:
         # Checks if a given location string is a valid spreadsheet cell location.
@@ -148,8 +153,14 @@ class Workbook:
         #
         # This method will never return a zero-length string; instead, empty
         # cells are indicated by a value of None.
+
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
         
-        pass
+        if not self.is_valid_location(location):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+        
+        return self.sheets[sheet_name.lower()].get_cell_contents(location)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified
