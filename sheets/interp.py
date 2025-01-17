@@ -1,10 +1,10 @@
 import decimal
 import lark
-from lark.visitors import visit_children_decor
+# from lark.visitors import visit_children_decor
 
 class FormulaEvaluator(lark.visitors.Interpreter):
     
-    @visit_children_decor
+    # @visit_children_decor
     def add_expr(self, values):
         if values[1] == '+':
             return values[0] + values[2]
@@ -19,8 +19,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     
     def number(self, tree):
         # called when run into number node 
-        return decimal.Decimal(tree.children)\
+        return decimal.Decimal(tree.children)
 
     def string(self, tree):
+        # called when run into a string node
         return tree.children[0].value[1:-1]
     
