@@ -1,5 +1,5 @@
 import lark
-from interp import FormulaEvaluator
+from sheets.interpretor import FormulaEvaluator
 
 def main():
     ev = FormulaEvaluator()
