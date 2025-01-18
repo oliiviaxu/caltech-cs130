@@ -61,3 +61,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def string(self, tree):
         # called when run into a string node
         return tree.children[0].value[1:-1]
+    
+    def cell(self, tree):
+        # first parse the value into sheet (if given) and location
+        get_cell_value(D2)
+        pass

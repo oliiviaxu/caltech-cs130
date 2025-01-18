@@ -38,5 +38,26 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D5'), 'test') # test basic get
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E4'), 'test') # test that trimming whitespace worked
 
+        wb.set_cell_contents('Sheet1', 'A1', '\'string')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'string')
+
+    def test_formula_evaluation(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + 2 * 3')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 7)
+
+        wb.set_cell_contents('Sheet1', 'A1', '="aba" & "cadabra"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'abacadabra')
+    
+    def test_cell_reference(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'D2', '2')
+        wb.set_cell_contents('Sheet1', 'D3', '=1 + D2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
+
 if __name__ == "__main__":
     unittest.main()

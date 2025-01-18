@@ -72,7 +72,7 @@ class Workbook:
                 raise ValueError('Spreadsheet names must be unique.')
 
         self.sheets[sheet_name.lower()] = Sheet(sheet_name)
-
+        return len(self.sheets.keys()) - 1, sheet_name
 
     def del_sheet(self, sheet_name: str) -> None:
         # Delete the spreadsheet with the specified name.
@@ -186,4 +186,4 @@ class Workbook:
         if not self.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
-        self.sheets[sheet_name.lower()].get_cell_value(location)
+        return self.sheets[sheet_name.lower()].get_cell_value(location)
