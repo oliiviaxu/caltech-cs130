@@ -1,6 +1,5 @@
 from typing import Any
 import lark
-from .interpreter import FormulaEvaluator
 import decimal 
 import os
 
@@ -24,11 +23,10 @@ class Cell:
         except ValueError:
             return False
     
-    def get_cell_value(self) -> Any:
+    def get_cell_value(self, ev) -> Any:
         contents = self.contents.strip() # remove whitespace
         if contents.startswith('='):
             parser = lark.Lark.open(lark_path, start='formula')
-            ev = FormulaEvaluator()
             tree = parser.parse(self.contents)
             self.value = ev.visit(tree)
         elif contents.startswith("'"):

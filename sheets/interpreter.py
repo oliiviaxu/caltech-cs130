@@ -3,6 +3,8 @@ import lark
 from lark.visitors import visit_children_decor
 
 class FormulaEvaluator(lark.visitors.Interpreter):
+    def __init__(self, sheet_name):
+        self.sheet_name = sheet_name
 
     error_dict = {
         "#ERROR!": 1,
@@ -64,5 +66,5 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     
     def cell(self, tree):
         # first parse the value into sheet (if given) and location
-        get_cell_value(D2)
+        # get_cell_value(D2)
         pass

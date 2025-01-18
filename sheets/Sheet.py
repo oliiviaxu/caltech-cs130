@@ -1,6 +1,7 @@
 from .Cell import *
 from typing import List, Optional, Tuple, Any
 import re
+from .interpreter import FormulaEvaluator
 
 class Sheet:
     def __init__(self, sheet_name=''):
@@ -8,6 +9,7 @@ class Sheet:
         self.num_rows = 1
         self.num_cols = 0
         self.cells = [[]]
+        self.ev = FormulaEvaluator(sheet_name)
     
     def str_to_index(self, column: str) -> int:
         column = column.upper()
@@ -65,4 +67,4 @@ class Sheet:
         if col_idx >= self.num_cols or row_idx >= self.num_rows:
             raise ValueError('Location is beyond current extent of sheet.')
         
-        return self.cells[row_idx][col_idx].get_cell_value()
+        return self.cells[row_idx][col_idx].get_cell_value(self.ev)
