@@ -42,10 +42,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
 
     @visit_children_decor
     def concat_expr(self, values):
-        if values[1] == '&':
-            return values[0] + values[2]
-        else:
-            False, f'Unexpected operation: {values[1]}'
+        assert len(values) == 2, 'Unexpected number of args'
+        return values[0] + values[1]
 
     def error(self, tree):
         error_value = FormulaEvaluator.error_dict[self.children[0]]
@@ -54,6 +52,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def parens(self, tree):
         values = self.visit_children(tree)
         assert len(values) == 1, f'Unexpected tree {tree.pretty()}'
+        return values[0]
     
     def number(self, tree):
         # called when run into number node 
