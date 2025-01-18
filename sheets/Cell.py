@@ -16,7 +16,7 @@ class Cell:
         self.outgoing = []
         self.ingoing = []
     
-    def is_number(self, s):
+    def is_number(s):
         try:
             float(s)
             return True
@@ -32,7 +32,7 @@ class Cell:
         elif contents.startswith("'"):
             self.value = contents[1:]                        
         else:
-            if self.is_number(contents):
+            if Cell.is_number(contents):
                 self.value = decimal.Decimal(contents)
             else:
                 assert False
