@@ -1,6 +1,10 @@
 from .Sheet import *
 from .Cell import *
 from typing import List, Optional, Tuple, Any
+import os
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+lark_path = os.path.join(current_dir, "formulas.lark")
 
 class Workbook:
     # A workbook containing zero or more named spreadsheets.
@@ -187,3 +191,30 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         return self.sheets[sheet_name.lower()].get_cell_value(location)
+
+        """
+        ### Proposed Change:
+        sheet = self.sheets[sheet_name.lower()]
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+
+        if col_idx >= sheet.num_cols or row_idx >= sheet.num_rows:
+            raise ValueError('Location is beyond current extent of sheet.')
+        
+        cell = sheet.cells[row_idx][col_idx]
+
+        ### This code below is copied from Cell.py (mostly)
+        contents = cell.contents.strip() # remove whitespace
+        if contents.startswith('='):
+            parser = lark.Lark.open(lark_path, start='formula')
+            tree = parser.parse(cell.contents)
+            ev = FormulaEvaluator(sheet_name)
+            cell.value = ev.visit(tree)
+        elif contents.startswith("'"):
+            cell.value = contents[1:]                        
+        else:
+            if Cell.is_number(contents):
+                cell.value = decimal.Decimal(contents)
+            else:
+                assert False
+        return cell.value
+        """

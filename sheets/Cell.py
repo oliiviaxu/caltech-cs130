@@ -3,10 +3,7 @@ import lark
 import decimal 
 import os
 
-# Get the directory containing Cell.py
 current_dir = os.path.dirname(os.path.abspath(__file__))
-
-# Construct the absolute path to formulas.lark
 lark_path = os.path.join(current_dir, "formulas.lark")
 
 class Cell:
