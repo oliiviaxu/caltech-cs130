@@ -58,3 +58,11 @@ class Sheet:
             raise ValueError('Location is beyond current extent of sheet.')
         
         return self.cells[row_idx][col_idx].contents
+
+    def get_cell_value(self, location: str):
+        col_idx, row_idx = self.split_cell_ref(location)
+
+        if col_idx >= self.num_cols or row_idx >= self.num_rows:
+            raise ValueError('Location is beyond current extent of sheet.')
+        
+        return self.cells[row_idx][col_idx].get_cell_value()

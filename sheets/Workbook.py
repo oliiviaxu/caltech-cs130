@@ -180,4 +180,10 @@ class Workbook:
         # decimal place, and will not include a decimal place if the value is a
         # whole number.  For example, this function would not return
         # Decimal('1.000'); rather it would return Decimal('1').
-        pass
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        if not self.is_valid_location(location):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
+        
+        self.sheets[sheet_name.lower()].get_cell_value(location)

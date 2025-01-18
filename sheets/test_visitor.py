@@ -1,5 +1,5 @@
 import lark
-from sheets.visitor import CellRefFinder
+from visitor import CellRefFinder
 
 def main():
     f = CellRefFinder()
