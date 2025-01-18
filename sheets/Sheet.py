@@ -11,19 +11,19 @@ class Sheet:
         self.cells = [[]]
         self.ev = FormulaEvaluator(sheet_name)
     
-    def str_to_index(self, column: str) -> int:
+    def str_to_index(column: str) -> int:
         column = column.upper()
         index = 0
         for i in range(len(column)):
             index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('A') + 1)
         return index - 1
     
-    def split_cell_ref(self, location: str) -> Tuple[int, int]:
+    def split_cell_ref(location: str) -> Tuple[int, int]:
         i = 0
         while i < len(location) and location[i].isalpha():
             i += 1
         col, row = location[:i], location[i:]
-        return self.str_to_index(col), int(row) - 1
+        return Sheet.str_to_index(col), int(row) - 1
     
     def resize_sheet(self, new_num_rows, new_num_cols) -> None:
         # resizes sheet and updates num_rows and num_cols fields accordingly
@@ -41,7 +41,7 @@ class Sheet:
 
     def set_cell_contents(self, location: str, contents: Optional[str]) -> None:
 
-        col_idx, row_idx = self.split_cell_ref(location)
+        col_idx, row_idx = Sheet.split_cell_ref(location)
 
         updated_num_rows = max(self.num_rows, row_idx + 1)
         updated_num_cols = max(self.num_cols, col_idx + 1)
@@ -54,7 +54,7 @@ class Sheet:
 
         # if specified location is beyond extent of sheet, raises a ValueError 
 
-        col_idx, row_idx = self.split_cell_ref(location)
+        col_idx, row_idx = Sheet.split_cell_ref(location)
 
         if col_idx >= self.num_cols or row_idx >= self.num_rows:
             raise ValueError('Location is beyond current extent of sheet.')
@@ -62,7 +62,7 @@ class Sheet:
         return self.cells[row_idx][col_idx].contents
 
     def get_cell_value(self, location: str):
-        col_idx, row_idx = self.split_cell_ref(location)
+        col_idx, row_idx = Sheet.split_cell_ref(location)
 
         if col_idx >= self.num_cols or row_idx >= self.num_rows:
             raise ValueError('Location is beyond current extent of sheet.')
