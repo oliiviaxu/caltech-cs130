@@ -12,6 +12,7 @@ class CellRefFinder(lark.Visitor):
         if len(tree.children) == 1:
             self.refs.add(str(tree.children[0]).upper())
         elif len(tree.children) == 2:
-            self.refs.add('!'.join(str(tree.children)).upper())
+            print('test', str(tree.children))
+            self.refs.add(str(tree.children[0]) + '!' + str(tree.children[1]).upper())
         else:
             assert False, 'Invalid formula. Format must be in ZZZZ9999.'
