@@ -21,7 +21,11 @@ class Cell:
             return False
     
     def get_cell_value(self, ev) -> Any:
-        contents = self.contents.strip() # remove whitespace
+        contents = self.contents
+        if (contents is None):
+            return ""
+        
+        contents = contents.strip()
         if contents.startswith('='):
             parser = lark.Lark.open(lark_path, start='formula')
             tree = parser.parse(self.contents)
@@ -32,5 +36,5 @@ class Cell:
             if Cell.is_number(contents):
                 self.value = decimal.Decimal(contents)
             else:
-                assert False
+                self.value = contents
         return self.value

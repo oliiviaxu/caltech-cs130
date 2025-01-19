@@ -6,9 +6,11 @@ from .interpreter import FormulaEvaluator
 class Sheet:
     def __init__(self, sheet_name=''):
         self.sheet_name = sheet_name
-        self.num_rows = 1
-        self.num_cols = 0
-        self.cells = [[]]
+        self.num_rows = 25
+        self.num_cols = 25
+        self.cells = []
+        for _ in range(self.num_rows):
+            self.cells.append([Cell('')] * self.num_cols)
         self.ev = FormulaEvaluator(sheet_name)
     
     def str_to_index(column: str) -> int:

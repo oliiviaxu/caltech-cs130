@@ -1,5 +1,6 @@
 from .Sheet import *
 from .Cell import *
+from .visitor import CellRefFinder
 from typing import List, Optional, Tuple, Any
 import os
 
@@ -138,7 +139,8 @@ class Workbook:
         if not self.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
-        contents = contents.strip()
+        if (contents is not None):
+            contents = contents.strip()
         self.sheets[sheet_name.lower()].set_cell_contents(location, contents)
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
@@ -218,3 +220,24 @@ class Workbook:
                 assert False
         return cell.value
         """
+    
+    # def get_cell_ref_info(self, tree, sheet_name):
+    #     """
+    #     Given a parsed formula tree and a sheet name, this finds the cell
+    #     references in the tree, and stores their value into a map. Used by
+    #     the FormulaEvaluator in get_cell_value.
+    #     """
+    #     finder = CellRefFinder()
+    #     finder.visit(tree)
+
+    #     info = {}
+    #     for ref in finder.refs:
+    #         # parse ref if necessary
+    #         if ('!' in ref):
+    #             curr_sheet_name = ref[:ref.index('!')]
+    #             curr_location = ref[ref.index('!') + 1:]
+    #         else:
+    #             curr_sheet_name = sheet_name
+    #             curr_location = ref
+    #         info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+    #     return info
