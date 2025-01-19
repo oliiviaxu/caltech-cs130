@@ -3,6 +3,7 @@ from .Cell import *
 from .visitor import CellRefFinder
 from typing import List, Optional, Tuple, Any
 import os
+import lark
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
@@ -207,12 +208,18 @@ class Workbook:
         
         contents = contents.strip()
         if contents.startswith('='):
+            # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
             tree = parser.parse(cell.contents)
-            ev = FormulaEvaluator(sheet_name)
+
+            # obtain reference info from tree with visitor
+            ref_info = self.get_cell_ref_info(tree, sheet_name)
+
+            # feed references and sheet name into interpreter
+            ev = FormulaEvaluator(sheet_name, ref_info)
             cell.value = ev.visit(tree)
         elif contents.startswith("'"):
-            cell.value = contents[1:]                        
+            cell.value = contents[1:]
         else:
             if Cell.is_number(contents):
                 cell.value = decimal.Decimal(contents)
@@ -220,23 +227,23 @@ class Workbook:
                 cell.value = contents
         return cell.value
     
-    # def get_cell_ref_info(self, tree, sheet_name):
-    #     """
-    #     Given a parsed formula tree and a sheet name, this finds the cell
-    #     references in the tree, and stores their value into a map. Used by
-    #     the FormulaEvaluator in get_cell_value.
-    #     """
-    #     finder = CellRefFinder()
-    #     finder.visit(tree)
+    def get_cell_ref_info(self, tree, sheet_name):
+        """
+        Given a parsed formula tree and a sheet name, this finds the cell
+        references in the tree, and stores their value into a map. Used by
+        the FormulaEvaluator in get_cell_value.
+        """
+        finder = CellRefFinder()
+        finder.visit(tree)
 
-    #     info = {}
-    #     for ref in finder.refs:
-    #         # parse ref if necessary
-    #         if ('!' in ref):
-    #             curr_sheet_name = ref[:ref.index('!')]
-    #             curr_location = ref[ref.index('!') + 1:]
-    #         else:
-    #             curr_sheet_name = sheet_name
-    #             curr_location = ref
-    #         info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
-    #     return info
+        info = {}
+        for ref in finder.refs:
+            # parse ref if necessary
+            if ('!' in ref):
+                curr_sheet_name = ref[:ref.index('!')]
+                curr_location = ref[ref.index('!') + 1:]
+            else:
+                curr_sheet_name = sheet_name
+                curr_location = ref
+            info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+        return info

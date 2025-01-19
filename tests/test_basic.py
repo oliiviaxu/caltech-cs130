@@ -1,6 +1,11 @@
 # python -m unittest discover -s tests
 import unittest
 import sheets
+import os
+import lark
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+lark_path = os.path.join(current_dir, "../sheets/formulas.lark")
 
 class BasicTests(unittest.TestCase):
     def test_new_sheet(self):
@@ -51,13 +56,13 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '="aba" & "cadabra"')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'abacadabra')
     
-    # def test_cell_reference(self):
-    #     wb = sheets.Workbook()
-    #     wb.new_sheet()
+    def test_cell_reference(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
 
-    #     wb.set_cell_contents('Sheet1', 'D2', '2')
-    #     wb.set_cell_contents('Sheet1', 'D3', '=1 + D2')
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
+        wb.set_cell_contents('Sheet1', 'D2', '2')
+        wb.set_cell_contents('Sheet1', 'D3', '=1 + D2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
 
 if __name__ == "__main__":
     unittest.main()

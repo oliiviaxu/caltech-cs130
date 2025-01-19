@@ -11,7 +11,7 @@ class Sheet:
         self.cells = []
         for _ in range(self.num_rows):
             self.cells.append([Cell('')] * self.num_cols)
-        self.ev = FormulaEvaluator(sheet_name)
+        # self.ev = FormulaEvaluator(sheet_name)
     
     def str_to_index(column: str) -> int:
         column = column.upper()
