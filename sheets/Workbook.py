@@ -192,10 +192,6 @@ class Workbook:
         if not self.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
-        return self.sheets[sheet_name.lower()].get_cell_value(location)
-
-        """
-        ### Proposed Change:
         sheet = self.sheets[sheet_name.lower()]
         col_idx, row_idx = Sheet.split_cell_ref(location)
 
@@ -205,7 +201,11 @@ class Workbook:
         cell = sheet.cells[row_idx][col_idx]
 
         ### This code below is copied from Cell.py (mostly)
-        contents = cell.contents.strip() # remove whitespace
+        contents = cell.contents
+        if (contents is None):
+            return ""
+        
+        contents = contents.strip()
         if contents.startswith('='):
             parser = lark.Lark.open(lark_path, start='formula')
             tree = parser.parse(cell.contents)
@@ -217,9 +217,8 @@ class Workbook:
             if Cell.is_number(contents):
                 cell.value = decimal.Decimal(contents)
             else:
-                assert False
+                cell.value = contents
         return cell.value
-        """
     
     # def get_cell_ref_info(self, tree, sheet_name):
     #     """
