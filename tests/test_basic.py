@@ -23,20 +23,20 @@ class BasicTests(unittest.TestCase):
     def test_set_cell_contents(self):
         wb = sheets.Workbook()
         wb.new_sheet()
-        wb.set_cell_contents('Sheet1', 'd5', 'test')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (4, 5))
-        wb.set_cell_contents('Sheet1', 'C6', 'test')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (4, 6)) # test adding rows
-        wb.set_cell_contents('Sheet1', 'E4', '  test  ')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (5, 6)) # test adding columns
+        wb.set_cell_contents('Sheet1', 'AA26', 'test')
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
+        wb.set_cell_contents('Sheet1', 'C27', 'test')
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 27)) # test adding rows
+        wb.set_cell_contents('Sheet1', 'AB4', '  test  ')
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (28, 27)) # test adding columns
 
         with self.assertRaises(KeyError):
             wb.set_cell_contents('Sheet2', 'D5', 'test')
         with self.assertRaises(ValueError):
             wb.set_cell_contents('Sheet1', 'D5D5', 'test')
         
-        self.assertEqual(wb.get_cell_contents('Sheet1', 'D5'), 'test') # test basic get
-        self.assertEqual(wb.get_cell_contents('Sheet1', 'E4'), 'test') # test that trimming whitespace worked
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'AA26'), 'test') # test basic get
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'AB4'), 'test') # test that trimming whitespace worked
 
         wb.set_cell_contents('Sheet1', 'A1', '\'string')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'string')
