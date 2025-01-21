@@ -4,6 +4,7 @@ import sheets
 import os
 import sheets.Sheet as Sheet
 import lark
+from sheets.interpreter import FormulaEvaluator
 import decimal
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -122,10 +123,10 @@ class BasicTests(unittest.TestCase):
         wb.new_sheet()
 
         wb.set_cell_contents('Sheet1', 'A1', '=1/0')
-        print('cell error test: ', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
+        # print('cell error test: ', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
 
         wb.set_cell_contents('Sheet1', 'A1', '=A5+++46a4')
-        print('cell error test again', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
+        # print('cell error test again', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()
@@ -200,11 +201,23 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'C1', '=D1')
 
         cell = wb.sheets['sheet1'].cells[0][1]
-        print('cell', [c.location for c in cell.outgoing], cell.contents)
+        # print('cell', [c.location for c in cell.outgoing], cell.contents)
         cell = wb.sheets['sheet1'].cells[0][2]
-        print('cell', [c.location for c in cell.outgoing], cell.contents)
+        # print('cell', [c.location for c in cell.outgoing], cell.contents)
 
-        print(wb.detect_cycle(cell))
+        # print(wb.detect_cycle(cell))
+    
+    def test_interpreter(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        parser = lark.Lark.open(lark_path, start='formula')
+        tree = parser.parse('=1 + D3')
+        ref_info = wb.get_cell_ref_info(tree, 'sheet1')
+
+        ev = FormulaEvaluator('sheet1', ref_info)
+        # print(tree.pretty())
+        # print(ev.visit(tree))
 
 if __name__ == "__main__":
     unittest.main()
