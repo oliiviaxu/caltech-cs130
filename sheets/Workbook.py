@@ -93,14 +93,10 @@ class Workbook:
         sheet_to_delete = self.sheets[sheet_name.lower()]
         cells = sheet_to_delete.cells
 
-        for row_idx in range(0, sheet_to_delete.num_rows):
-            for col_idx in range(0, sheet_to_delete.num_cols):
+        for row_idx in range(sheet_to_delete.num_rows):
+            for col_idx in range(sheet_to_delete.num_cols):
                 curr_cell = cells[row_idx][col_idx]
                 
-                for ingoing_cell in curr_cell.ingoing:
-                    ingoing_cell.outgoing.remove(curr_cell)
-                    # TODO: do we have to change the contents?
-                    ingoing_cell.value = CellError(CellErrorType.BAD_REFERENCE, 'Referenced cell was deleted')
                 for outgoing_cell in curr_cell.outgoing:
                     outgoing_cell.ingoing.remove(curr_cell)
         
@@ -155,9 +151,6 @@ class Workbook:
         if not self.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
-        if (contents is not None):
-            contents = contents.strip()
-        
         # remove original outgoing cells' ingoing & outgoing lists before setting new content
         col_idx, row_idx = Sheet.split_cell_ref(location)
         curr_sheet = self.sheets[sheet_name.lower()]
@@ -169,9 +162,13 @@ class Workbook:
                 orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
+        if contents == '':
+            contents = None
+        else:
+            contents = contents.strip()
 
         # Only need to change cell.outgoing if a formula is used in the cell
-        if contents.startswith('='):
+        if contents is not None and contents.startswith('='):
             # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
             tree = parser.parse(contents)
@@ -255,7 +252,7 @@ class Workbook:
         ### This code below is copied from Cell.py (mostly)
         contents = cell.contents
         if (contents is None):
-            return ""
+            return None
         
         contents = contents.strip()
         if contents.startswith('='):
@@ -273,6 +270,7 @@ class Workbook:
             cell.value = contents[1:]
         else:
             if Cell.is_number(contents):
+                contents = Cell.strip_trailing_zeros(contents)
                 cell.value = decimal.Decimal(contents)
             else:
                 cell.value = contents

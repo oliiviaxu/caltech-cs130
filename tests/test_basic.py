@@ -4,6 +4,7 @@ import sheets
 import os
 import sheets.Sheet as Sheet
 import lark
+import decimal
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "../sheets/formulas.lark")
@@ -26,9 +27,83 @@ class BasicTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             wb.new_sheet('~')
     
-    def test_set_cell_contents(self):
+    def test_del_sheet(self):
+        """
+        Test the deletion of a sheet from the workbook.
+        Arrange: Create a workbook and add a sheet with some cells.
+        Act: Delete the sheet.
+        Assert: Verify that the sheet is removed and references are updated.
+        """
+        # Arrange
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet1')
+        wb.new_sheet('Sheet2')
+
+        wb.set_cell_contents('Sheet1', 'A1', '2')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + A1')
+        wb.set_cell_contents('Sheet2', 'A1', '=1+Sheet1!A1')
+        
+        # Act
+        wb.del_sheet('Sheet2')
+        
+        # Assert
+        self.assertEqual(wb.list_sheets(), ['Sheet1'])
+        self.assertEqual(len(wb.sheets['sheet1'].cells[0][0].ingoing), 1)
+        self.assertEqual(wb.sheets['sheet1'].cells[0][0].ingoing[0].location, 'A2')
+    
+    def test_spreadsheet_cells(self):
         wb = sheets.Workbook()
         wb.new_sheet()
+
+        # test setting to number
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '4')
+        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), decimal.Decimal)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal(4))
+
+        # test setting to number, removing trailing zeros
+        wb.set_cell_contents('Sheet1', 'A1', '4.0000')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '4.0000')
+        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), decimal.Decimal)
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '4')
+
+        # test setting to Infinity
+        wb.set_cell_contents('Sheet1', 'A1', 'inf')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), 'inf')
+        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), str)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'inf')
+
+        # test setting to NaN
+        wb.set_cell_contents('Sheet1', 'A1', 'NaN')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), 'NaN')
+        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), str)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'NaN')
+
+        # test setting to string, no whitespace
+        wb.set_cell_contents('Sheet1', 'A1', '\'string')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '\'string')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'string')
+
+        # test setting to string, handles whitespace correctly
+        wb.set_cell_contents('Sheet1', 'A1', '\'  my string  ')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '\'  my string')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), '  my string')
+
+        # test setting to literal, handles whitespace correctly
+        wb.set_cell_contents('Sheet1', 'A1', '  my string  ')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), 'my string')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'my string')
+
+        # test setting to empty string
+        wb.set_cell_contents('Sheet1', 'A1', '')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), None)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
+    
+    def test_spreadsheet_extent(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # test the extent of spreadsheet
         wb.set_cell_contents('Sheet1', 'AA26', 'test')
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
         wb.set_cell_contents('Sheet1', 'C27', 'test')
@@ -36,16 +111,11 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'AB4', '  test  ')
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (28, 27)) # test adding columns
 
+        # test KeyError for missing sheet and ValueError for bad location
         with self.assertRaises(KeyError):
             wb.set_cell_contents('Sheet2', 'D5', 'test')
         with self.assertRaises(ValueError):
             wb.set_cell_contents('Sheet1', 'D5D5', 'test')
-        
-        self.assertEqual(wb.get_cell_contents('Sheet1', 'AA26'), 'test') # test basic get
-        self.assertEqual(wb.get_cell_contents('Sheet1', 'AB4'), 'test') # test that trimming whitespace worked
-
-        wb.set_cell_contents('Sheet1', 'A1', '\'string')
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'string')
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()
@@ -106,45 +176,6 @@ class BasicTests(unittest.TestCase):
         # print_lists(d_1)
         # print_lists(d_2)
         # print_lists(d_3)
-    
-    def test_random(self):
-        wb = sheets.Workbook()
-        wb.new_sheet()
-
-        wb.set_cell_contents('Sheet1', 'A1', '4')
-        # print(wb.get_cell_value('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A2'))
-
-        wb.set_cell_contents('Sheet1', 'A1', '0')
-        # print(wb.get_cell_value('Sheet1', 'A1'), wb.sheets['sheet1'].cells[1][0].value)
-    
-    def test_del_sheet(self):
-        """
-        Test the deletion of a sheet from the workbook.
-        Arrange: Create a workbook and add a sheet with some cells.
-        Act: Delete the sheet.
-        Assert: Verify that the sheet is removed and references are updated.
-        """
-        # Arrange
-        wb = sheets.Workbook()
-        wb.new_sheet('Sheet1')
-        wb.new_sheet('Sheet2')
-        wb.new_sheet('Sheet3')
-
-        wb.set_cell_contents('Sheet3', 'B1', '2')
-        wb.set_cell_contents('Sheet2', 'A1', '=1+Sheet3!B1')
-        wb.set_cell_contents('Sheet1', 'B1', '=1+Sheet2!A1')
-        
-        assert wb.sheets['sheet3'].cells[0][1].ingoing[0] == wb.sheets['sheet2'].cells[0][0]
-        assert wb.sheets['sheet1'].cells[0][1].outgoing[0] == wb.sheets['sheet2'].cells[0][0]
-
-        wb.del_sheet('Sheet2')
-        
-        # Assert
-        with self.assertRaises(KeyError):
-            wb.sheets['sheet2']
-        
-        assert len(wb.sheets['sheet3'].cells[0][1].ingoing) == 0
-        assert len(wb.sheets['sheet1'].cells[0][1].outgoing) == 0
 
 if __name__ == "__main__":
     unittest.main()
