@@ -2,7 +2,7 @@ from .Sheet import *
 from .Cell import *
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Any, Set
 import os
 import lark
 
@@ -36,7 +36,7 @@ class Workbook:
         lst = []
         for _, sheet in self.sheets.items():
             lst.append(sheet.sheet_name)
-        return lst # preserves case 
+        return lst # preserves case
 
     def new_sheet(self, sheet_name: Optional[str] = None) -> Tuple[int, str]:
         # Add a new sheet to the workbook.  If the sheet name is specified, it
@@ -87,8 +87,6 @@ class Workbook:
         # case does not have to.
         #
         # If the specified sheet name is not found, a KeyError is raised.
-
-        # TODO: put off until finish dependency graph implementation
 
         sheet_to_delete = self.sheets[sheet_name.lower()]
         cells = sheet_to_delete.cells
@@ -221,6 +219,36 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
+    
+    def dfs(self, node: Cell, visited: Set[str]) -> bool:
+        """
+        Perform DFS to detect cycles.
+        :param node: The current cell node.
+        :param visited: A set of visited cell locations.
+        :return: True if a cycle is detected, False otherwise.
+        """
+        id = node.sheet_name + '!' + node.location
+
+        if (id in visited):
+            return True
+        visited.add(id)
+        
+        has_cycle = False
+        for ref in node.outgoing:
+            ref_id = ref.sheet_name + '!' + ref.location
+            if ref_id not in visited:
+                has_cycle = has_cycle or self.dfs(ref, visited)
+        return has_cycle
+
+    def detect_cycle(self, src: Cell) -> bool:
+        """
+        Detect cycles starting from the source cell.
+        :param src: The source cell node.
+        :return: True if a cycle is detected, False otherwise.
+        """
+
+        visited = set()
+        return self.dfs(src, visited)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified
@@ -272,6 +300,9 @@ class Workbook:
             if parse_error:
                 cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
             else:
+                # if self.detect_cycle(cell):
+                #     return cell.value
+
                 # obtain reference info from tree with visitor
                 ref_info = self.get_cell_ref_info(tree, sheet_name)
 

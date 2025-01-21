@@ -9,9 +9,26 @@ class Sheet:
         self.num_rows = 25
         self.num_cols = 25
         self.cells = []
-        for _ in range(self.num_rows):
-            self.cells.append([Cell('')] * self.num_cols)
+        for i in range(self.num_rows):
+            row = []
+            for j in range(self.num_cols):
+                location = Sheet.to_sheet_coords(j, i)
+                cell = Cell(sheet_name, location, None)
+                row.append(cell)
+            self.cells.append(row)
         # self.ev = FormulaEvaluator(sheet_name)
+
+    def to_sheet_coords(col_index, row_index):
+        """
+        Converts 0-indexed coordinates (col_index, row_index) to spreadsheet coordinates.
+        """
+        col = ""
+        while col_index >= 0:
+            col = chr(65 + col_index % 26) + col
+            col_index = col_index // 26 - 1
+
+        row = str(row_index + 1)
+        return col + row
     
     def str_to_index(column: str) -> int:
         column = column.upper()

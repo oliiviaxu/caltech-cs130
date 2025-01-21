@@ -186,6 +186,25 @@ class BasicTests(unittest.TestCase):
         # print_lists(d_1)
         # print_lists(d_2)
         # print_lists(d_3)
+    
+    def test_cycle_detection(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=B1')
+
+        cell = wb.sheets['sheet1'].cells[0][1]
+
+        wb.set_cell_contents('Sheet1', 'C1', '=D1')
+
+        cell = wb.sheets['sheet1'].cells[0][1]
+        print('cell', [c.location for c in cell.outgoing], cell.contents)
+        cell = wb.sheets['sheet1'].cells[0][2]
+        print('cell', [c.location for c in cell.outgoing], cell.contents)
+
+        print(wb.detect_cycle(cell))
 
 if __name__ == "__main__":
     unittest.main()
