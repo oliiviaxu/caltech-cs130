@@ -1,5 +1,6 @@
 from .Sheet import *
 from .Cell import *
+from .main import CellError, CellErrorType
 from .visitor import CellRefFinder
 from typing import List, Optional, Tuple, Any
 import os
@@ -88,7 +89,22 @@ class Workbook:
         # If the specified sheet name is not found, a KeyError is raised.
 
         # TODO: put off until finish dependency graph implementation
-        pass
+
+        sheet_to_delete = self.sheets[sheet_name.lower()]
+        cells = sheet_to_delete.cells
+
+        for row_idx in range(0, sheet_to_delete.num_rows):
+            for col_idx in range(0, sheet_to_delete.num_cols):
+                curr_cell = cells[row_idx][col_idx]
+                
+                for ingoing_cell in curr_cell.ingoing:
+                    ingoing_cell.outgoing.remove(curr_cell)
+                    # TODO: do we have to change the contents?
+                    ingoing_cell.value = CellError(CellErrorType.BAD_REFERENCE, 'Referenced cell was deleted')
+                for outgoing_cell in curr_cell.outgoing:
+                    outgoing_cell.ingoing.remove(curr_cell)
+        
+        del self.sheets[sheet_name.lower()]
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -144,22 +160,23 @@ class Workbook:
         
         # remove original outgoing cells' ingoing & outgoing lists before setting new content
         col_idx, row_idx = Sheet.split_cell_ref(location)
-        sheet = self.sheets[sheet_name.lower()]
-        if col_idx < sheet.num_cols and row_idx < sheet.num_rows:
-            curr_cell = self.sheets[sheet_name.lower()].cells[row_idx][col_idx]
+        curr_sheet = self.sheets[sheet_name.lower()]
+        if col_idx < curr_sheet.num_cols and row_idx < curr_sheet.num_rows:
+            curr_cell = curr_sheet.cells[row_idx][col_idx]
             orig_outgoing = curr_cell.outgoing
 
             for orig_ref_cell in orig_outgoing:
                 orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
-        # we would only need to change cell.outgoing if a formula is used in the cell
+
+        # Only need to change cell.outgoing if a formula is used in the cell
         if contents.startswith('='):
             # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
             tree = parser.parse(contents)
 
-            # obtain references from the formula
+            # Obtain references
             finder = CellRefFinder()
             finder.visit(tree) 
             
@@ -170,14 +187,13 @@ class Workbook:
                     ref_sheet_name, ref_location = split_ref[0], Sheet.split_cell_ref(split_ref[1])
                     col_idx, row_idx = ref_location
                     referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
-
                     outgoing.append(referenced_cell)
                 else:
                     col_idx, row_idx = Sheet.split_cell_ref(ref)
-                    referenced_cell = self.sheets[sheet_name.lower()].cells[row_idx][col_idx]
+                    referenced_cell = curr_sheet.cells[row_idx][col_idx]
                     outgoing.append(referenced_cell)
             
-        self.sheets[sheet_name.lower()].set_cell_contents(sheet_name, location, contents, outgoing)
+        curr_sheet.set_cell_contents(sheet_name, location, contents, outgoing)
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
