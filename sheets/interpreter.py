@@ -22,57 +22,60 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def change_type(val_1, val_2) -> Any:
         # helper function for implicit type conversion needed in add_expr and mul_expr
 
-        if val_1 is None or type(val_1) == CellError:
-            raise TypeError(f'Invalid type: {val_1}')
-        if val_2 is None or type(val_2) == CellError:
-            raise TypeError(f'Invalid type: {val_2}')
-        if type(val_1) == str:
-            if Cell.is_number(val_1):
-                val_1 = decimal.Decimal(val_1)
-            else:
-                raise TypeError(f'Invalid type: {val_1}')
-        if type(val_2) == str:
-            if Cell.is_number(val_2):
-                val_2 = decimal.Decimal(val_2)
-            else:
-                raise TypeError(f'Invalid type: {val_2}')
-        
-        return val_1, val_2
+        if val_1 is None or isinstance(val_1, CellError):
+            return val_1, val_2
+        if val_2 is None or isinstance(val_2, CellError):
+            return val_1, val_2
+
+        def convert(val):
+            if isinstance(val, str):
+                if Cell.is_number(val):
+                    return decimal.Decimal(val)
+                else:
+                    return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
+            return val
+
+        res_1 = convert(val_1)
+        res_2 = convert(val_2)
+
+        return res_1, res_2
         
     @visit_children_decor
     def add_expr(self, values):
-        orig_val_1, operator, orig_val_2 = values[0], values[1], values[2]
+            val_1, operator, val_2 = values[0], values[1], values[2]
 
-        try:
-            val_1, val_2 = FormulaEvaluator.change_type(orig_val_1, orig_val_2)
-        except TypeError:
-            return CellError(CellErrorType.TYPE_ERROR, 'Cannot perform addition/subtraction. Invalid types')
+            res_1, res_2 = FormulaEvaluator.change_type(val_1, val_2)
+            if isinstance(res_1, CellError):
+                return res_1
+            elif isinstance(res_2, CellError):
+                return res_2
+            else:
+                if operator == '+':
+                    return res_1 + res_2
+                elif operator == '-':
+                    return res_1 - res_2
+                else:
+                    assert False, f'Unexpected operation: {operator}'
         
-        if operator == '+':
-            return val_1 + val_2
-        elif operator == '-':
-            return val_1 - val_2
-        else:
-            assert False, f'Unexpected operation: {values[1]}'
-    
     @visit_children_decor
     def mul_expr(self, values):
 
-        orig_val_1, operator, orig_val_2 = values[0], values[1], values[2]
-
-        try:
-            val_1, val_2 = FormulaEvaluator.change_type(orig_val_1, orig_val_2)
-        except TypeError:
-            return CellError(CellErrorType.TYPE_ERROR, 'Cannot perform multiplication/division. Invalid types')
-
-        if operator == '*':
-            return val_1 * val_2
-        elif operator == '/':
-            if (val_2 == 0):
-                return CellError(CellErrorType.DIVIDE_BY_ZERO, 'Cannot divide by zero')
-            return val_1 / val_2
+        val_1, operator, val_2 = values[0], values[1], values[2]
+        res_1, res_2 = FormulaEvaluator.change_type(val_1, val_2)
+        
+        if isinstance(res_1, CellError):
+            return res_1
+        elif isinstance(res_2, CellError):
+            return res_2
         else:
-            assert False, f'Unexpected operation: {operator}'
+            if operator == '*':
+                return res_1 * res_2
+            elif operator == '/':
+                if (res_2 == 0):
+                    return CellError(CellErrorType.DIVIDE_BY_ZERO, 'Cannot divide by zero')
+                return res_1 / res_2
+            else:
+                assert False, f'Unexpected operation: {operator}'
     
     @visit_children_decor
     def unary_op(self, values):
