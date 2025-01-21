@@ -1,6 +1,6 @@
 from .Sheet import *
 from .Cell import *
-from .main import CellError, CellErrorType
+from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
 from typing import List, Optional, Tuple, Any
 import os
