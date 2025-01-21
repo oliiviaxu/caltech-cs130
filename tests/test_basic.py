@@ -59,25 +59,25 @@ class BasicTests(unittest.TestCase):
         # test setting to number
         wb.set_cell_contents('Sheet1', 'A1', '4')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '4')
-        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), decimal.Decimal)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal(4))
 
         # test setting to number, removing trailing zeros
         wb.set_cell_contents('Sheet1', 'A1', '4.0000')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '4.0000')
-        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), decimal.Decimal)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal)
         self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '4')
 
         # test setting to Infinity
         wb.set_cell_contents('Sheet1', 'A1', 'inf')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), 'inf')
-        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), str)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), str)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'inf')
 
         # test setting to NaN
         wb.set_cell_contents('Sheet1', 'A1', 'NaN')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), 'NaN')
-        self.assertEqual(type(wb.get_cell_value('Sheet1', 'A1')), str)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), str)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'NaN')
 
         # test setting to string, no whitespace
@@ -122,11 +122,63 @@ class BasicTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
 
+        # test divide by zero
         wb.set_cell_contents('Sheet1', 'A1', '=1/0')
-        # print('cell error test: ', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
 
+        # test parse error
         wb.set_cell_contents('Sheet1', 'A1', '=A5+++46a4')
-        # print('cell error test again', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+
+        # test bad reference
+        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!A1')
+        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # TODO: is a cell reference invalid if it is out of the extent of the sheet?
+        # test bad reference (reference out of extent of sheet)
+        # wb.new_sheet()
+        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!ZZ45')
+        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # test bad reference (reference exceeds ZZZZ9999)
+        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!ZZZZZ99')
+        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # test circular reference
+        # wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        # wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        # test type error
+        wb.set_cell_contents('Sheet1', 'A1', '\'mystring')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + "test"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # test setting content to string representation of error
+        wb.set_cell_contents('Sheet1', 'A1', '=#REF!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=#ref!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # test error propagation
+        # test error prioritization
+        # test implicit type conversion
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()
@@ -193,19 +245,13 @@ class BasicTests(unittest.TestCase):
         wb.new_sheet()
 
         wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+
+        cell = wb.sheets['sheet1'].cells[0][0]
+        self.assertEqual(wb.detect_cycle(cell), True)
+
         wb.set_cell_contents('Sheet1', 'B1', '=C1')
-        wb.set_cell_contents('Sheet1', 'C1', '=B1')
-
-        cell = wb.sheets['sheet1'].cells[0][1]
-
-        wb.set_cell_contents('Sheet1', 'C1', '=D1')
-
-        cell = wb.sheets['sheet1'].cells[0][1]
-        # print('cell', [c.location for c in cell.outgoing], cell.contents)
-        cell = wb.sheets['sheet1'].cells[0][2]
-        # print('cell', [c.location for c in cell.outgoing], cell.contents)
-
-        # print(wb.detect_cycle(cell))
+        self.assertEqual(wb.detect_cycle(cell), False)
     
     def test_interpreter(self):
         wb = sheets.Workbook()

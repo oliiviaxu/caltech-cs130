@@ -228,16 +228,14 @@ class Workbook:
         :return: True if a cycle is detected, False otherwise.
         """
         id = node.sheet_name + '!' + node.location
-
+        print(id, [c.location for c in node.outgoing])
         if (id in visited):
             return True
         visited.add(id)
         
         has_cycle = False
         for ref in node.outgoing:
-            ref_id = ref.sheet_name + '!' + ref.location
-            if ref_id not in visited:
-                has_cycle = has_cycle or self.dfs(ref, visited)
+            has_cycle = has_cycle or self.dfs(ref, visited)
         return has_cycle
 
     def detect_cycle(self, src: Cell) -> bool:
@@ -337,5 +335,9 @@ class Workbook:
             else:
                 curr_sheet_name = sheet_name
                 curr_location = ref
-            ref_info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+
+            try:
+                ref_info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+            except (ValueError, KeyError) as e:
+                ref_info[ref] = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
         return ref_info

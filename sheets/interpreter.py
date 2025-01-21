@@ -11,12 +11,12 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         self.ref_info = ref_info
 
     error_dict = {
-        "#ERROR!": 1,
-        "#CIRCREF!": 2,
-        "#REF!": 3,
-        "#NAME?": 4,
-        "#VALUE!": 5,
-        "#DIV/0!": 6
+        "#ERROR!": CellErrorType.PARSE_ERROR,
+        "#CIRCREF!": CellErrorType.CIRCULAR_REFERENCE,
+        "#REF!": CellErrorType.BAD_REFERENCE,
+        "#NAME?": CellErrorType.BAD_NAME,
+        "#VALUE!": CellErrorType.TYPE_ERROR,
+        "#DIV/0!": CellErrorType.DIVIDE_BY_ZERO
     }
     
     def change_type(val_1, val_2) -> Any:
@@ -106,7 +106,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             return str(val_1) + str(val_2)
 
     def error(self, tree):
-        error_value = FormulaEvaluator.error_dict[self.children[0]] # TODO: fix
+        error_value = CellError(FormulaEvaluator.error_dict[tree.children[0].upper()], 'String representation of error given')
         return error_value
 
     def parens(self, tree):
