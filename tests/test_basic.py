@@ -2,6 +2,7 @@
 import unittest
 import sheets
 import os
+import sheets.Sheet as Sheet
 import lark
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -62,7 +63,59 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'D2', '2')
         wb.set_cell_contents('Sheet1', 'D3', '=1 + D2')
+
+        col_idx, row_idx = Sheet.split_cell_ref('D3')
+        # print(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location)
+
+        self.assertEqual(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location, 'D2')
+
         self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
+    
+    def test_ingoing_outgoing(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'D1', '2')
+        wb.set_cell_contents('Sheet1', 'D2', '=D1+3')
+        wb.set_cell_contents('Sheet1', 'D3', '=D1+4')
+
+        d_1 = wb.sheets['sheet1'].cells[0][3]
+        d_2 = wb.sheets['sheet1'].cells[1][3]
+        d_3 = wb.sheets['sheet1'].cells[2][3]
+
+        # def print_lists(cell):
+        #     print(f'########## PRINTING {cell.location} LIST ############')
+        #     print('Ingoing: ')
+        #     for c in cell.ingoing:
+        #         print(f'{c.location}')
+            
+        #     print('Outgoing: ')
+        #     for c in cell.outgoing:
+        #         print(f'{c.location}')
+        
+        # print_lists(d_1)
+        # print_lists(d_2)
+        # print_lists(d_3)
+        
+        wb.set_cell_contents('Sheet1', 'D2', '=1')
+
+        d_1 = wb.sheets['sheet1'].cells[0][3]
+        d_2 = wb.sheets['sheet1'].cells[1][3]
+        d_3 = wb.sheets['sheet1'].cells[2][3]
+
+        # print_lists(d_1)
+        # print_lists(d_2)
+        # print_lists(d_3)
+    
+    def test_random(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        # print(wb.get_cell_value('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A2'))
+
+        wb.set_cell_contents('Sheet1', 'A1', '0')
+        # print(wb.get_cell_value('Sheet1', 'A1'), wb.sheets['sheet1'].cells[1][0].value)
 
 if __name__ == "__main__":
     unittest.main()

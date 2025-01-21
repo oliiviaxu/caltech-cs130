@@ -41,7 +41,7 @@ class Sheet:
         self.num_rows = new_num_rows
         self.num_cols = new_num_cols
 
-    def set_cell_contents(self, location: str, contents: Optional[str]) -> None:
+    def set_cell_contents(self, sheet_name, location, contents, outgoing) -> None:
 
         col_idx, row_idx = Sheet.split_cell_ref(location)
 
@@ -50,7 +50,14 @@ class Sheet:
 
         self.resize_sheet(updated_num_rows, updated_num_cols)
 
-        self.cells[row_idx][col_idx] = Cell(contents) # TODO: maybe change this
+        cell = Cell(sheet_name=sheet_name, location=location, contents=contents)
+
+        for referenced_cell in outgoing:
+            referenced_cell.ingoing.append(cell)   
+
+        cell.outgoing = outgoing
+        
+        self.cells[row_idx][col_idx] = cell
     
     def get_cell_contents(self, location: str) -> Optional[str]:
 
@@ -62,12 +69,3 @@ class Sheet:
             raise ValueError('Location is beyond current extent of sheet.')
         
         return self.cells[row_idx][col_idx].contents
-
-    # The bulk of the below method has been moved to Workbook.py
-    # def get_cell_value(self, location: str):
-    #     col_idx, row_idx = Sheet.split_cell_ref(location)
-
-    #     if col_idx >= self.num_cols or row_idx >= self.num_rows:
-    #         raise ValueError('Location is beyond current extent of sheet.')
-        
-    #     return self.cells[row_idx][col_idx].get_cell_value(self.ev)

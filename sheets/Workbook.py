@@ -16,7 +16,6 @@ class Workbook:
 
     def __init__(self):
         self.sheets = {} # lowercase keys  
-        pass
 
     def num_sheets(self) -> int:
         return len(self.sheets.keys())
@@ -142,7 +141,43 @@ class Workbook:
         
         if (contents is not None):
             contents = contents.strip()
-        self.sheets[sheet_name.lower()].set_cell_contents(location, contents)
+        
+        # remove original outgoing cells' ingoing & outgoing lists before setting new content
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+        sheet = self.sheets[sheet_name.lower()]
+        if col_idx < sheet.num_cols and row_idx < sheet.num_rows:
+            curr_cell = self.sheets[sheet_name.lower()].cells[row_idx][col_idx]
+            orig_outgoing = curr_cell.outgoing
+
+            for orig_ref_cell in orig_outgoing:
+                orig_ref_cell.ingoing.remove(curr_cell)
+
+        outgoing = []
+        # we would only need to change cell.outgoing if a formula is used in the cell
+        if contents.startswith('='):
+            # parse formula into tree
+            parser = lark.Lark.open(lark_path, start='formula')
+            tree = parser.parse(contents)
+
+            # obtain references from the formula
+            finder = CellRefFinder()
+            finder.visit(tree) 
+            
+            for ref in finder.refs:
+                if '!' in ref:
+                    # get the referenced cells
+                    split_ref = ref.split('!')
+                    ref_sheet_name, ref_location = split_ref[0], Sheet.split_cell_ref(split_ref[1])
+                    col_idx, row_idx = ref_location
+                    referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
+
+                    outgoing.append(referenced_cell)
+                else:
+                    col_idx, row_idx = Sheet.split_cell_ref(ref)
+                    referenced_cell = self.sheets[sheet_name.lower()].cells[row_idx][col_idx]
+                    outgoing.append(referenced_cell)
+            
+        self.sheets[sheet_name.lower()].set_cell_contents(sheet_name, location, contents, outgoing)
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
@@ -236,7 +271,7 @@ class Workbook:
         finder = CellRefFinder()
         finder.visit(tree)
 
-        info = {}
+        ref_info = {}
         for ref in finder.refs:
             # parse ref if necessary
             if ('!' in ref):
@@ -245,5 +280,5 @@ class Workbook:
             else:
                 curr_sheet_name = sheet_name
                 curr_location = ref
-            info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
-        return info
+            ref_info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+        return ref_info
