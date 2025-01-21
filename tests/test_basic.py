@@ -116,6 +116,16 @@ class BasicTests(unittest.TestCase):
             wb.set_cell_contents('Sheet2', 'D5', 'test')
         with self.assertRaises(ValueError):
             wb.set_cell_contents('Sheet1', 'D5D5', 'test')
+    
+    def test_cell_error(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1/0')
+        print('cell error test: ', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
+
+        wb.set_cell_contents('Sheet1', 'A1', '=A5+++46a4')
+        print('cell error test again', wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()

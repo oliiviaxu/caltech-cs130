@@ -90,9 +90,9 @@ class TestWorkbook(unittest.TestCase):
         valid_locations = ["A1", "Z9999", "AB12"]
         invalid_locations = ["", "123A", "AAAAA1", "A0"]
         for loc in valid_locations:
-            self.assertTrue(self.workbook.is_valid_location(loc))
+            self.assertTrue(sheets.Workbook.is_valid_location(loc))
         for loc in invalid_locations:
-            self.assertFalse(self.workbook.is_valid_location(loc))
+            self.assertFalse(sheets.Workbook.is_valid_location(loc))
 
     def test_set_cell_contents(self):
         """Test that setting cell contents updates the correct cell."""

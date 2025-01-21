@@ -1,4 +1,5 @@
 import decimal
+from .CellError import CellError, CellErrorType
 import lark
 from lark.visitors import visit_children_decor
 
@@ -30,6 +31,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if values[1] == '*':
             return values[0] * values[2]
         elif values[1] == '/':
+            if (values[2] == 0):
+                return CellError(CellErrorType.DIVIDE_BY_ZERO, 'Cannot divide by zero')
             return values[0] / values[2]
         else:
             assert False, f'Unexpected operation: {values[1]}'

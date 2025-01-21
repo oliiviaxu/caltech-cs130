@@ -117,7 +117,7 @@ class Workbook:
         num_cols, num_rows = sheet.num_cols, sheet.num_rows
         return num_cols, num_rows
 
-    def is_valid_location(self, location: str) -> bool:
+    def is_valid_location(location: str) -> bool:
         # Checks if a given location string is a valid spreadsheet cell location.
         pattern = r'^[A-Za-z]{1,4}[1-9][0-9]{0,3}$'
         return bool(re.match(pattern, location))
@@ -148,7 +148,7 @@ class Workbook:
         if sheet_name.lower() not in self.sheets.keys():
             raise KeyError('Sheet not found.')
         
-        if not self.is_valid_location(location):
+        if not Workbook.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         # remove original outgoing cells' ingoing & outgoing lists before setting new content
@@ -171,24 +171,29 @@ class Workbook:
         if contents is not None and contents.startswith('='):
             # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
-            tree = parser.parse(contents)
+            parse_error = False
+            try:
+                tree = parser.parse(contents)
+            except:
+                parse_error = True
 
-            # Obtain references
-            finder = CellRefFinder()
-            finder.visit(tree) 
-            
-            for ref in finder.refs:
-                if '!' in ref:
-                    # get the referenced cells
-                    split_ref = ref.split('!')
-                    ref_sheet_name, ref_location = split_ref[0], Sheet.split_cell_ref(split_ref[1])
-                    col_idx, row_idx = ref_location
-                    referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
-                    outgoing.append(referenced_cell)
-                else:
-                    col_idx, row_idx = Sheet.split_cell_ref(ref)
-                    referenced_cell = curr_sheet.cells[row_idx][col_idx]
-                    outgoing.append(referenced_cell)
+            if not parse_error:
+                # Obtain references
+                finder = CellRefFinder()
+                finder.visit(tree) 
+                
+                for ref in finder.refs:
+                    if '!' in ref:
+                        # get the referenced cells
+                        split_ref = ref.split('!')
+                        ref_sheet_name, ref_location = split_ref[0], Sheet.split_cell_ref(split_ref[1])
+                        col_idx, row_idx = ref_location
+                        referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
+                        outgoing.append(referenced_cell)
+                    else:
+                        col_idx, row_idx = Sheet.split_cell_ref(ref)
+                        referenced_cell = curr_sheet.cells[row_idx][col_idx]
+                        outgoing.append(referenced_cell)
             
         curr_sheet.set_cell_contents(sheet_name, location, contents, outgoing)
 
@@ -212,7 +217,7 @@ class Workbook:
         if sheet_name.lower() not in self.sheets.keys():
             raise KeyError('Sheet not found.')
         
-        if not self.is_valid_location(location):
+        if not Workbook.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
@@ -238,7 +243,7 @@ class Workbook:
         if sheet_name.lower() not in self.sheets.keys():
             raise KeyError('Sheet not found.')
         
-        if not self.is_valid_location(location):
+        if not Workbook.is_valid_location(location):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         sheet = self.sheets[sheet_name.lower()]
@@ -258,14 +263,21 @@ class Workbook:
         if contents.startswith('='):
             # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
-            tree = parser.parse(cell.contents)
+            parse_error = False
+            try:
+                tree = parser.parse(cell.contents)
+            except:
+                parse_error = True
 
-            # obtain reference info from tree with visitor
-            ref_info = self.get_cell_ref_info(tree, sheet_name)
+            if parse_error:
+                cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
+            else:
+                # obtain reference info from tree with visitor
+                ref_info = self.get_cell_ref_info(tree, sheet_name)
 
-            # feed references and sheet name into interpreter
-            ev = FormulaEvaluator(sheet_name, ref_info)
-            cell.value = ev.visit(tree)
+                # feed references and sheet name into interpreter
+                ev = FormulaEvaluator(sheet_name, ref_info)
+                cell.value = ev.visit(tree)
         elif contents.startswith("'"):
             cell.value = contents[1:]
         else:
