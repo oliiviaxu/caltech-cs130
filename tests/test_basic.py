@@ -167,6 +167,15 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
 
+        wb.set_cell_contents('Sheet1', 'A1', '\'mystring')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 * A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * "test"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
         # test setting content to string representation of error
         wb.set_cell_contents('Sheet1', 'A1', '=#REF!')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
@@ -176,9 +185,44 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
-        # test error propagation
+    def test_error_propagation(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + #ref!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + 1/0')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + A2')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + "mystring"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # now with multiply instead of addition
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * #ref!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * (1/0)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * A2')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + "mystring"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+    def test_error_priority(self):
         # test error prioritization
-        # test implicit type conversion
+        pass
+    
+    def test_implicit_conversion(self):
+        # TODO: test implicit type conversion
+        pass
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()
@@ -264,6 +308,10 @@ class BasicTests(unittest.TestCase):
         ev = FormulaEvaluator('sheet1', ref_info)
         # print(tree.pretty())
         # print(ev.visit(tree))
+    
+    def test_automatic_updates(self):
+        # TODO: test automatic updates
+        pass
 
 if __name__ == "__main__":
     unittest.main()
