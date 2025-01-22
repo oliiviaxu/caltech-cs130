@@ -1,5 +1,6 @@
 # python -m unittest discover -s tests
 import unittest
+import coverage
 import sheets
 import os
 import sheets.Sheet as Sheet
@@ -336,7 +337,12 @@ class BasicTests(unittest.TestCase):
         pass
 
 if __name__ == "__main__":
+    cov = coverage.Coverage()
+    cov.start()
     unittest.main()
+    cov.stop()
+    cov.save()
+    cov.html_report()
 
 
 

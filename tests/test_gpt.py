@@ -1,4 +1,5 @@
 import unittest
+import coverage
 import sheets
 
 class TestWorkbook(unittest.TestCase):
@@ -137,4 +138,9 @@ class TestWorkbook(unittest.TestCase):
             self.workbook.get_cell_contents("Sheet1", "Invalid")
 
 if __name__ == "__main__":
+    cov = coverage.Coverage()
+    cov.start()
     unittest.main()
+    cov.stop()
+    cov.save()
+    cov.html_report()
