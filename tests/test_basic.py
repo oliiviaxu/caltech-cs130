@@ -315,3 +315,20 @@ class BasicTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
+
+# TODO: edge case
+# cell A1 references cell AAA45, which is error at first
+# then populate AAA45, cell A1 should fix itself
+
+# TODO: change ingoing and outgoing to sets
+# TODO: for arithmetic on empty cell - do we treat empty cell as 0?
+
+# TODO: edge cases for deleting sheets - Sheet1!A1 references Sheet2!A1, then delete Sheet2. 
+# what happens to Sheet1!A1 - contents? value?
+# and what if we create another sheet called Sheet1?
+
+# TODO: add new sheet - in excel, if you add sheet1, add sheet2, delete sheet2, then new_sheet gives sheet3.
+# is this desired for our engine also?

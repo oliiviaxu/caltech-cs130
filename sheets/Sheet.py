@@ -48,12 +48,20 @@ class Sheet:
         # resizes sheet and updates num_rows and num_cols fields accordingly
 
         # Add rows
-        for _ in range(new_num_rows - self.num_rows):
-            self.cells.append([None] * self.num_cols)
+        for row_idx in range(self.num_rows, new_num_rows):
+            row = []
+            for col_idx in range(self.num_cols):
+                location = Sheet.to_sheet_coords(col_idx, row_idx)
+                cell = Cell(self.sheet_name, location, None)
+                row.append(cell)
+            self.cells.append(row)
 
         # Add columns
-        for row in self.cells:
-            row.extend([None] * (new_num_cols - self.num_cols))
+        for row_idx, row in enumerate(self.cells):
+            for col_idx in range(self.num_cols, new_num_cols):
+                location = Sheet.to_sheet_coords(col_idx, row_idx)
+                cell = Cell(self.sheet_name, location, None)
+                row.append(cell)
 
         self.num_rows = new_num_rows
         self.num_cols = new_num_cols
@@ -67,14 +75,13 @@ class Sheet:
 
         self.resize_sheet(updated_num_rows, updated_num_cols)
 
-        cell = Cell(sheet_name=sheet_name, location=location, contents=contents)
+        cell = self.cells[row_idx][col_idx]
 
         for referenced_cell in outgoing:
             referenced_cell.ingoing.append(cell)   
 
         cell.outgoing = outgoing
-        
-        self.cells[row_idx][col_idx] = cell
+        cell.contents = contents
     
     def get_cell_contents(self, location: str) -> Optional[str]:
 
