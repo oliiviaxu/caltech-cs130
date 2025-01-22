@@ -257,8 +257,30 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
     def test_error_priority(self):
-        # TODO: test error prioritization
-        pass
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # parse error comes before circref or any other error
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=BB/0')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+        
+        # circref comes before other errors (assuming no parse error)
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=B1/0')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     
     def test_implicit_conversion(self):
         wb = sheets.Workbook()
