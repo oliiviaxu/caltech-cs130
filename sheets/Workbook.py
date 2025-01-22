@@ -304,15 +304,15 @@ class Workbook:
             if parse_error:
                 cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
             else:
-                # if self.detect_cycle(cell):
-                #     return cell.value
+                if self.detect_cycle(cell):
+                    cell.value = CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found')
+                else:
+                    # obtain reference info from tree with visitor
+                    ref_info = self.get_cell_ref_info(tree, sheet_name)
 
-                # obtain reference info from tree with visitor
-                ref_info = self.get_cell_ref_info(tree, sheet_name)
-
-                # feed references and sheet name into interpreter
-                ev = FormulaEvaluator(sheet_name, ref_info)
-                cell.value = ev.visit(tree)
+                    # feed references and sheet name into interpreter
+                    ev = FormulaEvaluator(sheet_name, ref_info)
+                    cell.value = ev.visit(tree)
         elif contents.startswith("'"):
             cell.value = contents[1:]
         else:

@@ -27,6 +27,8 @@ class BasicTests(unittest.TestCase):
             wb.new_sheet(' Sheet')
         with self.assertRaises(ValueError):
             wb.new_sheet('~')
+        with self.assertRaises(ValueError):
+            wb.new_sheet('Lorem ipsum')
     
     def test_del_sheet(self):
         """
@@ -137,7 +139,12 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
-        # TODO: test bad reference (sheet was deleted)
+        # test bad reference (sheet was deleted)
+        wb.new_sheet('Sheet2')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + Sheet2!A1')
+        wb.del_sheet('Sheet2')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
         # TODO: is a cell reference invalid if it is out of the extent of the sheet?
         # # test bad reference (reference out of extent of sheet)
@@ -145,20 +152,19 @@ class BasicTests(unittest.TestCase):
         # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!ZZ45')
         # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
-        # print(wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
 
         # test bad reference (reference exceeds ZZZZ9999)
-        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!ZZZZZ99')
-        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
-        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!ZZZZZ99')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
         # test circular reference
-        # wb.set_cell_contents('Sheet1', 'A1', '=B1')
-        # wb.set_cell_contents('Sheet1', 'B1', '=A1')
-        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
-        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
-        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        # self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
         # test type error
         wb.set_cell_contents('Sheet1', 'A1', '\'mystring')
@@ -225,6 +231,10 @@ class BasicTests(unittest.TestCase):
     
     def test_implicit_conversion(self):
         # TODO: test implicit type conversion
+        # Test with None -> 0, None -> empty string
+        # test with number -> string for &
+        # test with string -> number for +, *
+        # 
         pass
 
     def test_formula_evaluation(self):
@@ -344,3 +354,4 @@ if __name__ == "__main__":
 
 # TODO: add new sheet - in excel, if you add sheet1, add sheet2, delete sheet2, then new_sheet gives sheet3.
 # is this desired for our engine also?
+# TODO: test unary operator
