@@ -199,6 +199,13 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
+        wb.set_cell_contents('Sheet1', 'A2', '#div/0!')
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + A2')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
     def test_error_propagation(self):
         wb = sheets.Workbook()
         wb.new_sheet()

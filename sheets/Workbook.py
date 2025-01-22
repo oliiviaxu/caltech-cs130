@@ -319,6 +319,8 @@ class Workbook:
             if Cell.is_number(contents):
                 contents = Cell.strip_trailing_zeros(contents)
                 cell.value = decimal.Decimal(contents)
+            elif contents.lower() in FormulaEvaluator.error_dict:
+                cell.value = CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation')
             else:
                 cell.value = contents
         return cell.value
