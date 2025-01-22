@@ -22,10 +22,10 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def change_type(val_1, val_2) -> Any:
         # helper function for implicit type conversion needed in add_expr and mul_expr
 
-        if val_1 is None or isinstance(val_1, CellError):
+        if val_1 is None or isinstance(val_1, CellError) or val_2 is None or isinstance(val_2, CellError):
             return val_1, val_2
-        if val_2 is None or isinstance(val_2, CellError):
-            return val_1, val_2
+        # if val_2 is None or isinstance(val_2, CellError):
+        #     return val_1, val_2
 
         def convert(val):
             if isinstance(val, str):
