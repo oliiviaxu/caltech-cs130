@@ -132,17 +132,20 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.PARSE_ERROR)
 
-        # test bad reference
-        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!A1')
-        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
-        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+        # test bad reference (sheet does not exist)
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # TODO: test bad reference (sheet was deleted)
 
         # TODO: is a cell reference invalid if it is out of the extent of the sheet?
-        # test bad reference (reference out of extent of sheet)
+        # # test bad reference (reference out of extent of sheet)
         # wb.new_sheet()
         # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!ZZ45')
         # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+        # print(wb.get_cell_contents('Sheet1', 'A1'), wb.get_cell_value('Sheet1', 'A1'))
 
         # test bad reference (reference exceeds ZZZZ9999)
         # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!ZZZZZ99')
@@ -245,8 +248,17 @@ class BasicTests(unittest.TestCase):
         # print(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location)
 
         self.assertEqual(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location, 'D2')
-
         self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!A2')
+        wb.set_cell_contents('Sheet1', 'A2', '4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
+
+        # test reference to another sheet, plus capitalization differences
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet2', 'A1', 'asdf')
+        wb.set_cell_contents('Sheet1', 'A1', '="test" & shEEt2!A1')
+        self.assertEqual(wb.get_cell_value('sheet1', 'a1'), "testasdf")
     
     def test_ingoing_outgoing(self):
         wb = sheets.Workbook()

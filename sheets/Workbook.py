@@ -119,6 +119,9 @@ class Workbook:
         # Checks if a given location string is a valid spreadsheet cell location.
         pattern = r'^[A-Za-z]{1,4}[1-9][0-9]{0,3}$'
         return bool(re.match(pattern, location))
+    
+    def get_cell(self, sheet_name, location):
+        pass
 
     def set_cell_contents(self, sheet_name: str, location: str,
                           contents: Optional[str]) -> None:
@@ -150,14 +153,14 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         # remove original outgoing cells' ingoing & outgoing lists before setting new content
-        col_idx, row_idx = Sheet.split_cell_ref(location)
         curr_sheet = self.sheets[sheet_name.lower()]
-        if col_idx < curr_sheet.num_cols and row_idx < curr_sheet.num_rows:
-            curr_cell = curr_sheet.cells[row_idx][col_idx]
-            orig_outgoing = curr_cell.outgoing
+        curr_sheet.resize(location)
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+        curr_cell = curr_sheet.cells[row_idx][col_idx]
+        orig_outgoing = curr_cell.outgoing
 
-            for orig_ref_cell in orig_outgoing:
-                orig_ref_cell.ingoing.remove(curr_cell)
+        for orig_ref_cell in orig_outgoing:
+            orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
         if contents == '':
@@ -184,13 +187,17 @@ class Workbook:
                     if '!' in ref:
                         # get the referenced cells
                         split_ref = ref.split('!')
-                        ref_sheet_name, ref_location = split_ref[0], Sheet.split_cell_ref(split_ref[1])
-                        col_idx, row_idx = ref_location
-                        referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
-                        outgoing.append(referenced_cell)
+                        ref_sheet_name = split_ref[0]
+                        ref_location = split_ref[1]
+                        col_idx, row_idx = Sheet.split_cell_ref(split_ref[1])
                     else:
+                        ref_sheet_name = sheet_name
+                        ref_location = ref
                         col_idx, row_idx = Sheet.split_cell_ref(ref)
-                        referenced_cell = curr_sheet.cells[row_idx][col_idx]
+                    
+                    if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
+                        self.sheets[ref_sheet_name.lower()].resize(ref_location)
+                        referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
                         outgoing.append(referenced_cell)
             
         curr_sheet.set_cell_contents(sheet_name, location, contents, outgoing)
@@ -228,7 +235,6 @@ class Workbook:
         :return: True if a cycle is detected, False otherwise.
         """
         id = node.sheet_name + '!' + node.location
-        print(id, [c.location for c in node.outgoing])
         if (id in visited):
             return True
         visited.add(id)
@@ -337,7 +343,7 @@ class Workbook:
                 curr_location = ref
 
             try:
-                ref_info[ref] = self.get_cell_value(curr_sheet_name, curr_location)
+                ref_info[ref.lower()] = self.get_cell_value(curr_sheet_name, curr_location)
             except (ValueError, KeyError) as e:
-                ref_info[ref] = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
+                ref_info[ref.lower()] = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
         return ref_info

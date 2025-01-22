@@ -31,10 +31,10 @@ class Sheet:
         return col + row
     
     def str_to_index(column: str) -> int:
-        column = column.upper()
+        column = column.lower()
         index = 0
         for i in range(len(column)):
-            index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('A') + 1)
+            index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('a') + 1)
         return index - 1
     
     def split_cell_ref(location: str) -> Tuple[int, int]:
@@ -65,9 +65,8 @@ class Sheet:
 
         self.num_rows = new_num_rows
         self.num_cols = new_num_cols
-
-    def set_cell_contents(self, sheet_name, location, contents, outgoing) -> None:
-
+    
+    def resize(self, location):
         col_idx, row_idx = Sheet.split_cell_ref(location)
 
         updated_num_rows = max(self.num_rows, row_idx + 1)
@@ -75,6 +74,9 @@ class Sheet:
 
         self.resize_sheet(updated_num_rows, updated_num_cols)
 
+    def set_cell_contents(self, sheet_name, location, contents, outgoing) -> None:
+        self.resize(location)
+        col_idx, row_idx = Sheet.split_cell_ref(location)
         cell = self.cells[row_idx][col_idx]
 
         for referenced_cell in outgoing:
@@ -84,12 +86,6 @@ class Sheet:
         cell.contents = contents
     
     def get_cell_contents(self, location: str) -> Optional[str]:
-
-        # if specified location is beyond extent of sheet, raises a ValueError 
-
+        self.resize(location)
         col_idx, row_idx = Sheet.split_cell_ref(location)
-
-        if col_idx >= self.num_cols or row_idx >= self.num_rows:
-            raise ValueError('Location is beyond current extent of sheet.')
-        
         return self.cells[row_idx][col_idx].contents

@@ -11,21 +11,23 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         self.ref_info = ref_info
 
     error_dict = {
-        "#ERROR!": CellErrorType.PARSE_ERROR,
-        "#CIRCREF!": CellErrorType.CIRCULAR_REFERENCE,
-        "#REF!": CellErrorType.BAD_REFERENCE,
-        "#NAME?": CellErrorType.BAD_NAME,
-        "#VALUE!": CellErrorType.TYPE_ERROR,
-        "#DIV/0!": CellErrorType.DIVIDE_BY_ZERO
+        "#error!": CellErrorType.PARSE_ERROR,
+        "#circref!": CellErrorType.CIRCULAR_REFERENCE,
+        "#ref!": CellErrorType.BAD_REFERENCE,
+        "#name?": CellErrorType.BAD_NAME,
+        "#value!": CellErrorType.TYPE_ERROR,
+        "#div/0!": CellErrorType.DIVIDE_BY_ZERO
     }
     
     def change_type(val_1, val_2) -> Any:
         # helper function for implicit type conversion needed in add_expr and mul_expr
+        if val_1 is None:
+            val_1 = 0
+        if val_2 is None:
+            val_2 = 0
 
-        if val_1 is None or isinstance(val_1, CellError) or val_2 is None or isinstance(val_2, CellError):
+        if isinstance(val_1, CellError) or isinstance(val_2, CellError):
             return val_1, val_2
-        # if val_2 is None or isinstance(val_2, CellError):
-        #     return val_1, val_2
 
         def convert(val):
             if isinstance(val, str):
@@ -109,7 +111,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             return str(val_1) + str(val_2)
 
     def error(self, tree):
-        error_value = CellError(FormulaEvaluator.error_dict[tree.children[0].upper()], 'String representation of error given')
+        error_value = CellError(FormulaEvaluator.error_dict[tree.children[0].lower()], 'String representation of error given')
         return error_value
 
     def parens(self, tree):
@@ -127,6 +129,17 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     
     def cell(self, tree):
         # first parse the value into sheet (if given) and location
-        reference = tree.children[0].value.upper()
-        assert reference in self.ref_info, f'Could not find cell information for reference {reference}'
-        return self.ref_info[reference]
+        if (len(tree.children) == 1):
+            reference = tree.children[0].value.lower()
+            if reference not in self.ref_info:
+                return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
+            return self.ref_info[reference]
+        elif (len(tree.children) == 2):
+            sheet = tree.children[0].value.lower()
+            location = tree.children[1].value.lower()
+            reference = sheet + '!' + location
+            if reference not in self.ref_info:
+                return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
+            return self.ref_info[reference]
+        else:
+            assert False, 'Length of tree for cell is not one or two'
