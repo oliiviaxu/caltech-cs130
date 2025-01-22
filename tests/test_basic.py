@@ -186,6 +186,10 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
 
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * +"test"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
         # test setting content to string representation of error
         wb.set_cell_contents('Sheet1', 'A1', '=#REF!')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
@@ -226,17 +230,62 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
 
+        # now with unary
+        # now with multiply instead of addition
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * -#ref!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * (-(1/0))')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * -A2')
+        wb.set_cell_contents('Sheet1', 'A2', '=1 + -"mystring"')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # now test propagation of circref
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        wb.set_cell_contents('Sheet1', 'C1', '=Sheet1!a1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'B1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
     def test_error_priority(self):
-        # test error prioritization
+        # TODO: test error prioritization
         pass
     
     def test_implicit_conversion(self):
-        # TODO: test implicit type conversion
-        # Test with None -> 0, None -> empty string
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # test with None -> 0
+        wb.set_cell_contents('Sheet1', 'A1', '=A2 + 4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+        
+        # test with None -> empty string
+        wb.set_cell_contents('Sheet1', 'A1', '=A2 & "test"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), "test")
+
+        # test with string -> number for +, *, unary
+        wb.set_cell_contents('Sheet1', 'A1', '=1 + "   0.04   "')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('1.04'))
+
+        wb.set_cell_contents('Sheet1', 'A1', '=2 * "   0.04   "')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('0.08'))
+
+        wb.set_cell_contents('Sheet1', 'A1', '=4 * -"  .01  "')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('-0.04'))
+
         # test with number -> string for &
-        # test with string -> number for +, *
-        # 
-        pass
+        wb.set_cell_contents('Sheet1', 'A1', '="test " & A2')
+        wb.set_cell_contents('Sheet1', 'A2', '0.4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), "test 0.4")
 
     def test_formula_evaluation(self):
         wb = sheets.Workbook()
@@ -247,6 +296,13 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '="aba" & "cadabra"')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'abacadabra')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=3 * -4 - 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), -17)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=-A2')
+        wb.set_cell_contents('Sheet1', 'A2', '-4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
     
     def test_cell_reference(self):
         wb = sheets.Workbook()
@@ -351,7 +407,7 @@ if __name__ == "__main__":
 # cell A1 references cell AAA45, which is error at first
 # then populate AAA45, cell A1 should fix itself
 
-# TODO: change ingoing and outgoing to sets
+# TODO: change ingoing and outgoing to sets (not arrays)
 # TODO: for arithmetic on empty cell - do we treat empty cell as 0?
 
 # TODO: edge cases for deleting sheets - Sheet1!A1 references Sheet2!A1, then delete Sheet2. 
@@ -360,4 +416,3 @@ if __name__ == "__main__":
 
 # TODO: add new sheet - in excel, if you add sheet1, add sheet2, delete sheet2, then new_sheet gives sheet3.
 # is this desired for our engine also?
-# TODO: test unary operator

@@ -82,8 +82,10 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     @visit_children_decor
     def unary_op(self, values):
         operator, val_1 = values[0], values[1]
+        if (val_1 is None):
+            val_1 = 0
 
-        if val_1 is None or type(val_1) == CellError:
+        if type(val_1) == CellError:
             return val_1
         if type(val_1) == str:
             if Cell.is_number(val_1):
@@ -94,7 +96,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if operator == '+':
             return abs(val_1)
         elif operator == '-':
-            return -abs(val_1)
+            return -val_1
         else:
             assert False, f'Unexpected operation: {operator}'
 
@@ -103,10 +105,15 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         assert len(values) == 2, 'Unexpected number of args'
 
         val_1, val_2 = values[0], values[1]
-        if val_1 is None or type(val_1) == CellError:
+        if type(val_1) == CellError:
             return val_1
-        elif val_2 is None or type(val_2) == CellError:
+        elif type(val_2) == CellError:
             return val_2
+        
+        if val_1 is None:
+            val_1 = ''
+        if val_2 is None:
+            val_2 = ''
         else:
             return str(val_1) + str(val_2)
 
