@@ -25,7 +25,7 @@ Wilson focused on formula and cell references, top sort and order of evaluation,
 our test suite and writing tests, cell errors, automatic updating of cells. 
 
 Olivia focused on module structure (Workbook/Spreadsheets/cells), 
-formula parser and evaluation, implicit conversions, cycle detection 
+formula parser and evaluation, implicit conversions, cycle detection, writing unit tests. 
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
 Wilson and Olivia spent roughly 15-20 hours.
@@ -39,51 +39,66 @@ D1.  [3pts] Briefly describe the high-level design abstractions (e.g. classes
      - Workbook, contains map of Sheets (sheet name to Sheet object)
      - Sheet, contains matrix of Cells
      - Cell
-          Cell Types: number, float, formula, or CellError
           Store content + value
           List of ingoing edges to cells (other cells that depend on current cell)
           List of outgoing edges (current cell depends on other cells)
+     - Formula Evaluator using Lark's Interpreter and CellRefFinder(Visitor)
 
 D2.  [4pts] Why did you choose the design you chose?  Describe other designs
      (or perhaps earlier versions of the above design) that you considered,
      and why you ended up not using them.
-     - The overall module structure was pretty intuitive and implied from the spec
+     - The overall module structure of a Sheet class and a Cell class was pretty 
+     intuitive and implied from the spec
      - For our dependency graph we thought of keeping a graph (adjacency list or map)
      at the workbook level, but ultimately we decided to implement it through a 
      ingoing and outgoing list as a field in each Cell because we thought implementing
-     delete sheet would be overly complicated/slow 
-
+     delete sheet would be overly complicated/slow with an adjacency list. 
+     - Initially, our get_cell_value contained lots of the formula evaluation code, but
+     we moved it to set_cell_content in order to facilitate automatic updating of cells.
 
 D3.  [4pts] At a high level (e.g. pseudocode or higher), enumerate the steps
      that your spreadsheet engine goes through when a caller sets a cell's
      contents.
      - Arguments: sheet name, location, content
-     - Workbook → sheet → access the cell/index the sheet → setter method
+     - Workbook → sheet → access the cell/index the sheet → setter method for Cell.contents
      - Then parse the content (formula parsing & evaluation)
-          Update the dependency graph (ingoing to current location) 
-          Detect cycles
-          Handle CellErrors
+          Use the parsed tree to store the value of the cell
+          Update the dependency graph (ingoing to current location)
+          Automatically update the ingoing cells to account for the value
+               This includes the detection of cycles and handling of CellErrors
 
 D4.  [3pts] How does your spreadsheet engine identify what other cells need
      updating when a cell's contents are changed, and what order to update them?
-     - 
+     - In each cell, we have a list of ingoing cells, which is a list of cells
+     that depends on the current cell. We traverse through these ingoing cells
+     recursively in order to update them.
+     - To handle the order of updating, we used a topological sort as outlined
+     in the spec.
 
 D5.  [3pts] How does your spreadsheet engine identify cycles between cells when
      a cell update is performed?  Are cells in a cycle processed any differently
      from other cells outside of the cycle?
-     - we decided to first implement a simple DFS evaluator with cycle detection for 
-     this project, simply keeping track of visited cells
-     - TODO 
+     - When a cell update is performed, our spreadsheet tries to perform a topological
+     sort, and if the topological sort fails, we know there are cycle(s) between cells.
+     - Cycles are propagated easily - given a cell that is a cycle, all ingoing cells are
+     assigned to be circular reference cells as well. Cells that are not in a cycle are
+     propagated based on the topological sort.
+     - In our formula evaluation, we have a simple DFS that detects cycles, which may be
+     redundant. However, it makes intuitive sense to check for cycles when evaluating formulas,
+     so we are keeping this DFS for now.
 
 D6.  [3pts] What steps does your spreadsheet engine go through when a sheet is
      deleted from a workbook?  How does it identify cells that may need to be
      recomputed after a sheet-deletion operation?
      - Sheet deletion involves: 
-          - Accessing the original 
-          - Looping through all of the cells in the sheet to be deleted,and removing
-          incoming edges from the current cell to its' outgoing cells
           - Error propagation and updating cells that depended on the cells that were
-          removed 
+          removed
+          - It identifies cells that need to be computed based on the same recursive
+          algorithm used in set_cell_content - it uses the ingoing edges
+          - Looping through all of the cells in the sheet to be deleted, and removing
+          incoming edges from the current cell to its' outgoing cells
+          - Deleting the key value pair corresponding to the argument sheet name 
+          from the Workbook's sheet map
 
 Implementation Process (23 pts)
 -------------------------------
@@ -92,7 +107,7 @@ P1.  [4pts] How did your team break down and keep track of the various tasks to
      complete for this project?  Did you use the GitHub issue tracker, or some
      other tool like Trello?
      - For this project we kept a list of the tasks from the spec that we had left
-     to do, and split the remaining work as we went
+     to do in a google doc, and split the remaining work as we went
      - We did not use issue tracker or Trello
 
 P2.  [4pts] How did you assign tasks to teammates?  Did you stick with your
@@ -100,8 +115,8 @@ P2.  [4pts] How did you assign tasks to teammates?  Did you stick with your
      project progressed?  Why?
      - We originally had mapped out who was going to do which task, splitting them
      as evenly as possible, but we did end up shifting around tasks as the project 
-     progressed due to the differences in our schedules as well/availabilities and 
-     when we changed small aspects of our original design (for instance, whoever was 
+     progressed due to the differences in our schedules and when we changed small 
+     aspects of our original design (for instance, whoever was 
      working on something that needed to be refactored would end up contuining on the 
      next related task)
 
