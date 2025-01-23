@@ -206,7 +206,11 @@ class Workbook:
                         referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
                         outgoing.append(referenced_cell)
             
-        curr_sheet.set_cell_contents(sheet_name, location, contents, outgoing)
+        for referenced_cell in outgoing:
+            referenced_cell.ingoing.append(curr_cell)   
+
+        curr_cell.outgoing = outgoing
+        curr_cell.contents = contents
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
@@ -287,6 +291,7 @@ class Workbook:
         sheet = self.sheets[sheet_name.lower()]
         sheet.resize(location)
         cell = sheet.get_cell(location)
+        # return cell.value
 
         contents = cell.contents
         if (contents is None):

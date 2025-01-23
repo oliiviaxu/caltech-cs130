@@ -76,16 +76,6 @@ class Sheet:
         updated_num_cols = max(self.num_cols, col_idx + 1)
 
         self.resize_sheet(updated_num_rows, updated_num_cols)
-
-    def set_cell_contents(self, sheet_name, location, contents, outgoing) -> None:
-        self.resize(location)
-        cell = self.get_cell(location)
-
-        for referenced_cell in outgoing:
-            referenced_cell.ingoing.append(cell)   
-
-        cell.outgoing = outgoing
-        cell.contents = contents
     
     def get_cell_contents(self, location: str) -> Optional[str]:
         self.resize(location)
