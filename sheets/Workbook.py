@@ -171,7 +171,7 @@ class Workbook:
             orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
-        if contents == '':
+        if contents == '' or contents == None:
             contents = None
         else:
             contents = contents.strip()
