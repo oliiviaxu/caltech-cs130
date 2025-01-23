@@ -298,14 +298,14 @@ class Workbook:
         :param visited: A set of visited cell locations.
         :return: True if a cycle is detected, False otherwise.
         """
-        id = node.sheet_name + '!' + node.location
-        if (id in visited):
-            return True
-        visited.add(id)
-        
         has_cycle = False
         for ref in node.outgoing:
+            ref_id = ref.sheet_name + '!' + ref.location
+            if (ref_id in visited):
+                return True
+            visited.add(ref_id)
             has_cycle = has_cycle or self.dfs(ref, visited)
+            visited.remove(ref_id)
         return has_cycle
 
     def detect_cycle(self, src: Cell) -> bool:
@@ -316,6 +316,8 @@ class Workbook:
         """
 
         visited = set()
+        id = src.sheet_name + '!' + src.location
+        visited.add(id)
         return self.dfs(src, visited)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:

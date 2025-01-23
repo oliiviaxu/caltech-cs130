@@ -356,6 +356,19 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet2', 'A1', 'asdf')
         wb.set_cell_contents('Sheet1', 'A1', '="test" & shEEt2!A1')
         self.assertEqual(wb.get_cell_value('sheet1', 'a1'), "testasdf")
+
+        # test changing cell's references
+        wb.set_cell_contents('Sheet1', 'A1', '=A2 + 4')
+        wb.set_cell_contents('Sheet1', 'B1', '=1 + A3')
+        wb.set_cell_contents('Sheet1', 'A2', '2')
+        wb.set_cell_contents('Sheet1', 'A3', '1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 6)
+        self.assertEqual(len(wb.get_cell('Sheet1', 'A2').ingoing), 1)
+        self.assertEqual(len(wb.get_cell('Sheet1', 'A3').ingoing), 1)
+        wb.set_cell_contents('Sheet1', 'A1', '=A3 + 4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
+        self.assertEqual(len(wb.get_cell('Sheet1', 'A2').ingoing), 0)
+        self.assertEqual(len(wb.get_cell('Sheet1', 'A3').ingoing), 2)
     
     def test_ingoing_outgoing(self):
         wb = sheets.Workbook()
@@ -434,9 +447,17 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A3'), 35)
 
     def test_order_evaluation(self):
-        # TODO: test order evaluation
+        wb = sheets.Workbook()
+        wb.new_sheet()
 
-        pass
+        wb.set_cell_contents('Sheet1', 'A1', '=B1+C1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 2)
+
+        wb.set_cell_contents('Sheet1', 'C1', '2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
