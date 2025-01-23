@@ -100,6 +100,7 @@ class Workbook:
                 for outgoing_cell in curr_cell.outgoing:
                     outgoing_cell.ingoing.remove(curr_cell)
                 
+                # error propagation
                 visited = set()
                 for ingoing_cell in curr_cell.ingoing:
                     self.update_cell(ingoing_cell, visited)

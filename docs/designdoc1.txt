@@ -18,10 +18,17 @@ L1.  [2pts] Enumerate all teammates here.
 Wilson Duan, Olivia Xu
 
 L2.  [2pts] What did each teammate focus on during this project?
+We both worked on brainstorming, refactoring our code when we
+switched implementation details, and writing tests. 
 
+Wilson focused on formula and cell references, top sort and order of evaluation, 
+our test suite and writing tests, cell errors, automatic updating of cells. 
+
+Olivia focused on module structure (Workbook/Spreadsheets/cells), 
+formula parser and evaluation, implicit conversions, cycle detection 
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
-
+Wilson and Olivia spent roughly 15-20 hours.
 
 Spreadsheet Engine Design (20 pts)
 ----------------------------------
@@ -29,37 +36,54 @@ Spreadsheet Engine Design (20 pts)
 D1.  [3pts] Briefly describe the high-level design abstractions (e.g. classes
      and/or submodules) in your spreadsheet engine, and what purposes these
      various abstractions fulfill.
-- Class for Sheet, and the Workbook class owns a list of Sheets
-- Class for Cell, and the Sheet class owns a matrix of Cells
+     - Workbook, contains map of Sheets (sheet name to Sheet object)
+     - Sheet, contains matrix of Cells
+     - Cell
+          Cell Types: number, float, formula, or CellError
+          Store content + value
+          List of ingoing edges to cells (other cells that depend on current cell)
+          List of outgoing edges (current cell depends on other cells)
 
 D2.  [4pts] Why did you choose the design you chose?  Describe other designs
      (or perhaps earlier versions of the above design) that you considered,
      and why you ended up not using them.
+     - The overall module structure was pretty intuitive and implied from the spec
+     - For our dependency graph we thought of keeping a graph (adjacency list or map)
+     at the workbook level, but ultimately we decided to implement it through a 
+     ingoing and outgoing list as a field in each Cell because we thought implementing
+     delete sheet would be overly complicated/slow 
 
 
 D3.  [4pts] At a high level (e.g. pseudocode or higher), enumerate the steps
      that your spreadsheet engine goes through when a caller sets a cell's
      contents.
-- Accesses the correct sheet according to the argument (via getter method in Workbook)
-- Accesses the correct cell in the sheet according to the argument (via getter method in Sheet)
-- Modify the cell contents (via setter method)
-     - Try to parse, then look for cycles, etc.
+     - Arguments: sheet name, location, content
+     - Workbook → sheet → access the cell/index the sheet → setter method
+     - Then parse the content (formula parsing & evaluation)
+          Update the dependency graph (ingoing to current location) 
+          Detect cycles
+          Handle CellErrors
 
 D4.  [3pts] How does your spreadsheet engine identify what other cells need
      updating when a cell's contents are changed, and what order to update them?
-- Each Sheet has a directed graph between cells that reference each other
-- Start from the origin cell supposed to be updated, then follow edges in a BFS
+     - 
 
 D5.  [3pts] How does your spreadsheet engine identify cycles between cells when
      a cell update is performed?  Are cells in a cycle processed any differently
      from other cells outside of the cycle?
-- Can detect cycles with DFS
-- Must propagate errors
+     - we decided to first implement a simple DFS evaluator with cycle detection for 
+     this project, simply keeping track of visited cells
+     - TODO 
 
 D6.  [3pts] What steps does your spreadsheet engine go through when a sheet is
      deleted from a workbook?  How does it identify cells that may need to be
      recomputed after a sheet-deletion operation?
-
+     - Sheet deletion involves: 
+          - Accessing the original 
+          - Looping through all of the cells in the sheet to be deleted,and removing
+          incoming edges from the current cell to its' outgoing cells
+          - Error propagation and updating cells that depended on the cells that were
+          removed 
 
 Implementation Process (23 pts)
 -------------------------------
@@ -67,30 +91,55 @@ Implementation Process (23 pts)
 P1.  [4pts] How did your team break down and keep track of the various tasks to
      complete for this project?  Did you use the GitHub issue tracker, or some
      other tool like Trello?
-
+     - For this project we kept a list of the tasks from the spec that we had left
+     to do, and split the remaining work as we went
+     - We did not use issue tracker or Trello
 
 P2.  [4pts] How did you assign tasks to teammates?  Did you stick with your
      task-assignments through the project, or did you shift around tasks as the
      project progressed?  Why?
-
+     - We originally had mapped out who was going to do which task, splitting them
+     as evenly as possible, but we did end up shifting around tasks as the project 
+     progressed due to the differences in our schedules as well/availabilities and 
+     when we changed small aspects of our original design (for instance, whoever was 
+     working on something that needed to be refactored would end up contuining on the 
+     next related task)
 
 P3.  [4pts] How would you characterize the quality of your project testing?
      Make sure to touch on these items:  Is it automated?  Is it easy for
      teammates to run?  Is it fast?  Is it reasonably complete?
-
+     - Our tests right now are not automated, we decided to allocate more time
+     to (not incurring too much technical debt) and we will definitely look to 
+     do so going forward. 
+     - The tests are considerably fast, on average taking a few seconds
+     - As Donnie mentioned in lecture, coverage was an important (necessary but not
+     sufficient) condition to evaluate the quality of our tests, so we ended up using
+     python's coverage library to try to have more metrics for gauging the quality of 
+     our tests 
 
 P4.  [3pts] What mechanisms did your team use for communication during the
      project?  Did you find them to be effective?  What issues did you
      encounter, if any?
-
+     - For this project, we primarily used video calls and in-person meetings to communicate. 
+     This approach was instrumental in ensuring that we were both on the same page and 
+     in agreement about the current status of our implementation.
+     - We luckily didn't encounter any communication issues. 
 
 P5.  [3pts] Did you use any kind of collaborative construction techniques, e.g.
      code reviews or pair-programming, during the project?  If so, what are your
      observations about its usefulness?  Did you find it to have any downsides?
-
+     - For the core elements of the project (in the beginning, when working on 
+     module structure and the more foundational aspects) we would practice pair 
+     programming (virtually and in person). 
+     - Pair-programming and informal code reviews were quite useful as they saved us 
+     time in figuring out implementation details and helped us avoid accumulating buggy code.
 
 P6.  [5pts] What would you like to improve about your team's development
      process, going forward?
+     - Implementing automated test suite
+     - Start coding earlier and time management, after this project we want to give 
+     ourselves more time than expected so that we wouldn't have to be as stressed when debugging
+     towards the end of our project
 
 
 Section F:  CS130 Project 1 Feedback [OPTIONAL]
@@ -108,11 +157,12 @@ F1.  What parts of the assignment did you find highly enjoyable?  Conversely,
 F2.  What parts of the assignment helped you learn more about software
      engineering best-practices, or other useful development skills?
      What parts were not helpful in learning these skills?
-
+     - Writing comprehensive tests and learning more about how to set up a good test suite were very helpful.
 
 F3.  Were there any parts of the assignment that seemed _unnecessarily_ tedious?
      (Some parts of software development are always tedious, of course.)
-
+     - refactoring our code for the dependency graph due to some bottlenecks that we 
+     did not expect as we encountered them was very tedious
 
 F4.  Do you have any feedback and/or constructive criticism about how this
      project can be made better in future iterations of CS130?
