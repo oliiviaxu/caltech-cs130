@@ -90,15 +90,19 @@ class Workbook:
 
         sheet_to_delete = self.sheets[sheet_name.lower()]
         cells = sheet_to_delete.cells
+        
+        del self.sheets[sheet_name.lower()]
 
         for row_idx in range(sheet_to_delete.num_rows):
             for col_idx in range(sheet_to_delete.num_cols):
                 curr_cell = cells[row_idx][col_idx]
-                
+
                 for outgoing_cell in curr_cell.outgoing:
                     outgoing_cell.ingoing.remove(curr_cell)
-        
-        del self.sheets[sheet_name.lower()]
+                
+                visited = set()
+                for ingoing_cell in curr_cell.ingoing:
+                    self.update_cell(ingoing_cell, visited)
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -131,6 +135,52 @@ class Workbook:
         sheet.resize(location)
 
         return sheet.get_cell(location)
+    
+    def update_cell(self, cell, visited):
+        if (cell in visited):
+            return
+        visited.add(cell)
+        self.evaluate_cell(cell)
+        for ingoing_cell in cell.ingoing:
+            self.update_cell(ingoing_cell, visited)
+    
+    def evaluate_cell(self, cell):
+        contents = cell.contents
+        if (contents is None):
+            cell.value = None
+            return
+        
+        if contents.startswith('='):
+            # parse formula into tree
+            parser = lark.Lark.open(lark_path, start='formula')
+            parse_error = False
+            try:
+                tree = parser.parse(cell.contents)
+            except:
+                parse_error = True
+
+            if parse_error:
+                cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
+            else:
+                if self.detect_cycle(cell):
+                    cell.value = CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found')
+                else:
+                    # obtain reference info from tree with visitor
+                    ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
+
+                    # feed references and sheet name into interpreter
+                    ev = FormulaEvaluator(cell.sheet_name, ref_info)
+                    cell.value = ev.visit(tree)
+        elif contents.startswith("'"):
+            cell.value = contents[1:]
+        else:
+            if Cell.is_number(contents):
+                contents = Cell.strip_trailing_zeros(contents)
+                cell.value = decimal.Decimal(contents)
+            elif contents.lower() in FormulaEvaluator.error_dict:
+                cell.value = CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation')
+            else:
+                cell.value = contents
 
     def set_cell_contents(self, sheet_name: str, location: str,
                           contents: Optional[str]) -> None:
@@ -212,6 +262,10 @@ class Workbook:
         curr_cell.outgoing = outgoing
         curr_cell.contents = contents
 
+        ### Update the value field of the cell
+        visited = set()
+        self.update_cell(curr_cell, visited)
+
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
         #
@@ -291,44 +345,6 @@ class Workbook:
         sheet = self.sheets[sheet_name.lower()]
         sheet.resize(location)
         cell = sheet.get_cell(location)
-        # return cell.value
-
-        contents = cell.contents
-        if (contents is None):
-            return None
-        
-        contents = contents.strip()
-        if contents.startswith('='):
-            # parse formula into tree
-            parser = lark.Lark.open(lark_path, start='formula')
-            parse_error = False
-            try:
-                tree = parser.parse(cell.contents)
-            except:
-                parse_error = True
-
-            if parse_error:
-                cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
-            else:
-                if self.detect_cycle(cell):
-                    cell.value = CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found')
-                else:
-                    # obtain reference info from tree with visitor
-                    ref_info = self.get_cell_ref_info(tree, sheet_name)
-
-                    # feed references and sheet name into interpreter
-                    ev = FormulaEvaluator(sheet_name, ref_info)
-                    cell.value = ev.visit(tree)
-        elif contents.startswith("'"):
-            cell.value = contents[1:]
-        else:
-            if Cell.is_number(contents):
-                contents = Cell.strip_trailing_zeros(contents)
-                cell.value = decimal.Decimal(contents)
-            elif contents.lower() in FormulaEvaluator.error_dict:
-                cell.value = CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation')
-            else:
-                cell.value = contents
         return cell.value
     
     def get_cell_ref_info(self, tree, sheet_name):

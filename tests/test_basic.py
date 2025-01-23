@@ -143,6 +143,7 @@ class BasicTests(unittest.TestCase):
         # test bad reference (sheet was deleted)
         wb.new_sheet('Sheet2')
         wb.set_cell_contents('Sheet1', 'A2', '=1 + Sheet2!A1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 1)
         wb.del_sheet('Sheet2')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.BAD_REFERENCE)

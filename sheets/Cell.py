@@ -12,7 +12,7 @@ class Cell:
         self.sheet_name = sheet_name
         self.location = location
         self.contents = contents
-        self.value = ''
+        self.value = None
         self.outgoing = []
         self.ingoing = []
     
