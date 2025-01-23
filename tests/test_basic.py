@@ -422,10 +422,15 @@ class BasicTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
 
+        wb.set_cell_contents('Sheet1', 'A1', '5')
         wb.set_cell_contents('Sheet1', 'A2', '=A1 + 2')
-        wb.set_cell_contents('Sheet1', 'A3', '=5 * A1')
-        # self.assertEqual(False, )
-        
+        wb.set_cell_contents('Sheet1', 'A3', '=5 * A1')   
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 7)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A3'), 25)
+
+        wb.set_cell_contents('Sheet1', 'A1', '7')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 9)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A3'), 35)
 
     def test_order_evaluation(self):
         # TODO: test order evaluation
