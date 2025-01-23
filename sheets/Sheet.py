@@ -6,8 +6,8 @@ from .interpreter import FormulaEvaluator
 class Sheet:
     def __init__(self, sheet_name=''):
         self.sheet_name = sheet_name
-        self.num_rows = 25
-        self.num_cols = 25
+        self.num_rows = 0
+        self.num_cols = 0
         self.cells = []
         for i in range(self.num_rows):
             row = []
