@@ -94,7 +94,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
                 return CellError(CellErrorType.TYPE_ERROR, 'Invalid type.')
         
         if operator == '+':
-            return abs(val_1)
+            return val_1
         elif operator == '-':
             return -val_1
         else:
