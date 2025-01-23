@@ -3,7 +3,6 @@ import unittest
 import coverage
 import sheets
 import os
-import sheets.Sheet as Sheet
 import lark
 from sheets.interpreter import FormulaEvaluator
 import decimal
@@ -341,10 +340,9 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'D2', '2')
         wb.set_cell_contents('Sheet1', 'D3', '=1 + D2')
 
-        col_idx, row_idx = Sheet.split_cell_ref('D3')
         # print(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location)
 
-        self.assertEqual(wb.sheets['sheet1'].cells[row_idx][col_idx].outgoing[0].location, 'D2')
+        self.assertEqual(wb.sheets['sheet1'].cells[2][3].outgoing[0].location, 'D2')
         self.assertEqual(wb.get_cell_value('Sheet1', 'D3'), 3)
 
         wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!A2')
