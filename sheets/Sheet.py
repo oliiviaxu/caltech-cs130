@@ -16,7 +16,10 @@ class Sheet:
                 cell = Cell(sheet_name, location, None)
                 row.append(cell)
             self.cells.append(row)
-        # self.ev = FormulaEvaluator(sheet_name)
+    
+    def get_cell(self, location):
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+        return self.cells[row_idx][col_idx]
 
     def to_sheet_coords(col_index, row_index):
         """
@@ -76,8 +79,7 @@ class Sheet:
 
     def set_cell_contents(self, sheet_name, location, contents, outgoing) -> None:
         self.resize(location)
-        col_idx, row_idx = Sheet.split_cell_ref(location)
-        cell = self.cells[row_idx][col_idx]
+        cell = self.get_cell(location)
 
         for referenced_cell in outgoing:
             referenced_cell.ingoing.append(cell)   
@@ -87,5 +89,4 @@ class Sheet:
     
     def get_cell_contents(self, location: str) -> Optional[str]:
         self.resize(location)
-        col_idx, row_idx = Sheet.split_cell_ref(location)
-        return self.cells[row_idx][col_idx].contents
+        return self.get_cell(location).contents

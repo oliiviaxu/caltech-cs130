@@ -419,6 +419,17 @@ class BasicTests(unittest.TestCase):
     
     def test_automatic_updates(self):
         # TODO: test automatic updates
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A2', '=A1 + 2')
+        wb.set_cell_contents('Sheet1', 'A3', '=5 * A1')
+        # self.assertEqual(False, )
+        
+
+    def test_order_evaluation(self):
+        # TODO: test order evaluation
+
         pass
 
 if __name__ == "__main__":
@@ -429,19 +440,9 @@ if __name__ == "__main__":
     cov.save()
     cov.html_report()
 
-
-
-
-# TODO: edge case
-# cell A1 references cell AAA45, which is error at first
-# then populate AAA45, cell A1 should fix itself
-
 # TODO: change ingoing and outgoing to sets (not arrays)
-# TODO: for arithmetic on empty cell - do we treat empty cell as 0?
-
 # TODO: edge cases for deleting sheets - Sheet1!A1 references Sheet2!A1, then delete Sheet2. 
 # what happens to Sheet1!A1 - contents? value?
 # and what if we create another sheet called Sheet1?
 
-# TODO: add new sheet - in excel, if you add sheet1, add sheet2, delete sheet2, then new_sheet gives sheet3.
-# is this desired for our engine also?
+# TODO: if value of cell exists, return that. memoization of sorts. automatic updating must work first

@@ -121,7 +121,16 @@ class Workbook:
         return bool(re.match(pattern, location))
     
     def get_cell(self, sheet_name, location):
-        pass
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        if not Workbook.is_valid_location(location):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+        
+        sheet = self.sheets[sheet_name.lower()]
+        sheet.resize(location)
+
+        return sheet.get_cell(location)
 
     def set_cell_contents(self, sheet_name: str, location: str,
                           contents: Optional[str]) -> None:
@@ -155,8 +164,7 @@ class Workbook:
         # remove original outgoing cells' ingoing & outgoing lists before setting new content
         curr_sheet = self.sheets[sheet_name.lower()]
         curr_sheet.resize(location)
-        col_idx, row_idx = Sheet.split_cell_ref(location)
-        curr_cell = curr_sheet.cells[row_idx][col_idx]
+        curr_cell = curr_sheet.get_cell(location)
         orig_outgoing = curr_cell.outgoing
 
         for orig_ref_cell in orig_outgoing:
@@ -189,15 +197,13 @@ class Workbook:
                         split_ref = ref.split('!')
                         ref_sheet_name = split_ref[0]
                         ref_location = split_ref[1]
-                        col_idx, row_idx = Sheet.split_cell_ref(split_ref[1])
                     else:
                         ref_sheet_name = sheet_name
                         ref_location = ref
-                        col_idx, row_idx = Sheet.split_cell_ref(ref)
                     
                     if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
                         self.sheets[ref_sheet_name.lower()].resize(ref_location)
-                        referenced_cell = self.sheets[ref_sheet_name.lower()].cells[row_idx][col_idx]
+                        referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
                         outgoing.append(referenced_cell)
             
         curr_sheet.set_cell_contents(sheet_name, location, contents, outgoing)
@@ -279,14 +285,9 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         sheet = self.sheets[sheet_name.lower()]
-        col_idx, row_idx = Sheet.split_cell_ref(location)
+        sheet.resize(location)
+        cell = sheet.get_cell(location)
 
-        if col_idx >= sheet.num_cols or row_idx >= sheet.num_rows:
-            raise ValueError('Location is beyond current extent of sheet.')
-        
-        cell = sheet.cells[row_idx][col_idx]
-
-        ### This code below is copied from Cell.py (mostly)
         contents = cell.contents
         if (contents is None):
             return None
