@@ -100,9 +100,7 @@ class Workbook:
                 for outgoing_cell in curr_cell.outgoing:
                     outgoing_cell.ingoing.remove(curr_cell)
                 
-                visited = set()
-                for ingoing_cell in curr_cell.ingoing:
-                    self.update_cell(ingoing_cell, visited)
+                self.handle_update_tree(curr_cell)
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -136,13 +134,39 @@ class Workbook:
 
         return sheet.get_cell(location)
     
-    def update_cell(self, cell, visited):
+    def handle_update_tree(self, cell):
+        visited, outdegree_visited = set(), set()
+        outdegree = {}
+        self.calculate_outdegree(cell, outdegree_visited, outdegree)
+        is_cycle = self.detect_cycle(cell)
+        self.update_tree(cell, visited, outdegree, is_cycle)
+    
+    def calculate_outdegree(self, cell, visited, outdegree):
         if (cell in visited):
             return
         visited.add(cell)
-        self.evaluate_cell(cell)
+        outdegree[cell] = len(cell.outgoing)
         for ingoing_cell in cell.ingoing:
-            self.update_cell(ingoing_cell, visited)
+            self.calculate_outdegree(ingoing_cell, visited, outdegree)
+    
+    def update_tree(self, cell, visited, outdegree, is_cycle):
+        if (cell in visited):
+            return
+        visited.add(cell)
+        if (is_cycle):
+            self.evaluate_cell(cell)
+            for ingoing_cell in cell.ingoing:
+                self.update_tree(ingoing_cell, visited, outdegree, True)
+        else:
+            self.evaluate_cell(cell)
+            for ingoing_cell in cell.ingoing:
+                outdegree[ingoing_cell] -= 1
+                if (outdegree[ingoing_cell] == 0):
+                    self.update_tree(ingoing_cell, visited, outdegree, False)
+
+            for ingoing_cell in cell.ingoing:
+                if (outdegree[ingoing_cell] != 0):
+                    self.update_tree(ingoing_cell, visited, outdegree, True)
     
     def evaluate_cell(self, cell):
         contents = cell.contents
@@ -263,8 +287,7 @@ class Workbook:
         curr_cell.contents = contents
 
         ### Update the value field of the cell
-        visited = set()
-        self.update_cell(curr_cell, visited)
+        self.handle_update_tree(curr_cell)
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.

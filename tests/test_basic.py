@@ -452,12 +452,63 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '=B1+C1')
         wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        print('\n\n')
         wb.set_cell_contents('Sheet1', 'C1', '1')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 2)
 
         wb.set_cell_contents('Sheet1', 'C1', '2')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+    
+    def test_update_tree(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
 
+        wb.set_cell_contents('Sheet1', 'A1', '=B1 + C1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=1')
+        wb.set_cell_contents('Sheet1', 'D1', '=A1 + E1')
+        wb.set_cell_contents('Sheet1', 'E1', '=F1')
+        wb.set_cell_contents('Sheet1', 'F1', '=D1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 1)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'E1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'E1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'F1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'F1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'C1', '2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 2)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'E1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'E1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'F1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'F1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        
+        wb.set_cell_contents('Sheet1', 'A1', '3')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 3)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 2)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'E1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'E1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'F1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'F1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=B1 + C1')
+        wb.set_cell_contents('Sheet1', 'D1', '=A1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'E1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'F1'), 4)
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
@@ -472,4 +523,4 @@ if __name__ == "__main__":
 # what happens to Sheet1!A1 - contents? value?
 # and what if we create another sheet called Sheet1?
 
-# TODO: if value of cell exists, return that. memoization of sorts. automatic updating must work first
+# TODO: more extensive tests for cell references, automatic updating, sheet deletion, cycles
