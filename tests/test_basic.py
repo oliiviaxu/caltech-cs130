@@ -307,6 +307,18 @@ class BasicTests(unittest.TestCase):
         # parentheses
         wb.set_cell_contents('Sheet1', 'A1', '=(D1)')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+    
+    def test_concat(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Test that trailing zeros are removed when concatenating a number and a string
+        wb.set_cell_contents('Sheet1', 'A1', '=4.00000 & "test"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), '4test')
+
+        wb.set_cell_contents('Sheet1', 'A2', '4.00000')
+        wb.set_cell_contents('Sheet1', 'A1', '="test" & A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'test4')
 
     def test_implicit_conversion(self):
         wb = sheets.Workbook()
@@ -489,12 +501,48 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '=B1+C1')
         wb.set_cell_contents('Sheet1', 'B1', '=C1')
-        print('\n\n')
         wb.set_cell_contents('Sheet1', 'C1', '1')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 2)
 
         wb.set_cell_contents('Sheet1', 'C1', '2')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
+        # diamond pattern
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet2', 'A1', '=B1 + D1')
+        wb.set_cell_contents('Sheet2', 'B1', '=C1 + 2')
+        wb.set_cell_contents('Sheet2', 'D1', '=C1')
+        wb.set_cell_contents('Sheet2', 'C1', '4')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'C1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'D1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'B1'), 6)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 10)
+
+        wb.set_cell_contents('Sheet2', 'C1', '5')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'C1'), 5)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'D1'), 5)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'B1'), 7)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 12)
+
+        # more expansive topological order evaluation test
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet3', 'A1', '=B1 + C1 + D1')
+        wb.set_cell_contents('Sheet3', 'B1', '=E1 * 4')
+        wb.set_cell_contents('Sheet3', 'C1', '=E1 - 1')
+        wb.set_cell_contents('Sheet3', 'D1', '=E1 / 2')
+        wb.set_cell_contents('Sheet3', 'E1', '=4')
+        self.assertEqual(wb.get_cell_value('Sheet3', 'E1'), 4)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'D1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'C1'), 3)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'B1'), 16)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'A1'), 21)
+
+        wb.set_cell_contents('Sheet3', 'E1', '2')
+        self.assertEqual(wb.get_cell_value('Sheet3', 'E1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'D1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'C1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'B1'), 8)
+        self.assertEqual(wb.get_cell_value('Sheet3', 'A1'), 10)
     
     def test_update_tree(self):
         wb = sheets.Workbook()
