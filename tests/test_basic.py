@@ -21,14 +21,10 @@ class BasicTests(unittest.TestCase):
         wb.new_sheet()
         self.assertEqual(wb.list_sheets(), ['Sheet1', 'Lorem ipsum', 'Sheet3', 'sheet2', 'Sheet5', 'Sheet4'])
 
-        with self.assertRaises(ValueError):
-            wb.new_sheet('')
-        with self.assertRaises(ValueError):
-            wb.new_sheet(' Sheet')
-        with self.assertRaises(ValueError):
-            wb.new_sheet('~')
-        with self.assertRaises(ValueError):
-            wb.new_sheet('Lorem ipsum')
+        invalid_sheet_names = ['', ' Sheet', '~', 'Lorem ipsum', 'Sheet\' name', 'Sheet \" name']
+        for sheet_name in invalid_sheet_names:
+            with self.assertRaises(ValueError):
+                wb.new_sheet(sheet_name)
     
     def test_del_sheet(self):
         """
@@ -549,7 +545,6 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(value, decimal.Decimal('46'))
 
         # Should print:  c1 = 46
-        print(f'c1 = {value}')
         self.assertEqual(value, 46)
 
         wb.set_cell_contents(name, 'd3', '=nonexistent!b4')

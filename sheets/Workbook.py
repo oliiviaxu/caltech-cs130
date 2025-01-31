@@ -66,8 +66,7 @@ class Workbook:
             # of letters, numbers, spaces, and these punctuation characters: .?!,:;!@#$%^&*()-_. 
             # Note specifically that all quote marks are excluded from names. Spreadsheet names 
             # cannot start or end with whitespace characters, and they cannot be an empty string.
-            sheet_name = sheet_name.replace('\'', '').replace('\"', '')
-            if (sheet_name == '' or sheet_name[0] in [' ', '\t', '\n'] or sheet_name[len(sheet_name)-1] in [' ', '\t', '\n']):
+            if (sheet_name == '' or '\'' in sheet_name or '\"' in sheet_name or sheet_name[0] in [' ', '\t', '\n'] or sheet_name[len(sheet_name)-1] in [' ', '\t', '\n']):
                 raise ValueError('Spreadsheet names cannot start or end with whitespace characters, and they cannot be an empty string.')
             
             for char in sheet_name:
