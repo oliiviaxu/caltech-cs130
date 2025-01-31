@@ -114,8 +114,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             val_1 = ''
         if val_2 is None:
             val_2 = ''
-        else:
-            return str(val_1) + str(val_2)
+
+        return str(val_1) + str(val_2)
 
     def error(self, tree):
         error_value = CellError(FormulaEvaluator.error_dict[tree.children[0].lower()], 'String representation of error given')
@@ -124,6 +124,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def parens(self, tree):
         values = self.visit_children(tree)
         assert len(values) == 1, f'Unexpected tree {tree.pretty()}'
+        if values[0] is None:
+            values[0] = 0
         return values[0]
     
     def number(self, tree):

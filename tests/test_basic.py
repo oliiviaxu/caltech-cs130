@@ -143,13 +143,6 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
-        # TODO: is a cell reference invalid if it is out of the extent of the sheet?
-        # # test bad reference (reference out of extent of sheet)
-        # wb.new_sheet()
-        # wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!ZZ45')
-        # self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
-        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
-
         # test bad reference (reference exceeds ZZZZ9999)
         wb.set_cell_contents('Sheet1', 'A1', '=1 + Sheet1!ZZZZZ99')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
@@ -285,6 +278,36 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     
+    def test_unset_cells(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # addition/subtraction
+        wb.set_cell_contents('Sheet1', 'A1', '=1 - D1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 1)
+
+        # multiplication/division
+        wb.set_cell_contents('Sheet1', 'A1', '=1 * D1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+        
+        # TODO: is division supposed to cause DIVIDE_BY_ZERO?
+        wb.set_cell_contents('Sheet1', 'A1', '=1 / D1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        # unary
+        # TODO: this failed acceptance tests, but passes here?
+        wb.set_cell_contents('Sheet1', 'A1', '=-D1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+
+        # concat
+        wb.set_cell_contents('Sheet1', 'A1', '="test" & D1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'test')
+
+        # parentheses
+        wb.set_cell_contents('Sheet1', 'A1', '=(D1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+
     def test_implicit_conversion(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -575,3 +598,4 @@ if __name__ == "__main__":
 # and what if we create another sheet called Sheet1?
 
 # TODO: more extensive tests for cell references, automatic updating, sheet deletion, cycles
+# TODO: tests for unset cells
