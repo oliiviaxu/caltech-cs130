@@ -134,11 +134,32 @@ class Workbook:
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
-        visited, outdegree_visited = set(), set()
         outdegree = {}
-        self.calculate_outdegree(cell, outdegree_visited, outdegree)
-        is_cycle = self.detect_cycle(cell)
-        self.update_tree(cell, visited, outdegree, is_cycle)
+        self.calculate_outdegree(cell, set(), outdegree)
+
+        visited = {key: False for key in outdegree}
+        self.evaluate_cell(cell)
+        visited[cell] = True
+        queue = []
+        for ingoing_cell in cell.ingoing:
+            outdegree[ingoing_cell] -= 1
+            if (outdegree[ingoing_cell] == 0):
+                queue.append(ingoing_cell)
+        
+        while len(queue):
+            curr_cell = queue.pop(0)
+            self.evaluate_cell(curr_cell)
+            visited[curr_cell] = True
+            for ingoing_cell in curr_cell.ingoing:
+                if visited[ingoing_cell]:
+                    continue
+                outdegree[ingoing_cell] -= 1
+                if (outdegree[ingoing_cell] == 0):
+                    queue.append(ingoing_cell)
+        
+        for remaining_cell in visited:
+            if not visited[remaining_cell]:
+                self.evaluate_cell(remaining_cell)
     
     def calculate_outdegree(self, cell, visited, outdegree):
         if (cell in visited):
@@ -147,25 +168,6 @@ class Workbook:
         outdegree[cell] = len(cell.outgoing)
         for ingoing_cell in cell.ingoing:
             self.calculate_outdegree(ingoing_cell, visited, outdegree)
-    
-    def update_tree(self, cell, visited, outdegree, is_cycle):
-        if (cell in visited):
-            return
-        visited.add(cell)
-        if (is_cycle):
-            self.evaluate_cell(cell)
-            for ingoing_cell in cell.ingoing:
-                self.update_tree(ingoing_cell, visited, outdegree, True)
-        else:
-            self.evaluate_cell(cell)
-            for ingoing_cell in cell.ingoing:
-                outdegree[ingoing_cell] -= 1
-                if (outdegree[ingoing_cell] == 0):
-                    self.update_tree(ingoing_cell, visited, outdegree, False)
-
-            for ingoing_cell in cell.ingoing:
-                if (outdegree[ingoing_cell] != 0):
-                    self.update_tree(ingoing_cell, visited, outdegree, True)
     
     def evaluate_cell(self, cell):
         contents = cell.contents
