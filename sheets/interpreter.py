@@ -41,6 +41,18 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         res_2 = convert(val_2)
 
         return res_1, res_2
+    
+    def change_type_concat(val_1, val_2):
+        if val_1 is None:
+            val_1 = ''
+        if val_2 is None:
+            val_2 = ''
+        
+        if Cell.is_number(val_1):
+            val_1 = Cell.strip_trailing_zeros(str(val_1))
+        if Cell.is_number(val_2):
+            val_2 = Cell.strip_trailing_zeros(str(val_2))
+        return val_1, val_2
         
     @visit_children_decor
     def add_expr(self, values):
@@ -110,11 +122,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         elif type(val_2) == CellError:
             return val_2
         
-        if val_1 is None:
-            val_1 = ''
-        if val_2 is None:
-            val_2 = ''
-
+        val_1, val_2 = FormulaEvaluator.change_type_concat(val_1, val_2)
         return str(val_1) + str(val_2)
 
     def error(self, tree):

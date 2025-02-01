@@ -102,6 +102,8 @@ class BasicTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
 
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
+
         # test the extent of spreadsheet
         wb.set_cell_contents('Sheet1', 'AA26', 'test')
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
@@ -115,6 +117,28 @@ class BasicTests(unittest.TestCase):
             wb.set_cell_contents('Sheet2', 'D5', 'test')
         with self.assertRaises(ValueError):
             wb.set_cell_contents('Sheet1', 'D5D5', 'test')
+
+        wb.new_sheet()
+
+        # If we have a cell A1 which is set to the value of D4, then the extent
+        # of the sheet is (1, 1) if D4 = None even though it is part of the
+        # formula for A1.
+        wb.set_cell_contents('Sheet2', 'A1', '=D4')
+        self.assertEqual(wb.get_sheet_extent('Sheet2'), (1, 1))
+
+        # A sheet's extent should shrink as the maximal cell's contents are cleared.
+        wb.set_cell_contents('Sheet1', 'AB4', None)
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 27))
+
+        wb.set_cell_contents('Sheet1', 'C27', None)
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
+
+        # A sheet's extent should shrink to 0 if all cell contents are cleared.
+        wb.set_cell_contents('Sheet1', 'AA26', None)
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
+
+        wb.set_cell_contents('Sheet2', 'A1', None)
+        self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
     
     def test_cell_error(self):
         wb = sheets.Workbook()
@@ -194,6 +218,14 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+    
+    def test_bad_reference_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1')
+        wb.new_sheet()
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
 
     def test_error_propagation(self):
         wb = sheets.Workbook()
@@ -290,7 +322,7 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=1 * D1')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
         
-        # TODO: is division supposed to cause DIVIDE_BY_ZERO?
+        # TODO: is division supposed to cause DIVIDE_BY_ZERO? we failed acceptance tests, but passes here
         wb.set_cell_contents('Sheet1', 'A1', '=1 / D1')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
@@ -363,6 +395,11 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=-A2')
         wb.set_cell_contents('Sheet1', 'A2', '-4')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
+        # TODO: figure out why we fail automated test which is multiplication between number and cell with whitespace
+        wb.set_cell_contents('Sheet1', 'A1', '=    4  *    A2  ')
+        wb.set_cell_contents('Sheet1', 'A2', '=     4.5     ')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 18)
     
     def test_cell_reference(self):
         wb = sheets.Workbook()
@@ -476,12 +513,8 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A3'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('sheet1', 'A4'), 1/2)
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A5'), sheets.CellError)
-
-        # print(tree.pretty())
-        # print(ev.visit(tree))
     
     def test_automatic_updates(self):
-        # TODO: test automatic updates
         wb = sheets.Workbook()
         wb.new_sheet()
 
@@ -641,9 +674,4 @@ if __name__ == "__main__":
     cov.html_report()
 
 # TODO: change ingoing and outgoing to sets (not arrays)
-# TODO: edge cases for deleting sheets - Sheet1!A1 references Sheet2!A1, then delete Sheet2. 
-# what happens to Sheet1!A1 - contents? value?
-# and what if we create another sheet called Sheet1?
-
-# TODO: more extensive tests for cell references, automatic updating, sheet deletion, cycles
-# TODO: tests for unset cells
+# TODO: Test a variety of formulas that include multiple operators between both cells and numbers
