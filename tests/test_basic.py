@@ -123,8 +123,13 @@ class BasicTests(unittest.TestCase):
         # If we have a cell A1 which is set to the value of D4, then the extent
         # of the sheet is (1, 1) if D4 = None even though it is part of the
         # formula for A1.
-        wb.set_cell_contents('Sheet2', 'A1', '=D4')
+        wb.set_cell_contents('Sheet2', 'A1', '=1 + D4')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 1)
         self.assertEqual(wb.get_sheet_extent('Sheet2'), (1, 1))
+
+        wb.set_cell_contents('Sheet2', 'D4', '2')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 3)
+        self.assertEqual(wb.get_sheet_extent('Sheet2'), (4, 4))
 
         # A sheet's extent should shrink as the maximal cell's contents are cleared.
         wb.set_cell_contents('Sheet1', 'AB4', None)
@@ -138,6 +143,7 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
 
         wb.set_cell_contents('Sheet2', 'A1', None)
+        wb.set_cell_contents('Sheet2', 'D4', None)
         self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
     
     def test_cell_error(self):
@@ -225,7 +231,7 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1')
         wb.new_sheet()
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
 
     def test_error_propagation(self):
         wb = sheets.Workbook()
@@ -674,4 +680,5 @@ if __name__ == "__main__":
     cov.html_report()
 
 # TODO: change ingoing and outgoing to sets (not arrays)
+    # maybe write a test that checks if setting =A2 + A2 works correctly
 # TODO: Test a variety of formulas that include multiple operators between both cells and numbers
