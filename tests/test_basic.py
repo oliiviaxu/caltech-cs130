@@ -404,6 +404,7 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
 
         # TODO: figure out why we fail automated test which is multiplication between number and cell with whitespace
+        # related to 'Other Totals'!G15 maybe?
         wb.set_cell_contents('Sheet1', 'A1', '=    4  *    A2  ')
         wb.set_cell_contents('Sheet1', 'A2', '=     4.5     ')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 18)
@@ -442,42 +443,6 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
         self.assertEqual(len(wb.get_cell('Sheet1', 'A2').ingoing), 0)
         self.assertEqual(len(wb.get_cell('Sheet1', 'A3').ingoing), 2)
-    
-    def test_ingoing_outgoing(self):
-        wb = sheets.Workbook()
-        wb.new_sheet()
-
-        wb.set_cell_contents('Sheet1', 'D1', '2')
-        wb.set_cell_contents('Sheet1', 'D2', '=D1+3')
-        wb.set_cell_contents('Sheet1', 'D3', '=D1+4')
-
-        d_1 = wb.sheets['sheet1'].cells[0][3]
-        d_2 = wb.sheets['sheet1'].cells[1][3]
-        d_3 = wb.sheets['sheet1'].cells[2][3]
-
-        # def print_lists(cell):
-        #     print(f'########## PRINTING {cell.location} LIST ############')
-        #     print('Ingoing: ')
-        #     for c in cell.ingoing:
-        #         print(f'{c.location}')
-            
-        #     print('Outgoing: ')
-        #     for c in cell.outgoing:
-        #         print(f'{c.location}')
-        
-        # print_lists(d_1)
-        # print_lists(d_2)
-        # print_lists(d_3)
-        
-        wb.set_cell_contents('Sheet1', 'D2', '=1')
-
-        d_1 = wb.sheets['sheet1'].cells[0][3]
-        d_2 = wb.sheets['sheet1'].cells[1][3]
-        d_3 = wb.sheets['sheet1'].cells[2][3]
-
-        # print_lists(d_1)
-        # print_lists(d_2)
-        # print_lists(d_3)
     
     def test_cycle_detection(self):
         wb = sheets.Workbook()
@@ -704,7 +669,9 @@ class BasicTests(unittest.TestCase):
                     sheets.Workbook.load_workbook(file)
 
     def test_save_workbook(self):
-        pass
+        file_path = os.path.join(json_dir, 'writing.json')
+        with open(file_path, "r") as file:
+            pass
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
