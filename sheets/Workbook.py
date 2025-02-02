@@ -151,17 +151,16 @@ class Workbook:
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
-        # TODO: change
-        outdegree = {}
-        self.calculate_outdegree(cell, set(), outdegree)
+        out_degree = {}
+        self.calculate_out_degree(cell, set(), out_degree)
 
-        visited = {key: False for key in outdegree}
+        visited = {key: False for key in out_degree}
         self.evaluate_cell(cell)
         visited[cell] = True
         queue = []
         for ingoing_cell in cell.ingoing:
-            outdegree[ingoing_cell] -= 1
-            if (outdegree[ingoing_cell] == 0):
+            out_degree[ingoing_cell] -= 1
+            if (out_degree[ingoing_cell] == 0):
                 queue.append(ingoing_cell)
         
         while len(queue):
@@ -171,21 +170,24 @@ class Workbook:
             for ingoing_cell in curr_cell.ingoing:
                 if visited[ingoing_cell]:
                     continue
-                outdegree[ingoing_cell] -= 1
-                if (outdegree[ingoing_cell] == 0):
+                out_degree[ingoing_cell] -= 1
+                if (out_degree[ingoing_cell] == 0):
                     queue.append(ingoing_cell)
         
         for remaining_cell in visited:
             if not visited[remaining_cell]:
                 self.evaluate_cell(remaining_cell)
     
-    def calculate_outdegree(self, cell, visited, outdegree):
+    def calculate_out_degree(self, cell, visited, out_degree):
         if (cell in visited):
             return
         visited.add(cell)
-        outdegree[cell] = len(cell.outgoing)
-        for ingoing_cell in cell.ingoing:
-            self.calculate_outdegree(ingoing_cell, visited, outdegree)
+        # out_degree[cell] = len(cell.outgoing)
+        out_degree[cell] = self.graph.outgoing_get(cell.sheet_name, cell.location)
+        for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
+            self.calculate_out_degree(self.get_cell(sn, loc), visited, out_degree)
+        # for ingoing_cell in cell.ingoing:
+            # self.calculate_out_degree(ingoing_cell, visited, out_degree)
     
     def evaluate_cell(self, cell):
         contents = cell.contents
@@ -303,7 +305,6 @@ class Workbook:
                         # outgoing.append(referenced_cell)
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
-        # TODO: refer to dep graph directly
         for sn, loc in outgoing:
             self.graph.ingoing_add(sn, loc, sheet_name, location)
             # referenced_cell.ingoing.append(curr_cell)   
@@ -348,14 +349,24 @@ class Workbook:
         :return: True if a cycle is detected, False otherwise.
         """
         has_cycle = False
-        for ref in node.outgoing:
-            ref_id = ref.sheet_name + '!' + ref.location
+        outgoing = self.graph.outgoing_get(node.sheet_name, node.location)
+        for sn, loc in outgoing:
+            ref_id = sn + '!' + loc
             if (ref_id in visited):
                 return True
             visited.add(ref_id)
-            has_cycle = has_cycle or self.dfs(ref, visited)
+            has_cycle = has_cycle or self.dfs(self.get_cell(sn, loc), visited)
             visited.remove(ref_id)
         return has_cycle
+
+        # for ref in node.outgoing:
+        #     ref_id = ref.sheet_name + '!' + ref.location
+        #     if (ref_id in visited):
+        #         return True
+        #     visited.add(ref_id)
+        #     has_cycle = has_cycle or self.dfs(ref, visited)
+        #     visited.remove(ref_id)
+        # return has_cycle
 
     def detect_cycle(self, src: Cell) -> bool:
         """

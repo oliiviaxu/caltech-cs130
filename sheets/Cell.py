@@ -9,8 +9,8 @@ lark_path = os.path.join(current_dir, "formulas.lark")
 
 class Cell:
     def __init__(self, sheet_name = '', location=str, contents=''):
-        self.sheet_name = sheet_name
-        self.location = location
+        self.sheet_name = sheet_name.lower()
+        self.location = location.lower()
         self.contents = contents
         self.value = None
         self.outgoing = []

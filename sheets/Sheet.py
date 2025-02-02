@@ -9,13 +9,6 @@ class Sheet:
         self.num_rows = 0
         self.num_cols = 0
         self.cells = []
-        for i in range(self.num_rows):
-            row = []
-            for j in range(self.num_cols):
-                location = Sheet.to_sheet_coords(j, i)
-                cell = Cell(sheet_name, location, None)
-                row.append(cell)
-            self.cells.append(row)
     
     def get_cell(self, location):
         col_idx, row_idx = Sheet.split_cell_ref(location)
