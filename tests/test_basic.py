@@ -6,6 +6,7 @@ import os
 import lark
 from sheets.interpreter import FormulaEvaluator
 import decimal
+import json
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, '../sheets/formulas.lark')
@@ -684,10 +685,33 @@ class BasicTests(unittest.TestCase):
                 with self.assertRaises(KeyError):
                     sheets.Workbook.load_workbook(file)
 
-    def test_save_workbook(self):
+    def test_save_with_string_formulas(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet('MySheet')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=B1 + C1')
+        wb.set_cell_contents('Sheet1', 'B1', '=\'3')
+        wb.set_cell_contents('MySheet', 'A1', '=Sheet1!A1 + 2')
+
         file_path = os.path.join(json_dir, 'writing.json')
+
+        with open(file_path, "w") as f:
+            wb.save_workbook(f)
+
         with open(file_path, "r") as file:
-            pass
+            d = json.load(file)
+            sheet_dic = d["sheets"]
+            self.assertEqual(sheet_dic[0]["name"], "Sheet1")
+            self.assertEqual(sheet_dic[0]["cell-contents"]["A1"], "=B1 + C1")
+            self.assertEqual(sheet_dic[0]["cell-contents"]["B1"], "=\'3")
+
+            self.assertEqual(sheet_dic[1]["name"], "MySheet")
+            self.assertEqual(sheet_dic[1]["cell-contents"]["A1"], "=Sheet1!A1 + 2")
+        
+    def test_move_sheet(self):
+        pass
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
