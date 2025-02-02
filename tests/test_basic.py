@@ -652,6 +652,22 @@ class BasicTests(unittest.TestCase):
             self.assertEqual(wb.get_cell_contents('Sheet2', 'B1'), '\'testing')
             self.assertEqual(wb.get_cell_contents('Sheet2', 'C1'), '=A1&B1')
             self.assertEqual(wb.get_cell_value('Sheet2', 'C1'), '4.3testing')
+
+        # test same but with txt
+        file_path = os.path.join(json_dir, 'simple.txt')
+        with open(file_path, "r") as file:
+            wb = sheets.Workbook.load_workbook(file)
+            self.assertEqual(wb.get_sheet_extent('Sheet1'), (3, 1))
+            self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '\'123')
+            self.assertEqual(wb.get_cell_contents('Sheet1', 'B1'), '5.3')
+            self.assertEqual(wb.get_cell_contents('Sheet1', 'C1'), '=A1*B1')
+            self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), decimal.Decimal('651.9'))
+
+            self.assertEqual(wb.get_sheet_extent('Sheet2'), (3, 1))
+            self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '4.3')
+            self.assertEqual(wb.get_cell_contents('Sheet2', 'B1'), '\'testing')
+            self.assertEqual(wb.get_cell_contents('Sheet2', 'C1'), '=A1&B1')
+            self.assertEqual(wb.get_cell_value('Sheet2', 'C1'), '4.3testing')
         
         # test that appropriate errors are raised
         type_error_files = ['fail_list.json', 'fail_sheets_not_list.json', 'fail_name_not_str.json', 'fail_contents_not_dict.json', 'fail_cell_data_not_str.json']
