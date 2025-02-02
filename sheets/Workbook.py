@@ -7,6 +7,7 @@ from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
 import os
 import lark
 import json
+from .DependencyGraph import *
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
@@ -18,7 +19,8 @@ class Workbook:
     # values should cause the workbook's contents to be updated properly.
 
     def __init__(self):
-        self.sheets = {} # lowercase keys  
+        self.sheets = {} # lowercase keys
+        self.graph = DependencyGraph()
 
     def num_sheets(self) -> int:
         return len(self.sheets.keys())
@@ -88,20 +90,33 @@ class Workbook:
         # case does not have to.
         #
         # If the specified sheet name is not found, a KeyError is raised.
-
-        sheet_to_delete = self.sheets[sheet_name.lower()]
-        cells = sheet_to_delete.cells
+        sheet_name = sheet_name.lower()
+        # sheet_to_delete = self.sheets[sheet_name.lower()]
+        # cells = sheet_to_delete.cells
         
-        del self.sheets[sheet_name.lower()]
+        del self.sheets[sheet_name]
 
-        for row_idx in range(sheet_to_delete.num_rows):
-            for col_idx in range(sheet_to_delete.num_cols):
-                curr_cell = cells[row_idx][col_idx]
+        # access self.graph[sheet_name]
+        # look through EVERY NODE's outgoing, from there delete ingoing from outgoing
+        # delete this sheet_name from graph
 
-                for outgoing_cell in curr_cell.outgoing:
-                    outgoing_cell.ingoing.remove(curr_cell)
-                
+        sheet_graph = self.graph[sheet_name]
+        for loc, outgoing_arr in sheet_graph.items():
+            for outgoing_sn, outgoing_loc in outgoing_arr:
+                self.graph.ingoing_remove(outgoing_sn, outgoing_loc, sheet_name, loc)
+                curr_cell = self.get_cell(sheet_name, loc)
                 self.handle_update_tree(curr_cell)
+        
+        del self.graph[sheet_name]
+
+        # for row_idx in range(sheet_to_delete.num_rows):
+        #     for col_idx in range(sheet_to_delete.num_cols):
+        #         curr_cell = cells[row_idx][col_idx]
+
+        #         for outgoing_cell in curr_cell.outgoing:
+        #             outgoing_cell.ingoing.remove(curr_cell)
+                
+        #         self.handle_update_tree(curr_cell)
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -136,6 +151,7 @@ class Workbook:
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
+        # TODO: change
         outdegree = {}
         self.calculate_outdegree(cell, set(), outdegree)
 
@@ -242,10 +258,13 @@ class Workbook:
         curr_sheet = self.sheets[sheet_name.lower()]
         curr_sheet.resize(location)
         curr_cell = curr_sheet.get_cell(location)
-        orig_outgoing = curr_cell.outgoing
 
-        for orig_ref_cell in orig_outgoing:
-            orig_ref_cell.ingoing.remove(curr_cell)
+        orig_outgoing = self.graph.outgoing_get(sheet_name, location)
+        # orig_outgoing = curr_cell.outgoing
+
+        for sn, loc in orig_outgoing:
+            self.graph.ingoing_remove(sn, loc, sheet_name, location)
+            # orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
         if contents == '' or contents == None:
@@ -280,14 +299,17 @@ class Workbook:
                     
                     if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
                         self.sheets[ref_sheet_name.lower()].resize(ref_location)
-                        referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
-                        outgoing.append(referenced_cell)
+                        # referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
+                        # outgoing.append(referenced_cell)
+                        outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         # TODO: refer to dep graph directly
-        for referenced_cell in outgoing:
-            referenced_cell.ingoing.append(curr_cell)   
+        for sn, loc in outgoing:
+            self.graph.ingoing_add(sn, loc, sheet_name, location)
+            # referenced_cell.ingoing.append(curr_cell)   
 
-        curr_cell.outgoing = outgoing
+        self.graph.outgoing_set(sheet_name, location, outgoing)
+        # curr_cell.outgoing = outgoing
         curr_cell.contents = contents
 
         ### Update the value field of the cell
@@ -452,6 +474,7 @@ class Workbook:
         return wb
 
     def save_workbook(self, fp: TextIO) -> None:
+        # TODO 
         # Instance method (not a static/class method) to save a workbook to a
         # text file or file-like object in JSON format.  Note that the _caller_
         # of this function is expected to have opened the file; this function
