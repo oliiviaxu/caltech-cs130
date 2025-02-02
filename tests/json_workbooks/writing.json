@@ -2,17 +2,7 @@
     "sheets": [
         {
             "name": "Sheet1",
-            "cell-contents": {
-                "A1": "=B1 + C1",
-                "B1": "='3"
-            }
-        },
-        {
-            "name": "MySheet",
-            "cell-contents": {
-                "A1": "=Sheet1!A1 + 2",
-                "B1": "=\"testing\" & \" double\""
-            }
+            "cell-contents": {}
         }
     ]
 }

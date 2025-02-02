@@ -715,6 +715,25 @@ class BasicTests(unittest.TestCase):
             self.assertEqual(sheet_dic[1]["cell-contents"]["A1"], "=Sheet1!A1 + 2")
             self.assertEqual(sheet_dic[1]["cell-contents"]["B1"], "=\"testing\" & \" double\"")
         
+        empty_wb = sheets.Workbook()
+        with open(file_path, "w") as f:
+            empty_wb.save_workbook(f)
+        
+        with open(file_path, "r") as file:
+            d = json.load(file)
+            self.assertEqual(d["sheets"], [])
+        
+        empty_cell_wb = sheets.Workbook()
+        empty_cell_wb.new_sheet()
+        with open(file_path, "w") as f:
+            empty_cell_wb.save_workbook(f)
+        
+        with open(file_path, "r") as file:
+            d = json.load(file)
+            self.assertEqual(len(d["sheets"]), 1)
+            self.assertEqual(d["sheets"][0]["name"], "Sheet1")
+            self.assertEqual(d["sheets"][0]["cell-contents"], {})
+        
     def test_move_sheet(self):
         pass
 
@@ -730,4 +749,3 @@ if __name__ == "__main__":
 # TODO: change ingoing and outgoing to sets (not arrays)
     # maybe write a test that checks if setting =A2 + A2 works correctly
 # TODO: Test a variety of formulas that include multiple operators between both cells and numbers
-# Always output a "sheets" list, even for empty workbooks. The list will simply contain no sheets for an empty workbook. Similarly, a sheet with no cells set should still have an empty "cell-contents" dictionary in the JSON output.
