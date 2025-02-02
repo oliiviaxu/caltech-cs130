@@ -6,6 +6,7 @@ from .visitor import CellRefFinder
 from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
 import os
 import lark
+import json
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
@@ -419,7 +420,35 @@ class Workbook:
         # If any expected value in the input JSON is not of the proper type
         # (e.g. an object instead of a list, or a number instead of a string),
         # raise a TypeError with a suitably descriptive message.
-        pass
+        try:
+            json_data = json.load(fp)
+        except json.JSONDecodeError as e:
+            raise e
+        
+        if (not isinstance(json_data, dict)):
+            raise TypeError('JSON must be dictionary.')
+        if ('sheets' not in json_data):
+            raise KeyError('JSON is missing sheets key.')
+        if (not isinstance(json_data['sheets'], list)):
+            raise TypeError('Value corresponding to sheets key must be list.')
+        
+        sheets_data = json_data['sheets']
+        wb = Workbook()
+        for sheet_data in sheets_data:
+            if ('name' not in sheet_data or 'cell-contents' not in sheet_data):
+                raise KeyError('Sheet is missing necessary key(s) (must have name and cell-contents)')
+            if (not isinstance(sheet_data['name'], str)):
+                raise TypeError('Sheet name must be string.')
+            if (not isinstance(sheet_data['cell-contents'], dict)):
+                raise TypeError('Sheet cell contents must be dictionary.')
+            
+            wb.new_sheet(sheet_data['name'])
+            for cell_location in sheet_data['cell-contents']:
+                cell_contents = sheet_data['cell-contents'][cell_location]
+                if (not isinstance(cell_location, str) or not isinstance(cell_contents, str)):
+                    raise TypeError('Cell data is not strings.')
+                wb.set_cell_contents(sheet_data['name'], cell_location, cell_contents)
+        return wb
 
     def save_workbook(self, fp: TextIO) -> None:
         # Instance method (not a static/class method) to save a workbook to a
