@@ -10,7 +10,8 @@
         {
             "name": "MySheet",
             "cell-contents": {
-                "A1": "=Sheet1!A1 + 2"
+                "A1": "=Sheet1!A1 + 2",
+                "B1": "=\"testing\" & \" double\""
             }
         }
     ]
