@@ -282,7 +282,8 @@ class Workbook:
                         self.sheets[ref_sheet_name.lower()].resize(ref_location)
                         referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
                         outgoing.append(referenced_cell)
-            
+        
+        # TODO: refer to dep graph directly
         for referenced_cell in outgoing:
             referenced_cell.ingoing.append(curr_cell)   
 
