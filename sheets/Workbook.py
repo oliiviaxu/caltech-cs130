@@ -137,17 +137,17 @@ class Workbook:
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
-        outdegree = {}
-        self.calculate_outdegree(cell, set(), outdegree)
+        out_degree = {}
+        self.calculate_out_degree(cell, set(), out_degree)
 
-        visited = {key: False for key in outdegree}
+        visited = {key: False for key in out_degree} # cells "connected" to src
         self.evaluate_cell(cell)
         visited[cell] = True
-        queue = []
-        for ingoing_cell in cell.ingoing:
-            outdegree[ingoing_cell] -= 1
-            if (outdegree[ingoing_cell] == 0):
-                queue.append(ingoing_cell)
+        queue = [cell]
+        # for ingoing_cell in cell.ingoing:
+        #     out_degree[ingoing_cell] -= 1
+        #     if (out_degree[ingoing_cell] == 0):
+        #         queue.append(ingoing_cell)
         
         while len(queue):
             curr_cell = queue.pop(0)
@@ -156,21 +156,22 @@ class Workbook:
             for ingoing_cell in curr_cell.ingoing:
                 if visited[ingoing_cell]:
                     continue
-                outdegree[ingoing_cell] -= 1
-                if (outdegree[ingoing_cell] == 0):
+                out_degree[ingoing_cell] -= 1
+                if (out_degree[ingoing_cell] == 0):
                     queue.append(ingoing_cell)
         
-        for remaining_cell in visited:
-            if not visited[remaining_cell]:
-                self.evaluate_cell(remaining_cell)
+        for c in visited:
+            if not visited[c]:
+                self.evaluate_cell(c)
     
-    def calculate_outdegree(self, cell, visited, outdegree):
+    def calculate_out_degree(self, cell, visited, out_degree):
         if (cell in visited):
             return
         visited.add(cell)
-        outdegree[cell] = len(cell.outgoing)
+        # out_degree[cell] = len(cell.outgoing)
         for ingoing_cell in cell.ingoing:
-            self.calculate_outdegree(ingoing_cell, visited, outdegree)
+            out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
+            self.calculate_out_degree(ingoing_cell, visited, out_degree)
     
     def evaluate_cell(self, cell):
         contents = cell.contents

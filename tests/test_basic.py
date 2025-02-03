@@ -549,6 +549,16 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet3', 'C1'), 1)
         self.assertEqual(wb.get_cell_value('Sheet3', 'B1'), 8)
         self.assertEqual(wb.get_cell_value('Sheet3', 'A1'), 10)
+
+        # test case with topsort
+        wb.new_sheet('Sheet4')
+        wb.set_cell_contents('Sheet4', 'A1', '=B1+C1')
+        wb.set_cell_contents('Sheet4', 'B1', '=C1 + E1 + F1')
+        wb.set_cell_contents('Sheet4', 'C1', '1')
+        self.assertEqual(wb.get_cell_value('Sheet4', 'A1'), 2)
+
+        wb.set_cell_contents('Sheet4', 'C1', '2')
+        self.assertEqual(wb.get_cell_value('Sheet4', 'A1'), 4)
     
     def test_update_tree(self):
         wb = sheets.Workbook()
