@@ -16,13 +16,21 @@ Logistics (7 pts)
 -----------------
 
 L1.  [2pts] Enumerate all teammates here.
-
+- Olivia Xu, Wilson Duan
 
 L2.  [2pts] What did each teammate focus on during this project?
+Olivia: 
+- 
 
+Wilson:
+- 
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
+Olivia: 
+- 
 
+Wilson:
+- 
 
 Spreadsheet Engine Design (11 pts)
 ----------------------------------
