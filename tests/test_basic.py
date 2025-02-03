@@ -18,6 +18,15 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1')
         wb.new_sheet()
+        self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
+
+        wb.del_sheet('Sheet2')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.new_sheet()
+        self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
     
     def test_unset_cells(self):

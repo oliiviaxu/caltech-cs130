@@ -82,6 +82,9 @@ class Workbook:
                 raise ValueError('Spreadsheet names must be unique.')
 
         self.sheets[sheet_name.lower()] = Sheet(sheet_name)
+        if sheet_name.lower() in self.graph.ingoing:
+            for loc in self.graph.ingoing[sheet_name.lower()]:
+                self.set_cell_contents(sheet_name, loc, None)
         self.graph.add_sheet(sheet_name.lower())
         return len(self.sheets.keys()) - 1, sheet_name
 
@@ -286,7 +289,7 @@ class Workbook:
                         ref_sheet_name = sheet_name
                         ref_location = ref
                     
-                    if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
+                    if (Workbook.is_valid_location(ref_location)):
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         for sn, loc in outgoing:
