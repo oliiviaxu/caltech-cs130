@@ -82,6 +82,7 @@ class Workbook:
                 raise ValueError('Spreadsheet names must be unique.')
 
         self.sheets[sheet_name.lower()] = Sheet(sheet_name)
+        self.graph.add_sheet(sheet_name.lower())
         return len(self.sheets.keys()) - 1, sheet_name
 
     def del_sheet(self, sheet_name: str) -> None:
@@ -91,33 +92,21 @@ class Workbook:
         # case does not have to.
         #
         # If the specified sheet name is not found, a KeyError is raised.
+
         sheet_name = sheet_name.lower()
-        # sheet_to_delete = self.sheets[sheet_name.lower()]
-        # cells = sheet_to_delete.cells
-        
-        del self.sheets[sheet_name]
+        if (sheet_name not in self.sheets):
+            raise KeyError(f'{sheet_name} not found, cannot delete.')
 
-        # access self.graph[sheet_name]
-        # look through EVERY NODE's outgoing, from there delete ingoing from outgoing
-        # delete this sheet_name from graph
-
-        sheet_graph = self.graph[sheet_name]
-        for loc, outgoing_arr in sheet_graph.items():
+        sheet_graph_outgoing = self.graph.outgoing[sheet_name]
+        for loc, outgoing_arr in sheet_graph_outgoing.items():
             for outgoing_sn, outgoing_loc in outgoing_arr:
                 self.graph.ingoing_remove(outgoing_sn, outgoing_loc, sheet_name, loc)
-                curr_cell = self.get_cell(sheet_name, loc)
-                self.handle_update_tree(curr_cell)
         
-        del self.graph[sheet_name]
-
-        # for row_idx in range(sheet_to_delete.num_rows):
-        #     for col_idx in range(sheet_to_delete.num_cols):
-        #         curr_cell = cells[row_idx][col_idx]
-
-        #         for outgoing_cell in curr_cell.outgoing:
-        #             outgoing_cell.ingoing.remove(curr_cell)
-                
-        #         self.handle_update_tree(curr_cell)
+        for loc in self.graph.ingoing[sheet_name]:
+            self.set_cell_contents(sheet_name, loc, '#ref!')
+        
+        del self.graph.outgoing[sheet_name]
+        del self.sheets[sheet_name]
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -159,16 +148,13 @@ class Workbook:
         self.evaluate_cell(cell)
         visited[cell] = True
         queue = [cell]
-        # for ingoing_cell in cell.ingoing:
-        #     out_degree[ingoing_cell] -= 1
-        #     if (out_degree[ingoing_cell] == 0):
-        #         queue.append(ingoing_cell)
         
         while len(queue):
             curr_cell = queue.pop(0)
             self.evaluate_cell(curr_cell)
             visited[curr_cell] = True
-            for ingoing_cell in curr_cell.ingoing:
+            for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
+                ingoing_cell = self.get_cell(sn, loc)
                 if visited[ingoing_cell]:
                     continue
                 out_degree[ingoing_cell] -= 1
@@ -183,8 +169,8 @@ class Workbook:
         if (cell in visited):
             return
         visited.add(cell)
-        # out_degree[cell] = len(cell.outgoing)
-        for ingoing_cell in cell.ingoing:
+        for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
+            ingoing_cell = self.get_cell(sn, loc)
             out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
             self.calculate_out_degree(ingoing_cell, visited, out_degree)
     
@@ -261,11 +247,9 @@ class Workbook:
         curr_cell = curr_sheet.get_cell(location)
 
         orig_outgoing = self.graph.outgoing_get(sheet_name, location)
-        # orig_outgoing = curr_cell.outgoing
 
         for sn, loc in orig_outgoing:
             self.graph.ingoing_remove(sn, loc, sheet_name, location)
-            # orig_ref_cell.ingoing.remove(curr_cell)
 
         outgoing = []
         if contents == '' or contents == None:
@@ -300,16 +284,12 @@ class Workbook:
                     
                     if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
                         self.sheets[ref_sheet_name.lower()].resize(ref_location)
-                        # referenced_cell = self.sheets[ref_sheet_name.lower()].get_cell(ref_location)
-                        # outgoing.append(referenced_cell)
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         for sn, loc in outgoing:
             self.graph.ingoing_add(sn, loc, sheet_name, location)
-            # referenced_cell.ingoing.append(curr_cell)   
 
         self.graph.outgoing_set(sheet_name, location, outgoing)
-        # curr_cell.outgoing = outgoing
         curr_cell.contents = contents
 
         ### Update the value field of the cell
@@ -357,15 +337,6 @@ class Workbook:
             has_cycle = has_cycle or self.dfs(self.get_cell(sn, loc), visited)
             visited.remove(ref_id)
         return has_cycle
-
-        # for ref in node.outgoing:
-        #     ref_id = ref.sheet_name + '!' + ref.location
-        #     if (ref_id in visited):
-        #         return True
-        #     visited.add(ref_id)
-        #     has_cycle = has_cycle or self.dfs(ref, visited)
-        #     visited.remove(ref_id)
-        # return has_cycle
 
     def detect_cycle(self, src: Cell) -> bool:
         """

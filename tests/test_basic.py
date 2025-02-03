@@ -49,8 +49,18 @@ class BasicTests(unittest.TestCase):
         
         # Assert
         self.assertEqual(wb.list_sheets(), ['Sheet1'])
-        self.assertEqual(len(wb.sheets['sheet1'].cells[0][0].ingoing), 1)
-        self.assertEqual(wb.sheets['sheet1'].cells[0][0].ingoing[0].location, 'A2')
+        self.assertEqual(len(wb.graph.ingoing_get('sheet1', 'a1')), 1)
+        self.assertEqual(wb.graph.ingoing_get('sheet1', 'a1')[0], ('sheet1', 'a2'))
+
+        wb2 = sheets.Workbook()
+        wb2.new_sheet()
+        wb2.new_sheet()
+
+        wb2.del_sheet('Sheet2')
+        self.assertEqual(wb2.list_sheets(), ['Sheet1'])
+
+        with self.assertRaises(KeyError):
+            wb2.del_sheet('Sheet4')
     
     def test_spreadsheet_cells(self):
         wb = sheets.Workbook()
@@ -438,12 +448,12 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A2', '2')
         wb.set_cell_contents('Sheet1', 'A3', '1')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 6)
-        self.assertEqual(len(wb.get_cell('Sheet1', 'A2').ingoing), 1)
-        self.assertEqual(len(wb.get_cell('Sheet1', 'A3').ingoing), 1)
+        self.assertEqual(len(wb.graph.ingoing_get('Sheet1', 'A2')), 1)
+        self.assertEqual(len(wb.graph.ingoing_get('Sheet1', 'A3')), 1)
         wb.set_cell_contents('Sheet1', 'A1', '=A3 + 4')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
-        self.assertEqual(len(wb.get_cell('Sheet1', 'A2').ingoing), 0)
-        self.assertEqual(len(wb.get_cell('Sheet1', 'A3').ingoing), 2)
+        self.assertEqual(len(wb.graph.ingoing_get('Sheet1', 'A2')), 0)
+        self.assertEqual(len(wb.graph.ingoing_get('Sheet1', 'A3')), 2)
     
     def test_cycle_detection(self):
         wb = sheets.Workbook()

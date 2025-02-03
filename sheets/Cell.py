@@ -13,8 +13,6 @@ class Cell:
         self.location = location.lower()
         self.contents = contents
         self.value = None
-        self.outgoing = []
-        self.ingoing = []
     
     def is_number(s):
         try:
