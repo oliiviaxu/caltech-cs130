@@ -3,7 +3,8 @@ from .Sheet import *
 from .Cell import *
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
-from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
+from collections import OrderedDict
+from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO, OrderedDict
 import os
 import lark
 import json
@@ -19,8 +20,8 @@ class Workbook:
     # values should cause the workbook's contents to be updated properly.
 
     def __init__(self):
-        self.sheets = {} # lowercase keys
         self.graph = DependencyGraph()
+        self.sheets = OrderedDict() # lowercase keys  
 
     def num_sheets(self) -> int:
         return len(self.sheets.keys())
@@ -154,14 +155,14 @@ class Workbook:
         out_degree = {}
         self.calculate_out_degree(cell, set(), out_degree)
 
-        visited = {key: False for key in out_degree}
+        visited = {key: False for key in out_degree} # cells "connected" to src
         self.evaluate_cell(cell)
         visited[cell] = True
-        queue = []
-        for ingoing_cell in cell.ingoing:
-            out_degree[ingoing_cell] -= 1
-            if (out_degree[ingoing_cell] == 0):
-                queue.append(ingoing_cell)
+        queue = [cell]
+        # for ingoing_cell in cell.ingoing:
+        #     out_degree[ingoing_cell] -= 1
+        #     if (out_degree[ingoing_cell] == 0):
+        #         queue.append(ingoing_cell)
         
         while len(queue):
             curr_cell = queue.pop(0)
@@ -174,20 +175,18 @@ class Workbook:
                 if (out_degree[ingoing_cell] == 0):
                     queue.append(ingoing_cell)
         
-        for remaining_cell in visited:
-            if not visited[remaining_cell]:
-                self.evaluate_cell(remaining_cell)
+        for c in visited:
+            if not visited[c]:
+                self.evaluate_cell(c)
     
     def calculate_out_degree(self, cell, visited, out_degree):
         if (cell in visited):
             return
         visited.add(cell)
         # out_degree[cell] = len(cell.outgoing)
-        out_degree[cell] = self.graph.outgoing_get(cell.sheet_name, cell.location)
-        for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
-            self.calculate_out_degree(self.get_cell(sn, loc), visited, out_degree)
-        # for ingoing_cell in cell.ingoing:
-            # self.calculate_out_degree(ingoing_cell, visited, out_degree)
+        for ingoing_cell in cell.ingoing:
+            out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
+            self.calculate_out_degree(ingoing_cell, visited, out_degree)
     
     def evaluate_cell(self, cell):
         contents = cell.contents
@@ -493,7 +492,22 @@ class Workbook:
         #
         # If an IO write error occurs (unlikely but possible), let any raised
         # exception propagate through.
-        pass
+        try:
+            sheet_list = []
+            for sheet in self.sheets.values():
+                cell_contents = {}
+                for row_idx in range(sheet.num_rows):
+                    for col_idx in range(sheet.num_cols):
+                        curr_cell = sheet.cells[row_idx][col_idx]
+                        loc = Sheet.to_sheet_coords(col_idx, row_idx).upper()
+                        if curr_cell and curr_cell.contents is not None:
+                            cell_contents[loc] = curr_cell.contents
+                sheet_data = {"name": sheet.sheet_name, "cell-contents": cell_contents}
+                sheet_list.append(sheet_data)
+            workbook_data = {"sheets": sheet_list}
+            json.dump(workbook_data, fp, indent=4)
+        except Exception as e:
+            raise e
 
     def notify_cells_changed(self,
             notify_function: Callable[[Workbook, Iterable[Tuple[str, str]]], None]) -> None:
@@ -549,7 +563,15 @@ class Workbook:
         # If the specified sheet name is not found, a KeyError is raised.
         #
         # If the index is outside the valid range, an IndexError is raised.
+        
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        if not (0 <= index < self.num_sheets()):
+            raise IndexError('Index out of range.')
+
         pass
+
 
     def copy_sheet(self, sheet_name: str) -> Tuple[int, str]:
         # Make a copy of the specified sheet, storing the copy at the end of the
