@@ -767,6 +767,12 @@ class BasicTests(unittest.TestCase):
         wb.move_sheet('Sheet2', 0)
         self.assertEqual(wb.list_sheets(), ['Sheet2', 'MySheet', 'Sheet1'])
 
+        with self.assertRaises(KeyError):
+            wb.move_sheet('Sheet4', 0)
+        
+        with self.assertRaises(IndexError):
+            wb.move_sheet('Sheet2', 5)
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
