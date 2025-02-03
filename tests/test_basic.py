@@ -755,7 +755,17 @@ class BasicTests(unittest.TestCase):
             self.assertEqual(d["sheets"][0]["cell-contents"], {})
         
     def test_move_sheet(self):
-        pass
+        wb = sheets.Workbook()
+
+        wb.new_sheet()
+        wb.new_sheet('MySheet')
+        wb.new_sheet()
+
+        wb.move_sheet('Sheet1', 2)
+        self.assertEqual(wb.list_sheets(), ['MySheet', 'Sheet2', 'Sheet1'])
+
+        wb.move_sheet('Sheet2', 0)
+        self.assertEqual(wb.list_sheets(), ['Sheet2', 'MySheet', 'Sheet1'])
 
 
 if __name__ == "__main__":

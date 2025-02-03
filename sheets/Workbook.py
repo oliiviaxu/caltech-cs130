@@ -541,8 +541,13 @@ class Workbook:
         if not (0 <= index < self.num_sheets()):
             raise IndexError('Index out of range.')
 
-        pass
+        sheets_list = list(self.sheets.items())
 
+        sheet_to_move = sheets_list.pop(sheets_list.index((sheet_name.lower(), self.sheets[sheet_name.lower()])))
+
+        sheets_list.insert(index, sheet_to_move)
+
+        self.sheets = OrderedDict(sheets_list)
 
     def copy_sheet(self, sheet_name: str) -> Tuple[int, str]:
         # Make a copy of the specified sheet, storing the copy at the end of the
