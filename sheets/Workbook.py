@@ -136,8 +136,8 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
         
         sheet = self.sheets[sheet_name.lower()]
-        sheet.resize(location)
-
+        if (sheet.out_of_bounds(location)):
+            return None
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
@@ -283,7 +283,6 @@ class Workbook:
                         ref_location = ref
                     
                     if (ref_sheet_name.lower() in self.sheets.keys() and Workbook.is_valid_location(ref_location)):
-                        self.sheets[ref_sheet_name.lower()].resize(ref_location)
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         for sn, loc in outgoing:
@@ -320,7 +319,7 @@ class Workbook:
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
     
-    def dfs(self, node: Cell, visited: Set[str]) -> bool:
+    def dfs(self, sheet_name, location, visited: Set[str]) -> bool:
         """
         Perform DFS to detect cycles.
         :param node: The current cell node.
@@ -328,13 +327,13 @@ class Workbook:
         :return: True if a cycle is detected, False otherwise.
         """
         has_cycle = False
-        outgoing = self.graph.outgoing_get(node.sheet_name, node.location)
+        outgoing = self.graph.outgoing_get(sheet_name, location)
         for sn, loc in outgoing:
             ref_id = sn + '!' + loc
             if (ref_id in visited):
                 return True
             visited.add(ref_id)
-            has_cycle = has_cycle or self.dfs(self.get_cell(sn, loc), visited)
+            has_cycle = has_cycle or self.dfs(sn, loc, visited)
             visited.remove(ref_id)
         return has_cycle
 
@@ -348,7 +347,7 @@ class Workbook:
         visited = set()
         id = src.sheet_name + '!' + src.location
         visited.add(id)
-        return self.dfs(src, visited)
+        return self.dfs(src.sheet_name, src.location, visited)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified
@@ -375,8 +374,9 @@ class Workbook:
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.') 
         
         sheet = self.sheets[sheet_name.lower()]
-        sheet.resize(location)
         cell = sheet.get_cell(location)
+        if (cell is None):
+            return None
         return cell.value
     
     def get_cell_ref_info(self, tree, sheet_name):

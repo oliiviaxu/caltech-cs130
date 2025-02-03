@@ -11,6 +11,8 @@ class Sheet:
         self.cells = []
     
     def get_cell(self, location):
+        if (self.out_of_bounds(location)):
+            return None
         col_idx, row_idx = Sheet.split_cell_ref(location)
         return self.cells[row_idx][col_idx]
 
@@ -39,6 +41,12 @@ class Sheet:
             i += 1
         col, row = location[:i], location[i:]
         return Sheet.str_to_index(col), int(row) - 1
+
+    def out_of_bounds(self, location):
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+        if (col_idx >= self.num_cols or row_idx >= self.num_rows):
+            return True
+        return False
     
     def resize_sheet(self, new_num_rows, new_num_cols) -> None:
         # resizes sheet and updates num_rows and num_cols fields accordingly
@@ -71,5 +79,6 @@ class Sheet:
         self.resize_sheet(updated_num_rows, updated_num_cols)
     
     def get_cell_contents(self, location: str) -> Optional[str]:
-        self.resize(location)
+        if (self.out_of_bounds(location)):
+            return None
         return self.get_cell(location).contents
