@@ -575,7 +575,6 @@ class Workbook:
         new_name = ""
         while True:
             new_name = sheet_name + '_' + str(num)
-            print(new_name)
             if (new_name.lower() not in sheet_names_lower):
                 break
             num += 1
