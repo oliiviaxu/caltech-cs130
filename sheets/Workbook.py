@@ -252,13 +252,17 @@ class Workbook:
             self.graph.ingoing_remove(sn, loc, sheet_name, location)
 
         outgoing = []
-        if contents == '' or contents == None:
-            contents = None
-        else:
+        if contents is not None:
             contents = contents.strip()
+        if contents == '':
+            contents = None
+        
+        curr_cell.contents = contents
 
         # Only need to change cell.outgoing if a formula is used in the cell
-        if contents is not None and contents.startswith('='):
+        if contents is None:
+            curr_sheet.check_shrink(location)
+        elif contents.startswith('='):
             # parse formula into tree
             parser = lark.Lark.open(lark_path, start='formula')
             parse_error = False
@@ -289,7 +293,6 @@ class Workbook:
             self.graph.ingoing_add(sn, loc, sheet_name, location)
 
         self.graph.outgoing_set(sheet_name, location, outgoing)
-        curr_cell.contents = contents
 
         ### Update the value field of the cell
         self.handle_update_tree(curr_cell)

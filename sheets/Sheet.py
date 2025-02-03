@@ -82,3 +82,41 @@ class Sheet:
         if (self.out_of_bounds(location)):
             return None
         return self.get_cell(location).contents
+    
+    def empty_row(self, row_idx):
+        for col_idx in range(self.num_cols):
+            if (self.cells[row_idx][col_idx].contents is not None):
+                return False
+        return True
+    
+    def empty_col(self, col_idx):
+        for row_idx in range(self.num_rows):
+            if (self.cells[row_idx][col_idx].contents is not None):
+                return False
+        return True
+    
+    def delete_row(self):
+        self.cells = self.cells[:-1]
+
+    def delete_col(self):
+        for row_idx in range(self.num_rows):
+            self.cells[row_idx] = self.cells[row_idx][:-1]
+    
+    def check_shrink(self, location):
+        col_idx, row_idx = Sheet.split_cell_ref(location)
+        if (col_idx == self.num_cols - 1):
+            # try to reduce columns
+            while self.num_cols > 0:
+                if (self.empty_col(self.num_cols - 1)):
+                    self.num_cols -= 1
+                    self.delete_col()
+                else:
+                    break
+        if (row_idx == self.num_rows - 1):
+            # try to reduce rows
+            while self.num_rows > 0:
+                if (self.empty_row(self.num_rows - 1)):
+                    self.num_rows -= 1
+                    self.delete_row()
+                else:
+                    break

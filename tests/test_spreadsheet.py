@@ -112,12 +112,12 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
 
         # test the extent of spreadsheet
-        wb.set_cell_contents('Sheet1', 'AA26', 'test')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
-        wb.set_cell_contents('Sheet1', 'C27', 'test')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 27)) # test adding rows
+        wb.set_cell_contents('Sheet1', 'AA20', 'test')
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 20))
+        wb.set_cell_contents('Sheet1', 'C24', 'test')
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 24)) # test adding rows
         wb.set_cell_contents('Sheet1', 'AB4', '  test  ')
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (28, 27)) # test adding columns
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (28, 24)) # test adding columns
 
         # test KeyError for missing sheet and ValueError for bad location
         with self.assertRaises(KeyError):
@@ -140,13 +140,13 @@ class SpreadsheetTests(unittest.TestCase):
 
         # A sheet's extent should shrink as the maximal cell's contents are cleared.
         wb.set_cell_contents('Sheet1', 'AB4', None)
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 27))
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 24))
 
-        wb.set_cell_contents('Sheet1', 'C27', None)
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 26))
+        wb.set_cell_contents('Sheet1', 'C24', None)
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (27, 20))
 
         # A sheet's extent should shrink to 0 if all cell contents are cleared.
-        wb.set_cell_contents('Sheet1', 'AA26', None)
+        wb.set_cell_contents('Sheet1', 'AA20', None)
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
 
         wb.set_cell_contents('Sheet2', 'A1', None)
