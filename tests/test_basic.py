@@ -772,7 +772,20 @@ class BasicTests(unittest.TestCase):
         
         with self.assertRaises(IndexError):
             wb.move_sheet('Sheet2', 5)
+    
+    def test_copy_sheet(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet()
 
+        index, sheet_name = wb.copy_sheet('Sheet1')
+
+        with self.assertRaises(KeyError):
+            wb.copy_sheet('Sheet4')
+        
+        self.assertEqual(index, 3)
+        self.assertEqual(sheet_name, 'Sheet1_1')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

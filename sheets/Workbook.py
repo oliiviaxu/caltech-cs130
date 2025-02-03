@@ -567,4 +567,19 @@ class Workbook:
         # sequence of sheets.
         #
         # If the specified sheet name is not found, a KeyError is raised.
-        pass
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        sheet_names_lower = [sheet_name.lower() for sheet_name in self.list_sheets()]
+        num = 1
+        new_name = ""
+        while True:
+            new_name = sheet_name + '_' + str(num)
+            print(new_name)
+            if (new_name.lower() not in sheet_names_lower):
+                break
+            num += 1
+        
+        self.sheets[new_name.lower()] = Sheet(new_name)
+        self.graph.add_sheet(sheet_name.lower())
+        return (len(self.sheets.keys()) - 1, new_name)
