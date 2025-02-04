@@ -21,7 +21,9 @@ class Workbook:
 
     def __init__(self):
         self.graph = DependencyGraph()
-        self.sheets = OrderedDict() # lowercase keys  
+        self.sheets = OrderedDict() # lowercase keys
+        self.notify_functions = []
+        self.is_deleting = False
 
     def num_sheets(self) -> int:
         return len(self.sheets.keys())
@@ -105,11 +107,13 @@ class Workbook:
             for outgoing_sn, outgoing_loc in outgoing_arr:
                 self.graph.ingoing_remove(outgoing_sn, outgoing_loc, sheet_name, loc)
         
+        self.is_deleting = True
         for loc in self.graph.ingoing[sheet_name]:
             self.set_cell_contents(sheet_name, loc, '#ref!')
         
         del self.graph.outgoing[sheet_name]
         del self.sheets[sheet_name]
+        self.is_deleting = False
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -144,17 +148,24 @@ class Workbook:
         return sheet.get_cell(location)
     
     def handle_update_tree(self, cell):
+        pending_notifications = []
+
         out_degree = {}
         self.calculate_out_degree(cell, set(), out_degree)
 
         visited = {key: False for key in out_degree} # cells "connected" to src
-        self.evaluate_cell(cell)
         visited[cell] = True
         queue = [cell]
         
         while len(queue):
             curr_cell = queue.pop(0)
+
+            prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
             self.evaluate_cell(curr_cell)
+            new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
+            if (prev_value != new_value):
+                pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+
             visited[curr_cell] = True
             for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
                 ingoing_cell = self.get_cell(sn, loc)
@@ -167,6 +178,8 @@ class Workbook:
         for c in visited:
             if not visited[c]:
                 self.evaluate_cell(c)
+        
+        return pending_notifications
     
     def calculate_out_degree(self, cell, visited, out_degree):
         if (cell in visited):
@@ -298,7 +311,15 @@ class Workbook:
         self.graph.outgoing_set(sheet_name, location, outgoing)
 
         ### Update the value field of the cell
-        self.handle_update_tree(curr_cell)
+        pending_notifications = self.handle_update_tree(curr_cell)
+        if (len(pending_notifications) > 0):
+            if (self.is_deleting):
+                pending_notifications = pending_notifications[1:]
+            for notify_function in self.notify_functions:
+                try:
+                    notify_function(self, pending_notifications)
+                except Exception as e:
+                    pass
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:
         # Return the contents of the specified cell on the specified sheet.
@@ -434,6 +455,8 @@ class Workbook:
             json_data = json.load(fp)
         except json.JSONDecodeError as e:
             raise e
+        except IOError as e:
+            raise e
         
         if (not isinstance(json_data, dict)):
             raise TypeError('JSON must be dictionary.')
@@ -507,7 +530,7 @@ class Workbook:
         # A notification function is expected to not mutate the workbook or
         # iterable that it is passed to it.  If a notification function violates
         # this requirement, the behavior is undefined.
-        pass
+        self.notify_functions.append(notify_function)
 
     def rename_sheet(self, sheet_name: str, new_sheet_name: str) -> None:
         # Rename the specified sheet to the new sheet name.  Additionally, all
