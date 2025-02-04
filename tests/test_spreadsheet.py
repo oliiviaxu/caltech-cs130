@@ -201,6 +201,14 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents(sheet_name, 'B2'), '=A1+3')
         self.assertEqual(wb.get_cell_value(sheet_name, 'A1'), decimal.Decimal(5))
         self.assertEqual(wb.get_cell_value(sheet_name, 'B2'), decimal.Decimal(8))
+
+        # check edge case
+        wb.set_cell_contents('Sheet2', 'A1', '=2 + Sheet1_2!A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet2', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.copy_sheet('Sheet1')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), decimal.Decimal('7'))
     
     def test_sheet_with_quotes(self):
         wb = sheets.Workbook()

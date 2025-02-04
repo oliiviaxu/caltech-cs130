@@ -52,17 +52,15 @@ class BasicTests(unittest.TestCase):
 
         # multiplication/division
         wb.set_cell_contents('Sheet1', 'A1', '=1 * D1')
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '0')
         
-        # TODO: is division supposed to cause DIVIDE_BY_ZERO? we failed acceptance tests, but passes here
         wb.set_cell_contents('Sheet1', 'A1', '=1 / D1')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
 
         # unary
-        # TODO: this failed acceptance tests, but passes here?
         wb.set_cell_contents('Sheet1', 'A1', '=-D1')
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '0')
 
         # concat
         wb.set_cell_contents('Sheet1', 'A1', '="test" & D1')
@@ -70,7 +68,7 @@ class BasicTests(unittest.TestCase):
 
         # parentheses
         wb.set_cell_contents('Sheet1', 'A1', '=(D1)')
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '0')
     
     def test_concat(self):
         wb = sheets.Workbook()
@@ -463,7 +461,27 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet1', 'a1')]\n"
         ))
 
-        # TODO: renaming and copying causes notification
+        # copying causes notification:
+        # Sheet1 -> Sheet2 -> Sheet1_1
+        temp_stdout = StringIO()
+        with contextlib.redirect_stdout(temp_stdout):
+            wb.new_sheet('Sheet2')
+            wb.set_cell_contents("Sheet2", "A1", "=1 + Sheet1_1!A1")
+            self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+            self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+            wb.copy_sheet('Sheet1')
+            self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+            self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        output = temp_stdout.getvalue()
+        self.assertEqual(output, (
+            "Cell(s) changed: [('sheet1', 'a1')]\n" # from new_sheet
+            "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents
+            "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from the new_sheet call inside copy_sheet
+            "Cell(s) changed: [('sheet1_1', 'a1'), ('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents call inside copy_sheet
+        ))
+        # TODO: verify that functionality above is correct (should copy sheet cause two cell notifications?)
+
+        # TODO: renaming causes notification
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
@@ -473,9 +491,6 @@ if __name__ == "__main__":
     cov.save()
     cov.html_report()
 
-# TODO: change ingoing and outgoing to sets (not arrays)
-    # maybe write a test that checks if setting =A2 + A2 works correctly
-# TODO: Test a variety of formulas that include multiple operators between both cells and numbers
 # TODO: Note that adding sheets, renaming sheets, copying sheets and deleting sheets can all cause cell-values to be updated.
     # adding sheets, deleting sheets implementing - but not copying/renaming sheets yet
     # test case - wb.set_cell_contents('Sheet1', 'A1', '=Sheet1_1!A2')
