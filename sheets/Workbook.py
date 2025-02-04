@@ -608,6 +608,16 @@ class Workbook:
                 break
             num += 1
         
-        self.sheets[new_name.lower()] = Sheet(new_name)
-        self.graph.add_sheet(sheet_name.lower())
+        self.new_sheet(new_name)
+
+        sheet_to_copy = self.sheets[sheet_name.lower()]
+        copy = self.sheets[new_name.lower()]
+        copy.resize_sheet(sheet_to_copy.num_rows, sheet_to_copy.num_cols)
+
+        for row_idx in range(sheet_to_copy.num_rows):
+            for col_idx in range(sheet_to_copy.num_cols):
+                curr_contents = sheet_to_copy[row_idx][col_idx].contents
+                loc = Sheet.to_sheet_coords(col_idx, row_idx)
+                self.set_cell_contents(new_name, loc, curr_contents)
+
         return (len(self.sheets.keys()) - 1, new_name)

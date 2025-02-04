@@ -7,6 +7,7 @@ import lark
 from sheets.interpreter import FormulaEvaluator
 import decimal
 import json
+import timeit
 import contextlib
 from io import StringIO
 
@@ -14,6 +15,15 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, '../sheets/formulas.lark')
 
 class BasicTests(unittest.TestCase):
+
+    def time_operation(self, stmt, setup="pass", number=100, repeat=5):
+        """Helper function to time an operation and return average time."""
+        times = timeit.repeat(stmt=stmt, setup=setup, number=number, repeat=repeat)
+        average_time = sum(times) / len(times)
+        print(f"Times: {times}")
+        print(f"Average time: {average_time}")
+        return average_time
+
     def test_bad_reference_edge(self):
         wb = sheets.Workbook()
         wb.new_sheet()
