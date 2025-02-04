@@ -97,7 +97,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def unary_op(self, values):
         operator, val_1 = values[0], values[1]
         if (val_1 is None):
-            val_1 = 0
+            val_1 = decimal.Decimal(0)
 
         if type(val_1) == CellError:
             return val_1
@@ -135,7 +135,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         values = self.visit_children(tree)
         assert len(values) == 1, f'Unexpected tree {tree.pretty()}'
         if values[0] is None:
-            values[0] = 0
+            values[0] = decimal.Decimal(0)
         return values[0]
     
     def number(self, tree):
