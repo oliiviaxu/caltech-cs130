@@ -550,6 +550,7 @@ class Workbook:
         #
         # If the new_sheet_name is an empty string or is otherwise invalid, a
         # ValueError is raised.
+        
         pass
 
     def move_sheet(self, sheet_name: str, index: int) -> None:

@@ -5,9 +5,10 @@ import sheets
 import os
 import lark
 from sheets.interpreter import FormulaEvaluator
+from sheets.transformer import SheetNameExtractor
 import decimal
 import json
-import timeit
+# import timeit
 import contextlib
 from io import StringIO
 
@@ -16,13 +17,13 @@ lark_path = os.path.join(current_dir, '../sheets/formulas.lark')
 
 class BasicTests(unittest.TestCase):
 
-    def time_operation(self, stmt, setup="pass", number=100, repeat=5):
-        """Helper function to time an operation and return average time."""
-        times = timeit.repeat(stmt=stmt, setup=setup, number=number, repeat=repeat)
-        average_time = sum(times) / len(times)
-        print(f"Times: {times}")
-        print(f"Average time: {average_time}")
-        return average_time
+    # def time_operation(self, stmt, setup="pass", number=100, repeat=5):
+    #     """Helper function to time an operation and return average time."""
+    #     times = timeit.repeat(stmt=stmt, setup=setup, number=number, repeat=repeat)
+    #     average_time = sum(times) / len(times)
+    #     print(f"Times: {times}")
+    #     print(f"Average time: {average_time}")
+    #     return average_time
 
     def test_bad_reference_edge(self):
         wb = sheets.Workbook()
@@ -180,7 +181,7 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'B1', '=C1')
         self.assertEqual(wb.detect_cycle(cell), False)
-    
+
     def test_interpreter(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -210,6 +211,26 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('sheet1', 'A4'), 1/2)
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A5'), sheets.CellError)
     
+    def test_transformer(self):
+        parser = lark.Lark.open(lark_path, start='formula')
+        tree_1 = parser.parse('=1 + 1')
+
+        sne = SheetNameExtractor('Sheet1', 'SheetBla')
+        self.assertEqual(sne.transform(tree_1), '1 + 1')
+        # print(sne.transform(tree_1))
+
+        tree_2 = parser.parse('=1 + Sheet1!A1')
+        self.assertEqual(sne.transform(tree_2), '1 + SheetBla!A1')
+
+        tree_3 = parser.parse('=1*A5')
+        self.assertEqual(sne.transform(tree_3), '1 * A5')
+
+        tree_4 = parser.parse('=-Sheet1!A1')
+        self.assertEqual(sne.transform(tree_4), '-SheetBla!A1')
+
+        tree_5 = parser.parse('=(((((Sheet1!B1)))))')
+        self.assertEqual(sne.transform(tree_5), '(((((SheetBla!B1)))))')
+
     def test_automatic_updates(self):
         wb = sheets.Workbook()
         wb.new_sheet()

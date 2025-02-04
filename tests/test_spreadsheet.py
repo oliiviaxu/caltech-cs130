@@ -199,7 +199,6 @@ class SpreadsheetTests(unittest.TestCase):
         
         self.assertEqual(index, 3)
         self.assertEqual(sheet_name, 'Sheet1_1')
-
         self.assertEqual(wb.get_cell_contents(sheet_name, 'A1'), '5')
         self.assertEqual(wb.get_cell_contents(sheet_name, 'B2'), '=A1+3')
         self.assertEqual(wb.get_cell_value(sheet_name, 'A1'), decimal.Decimal(5))
