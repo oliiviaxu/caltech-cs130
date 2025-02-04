@@ -443,3 +443,4 @@ if __name__ == "__main__":
     # adding sheets, deleting sheets implementing - but not copying/renaming sheets yet
     # test case - wb.set_cell_contents('Sheet1', 'A1', '=Sheet1_1!A2')
     # then wb.copy_sheet('Sheet1')
+# TODO: quoted sheet name tests

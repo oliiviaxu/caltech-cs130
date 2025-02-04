@@ -32,9 +32,11 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         def convert(val):
             if isinstance(val, str):
                 if Cell.is_number(val):
-                    return decimal.Decimal(val)
+                    return decimal.Decimal(Cell.strip_trailing_zeros(val))
                 else:
                     return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
+            elif isinstance(val, decimal.Decimal):
+                return decimal.Decimal(Cell.strip_trailing_zeros(str(val)))
             return val
 
         res_1 = convert(val_1)
@@ -150,6 +152,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             reference = tree.children[0].value.lower()
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
+            if (self.ref_info[reference] == None):
+                return decimal.Decimal('0')
             return self.ref_info[reference]
         elif (len(tree.children) == 2):
             sheet = tree.children[0].value.lower()
@@ -157,6 +161,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             reference = sheet + '!' + location
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
+            if (self.ref_info[reference] == None):
+                return decimal.Decimal('0')
             return self.ref_info[reference]
         else:
             assert False, 'Length of tree for cell is not one or two'
