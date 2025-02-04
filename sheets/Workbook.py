@@ -561,6 +561,61 @@ class Workbook:
         if (sheet_name.lower() not in self.sheets):
             raise KeyError(f'Sheet name {sheet_name} not found.')
 
+        sne = SheetNameExtractor(sheet_name, new_sheet_name)
+        # look at all ingoings with old sheet_name
+        """
+        Sheet1A1 -> Sheet2A2
+
+        Rename Sheet2 -> SheetBla
+
+        Sheet2 has an ingoing which is Sheet1A1, so we want to update Sheet1A1
+
+        sheet1.outgoing (which should contain Sheet2A2)
+        
+        """
+        # self.
+        sheet_ingoings = self.graph.ingoing[sheet_name]
+        for loc in sheet_ingoings:
+            cell_ingoings = sheet_ingoings[loc]
+            for sn, loc in cell_ingoings:
+                # update outgoing of this cell
+                parser = lark.Lark.open(lark_path, start='formula')
+                parse_error = False
+                try:
+                    tree = parser.parse(self.get_cell_contents(sn, loc))
+                except:
+                    parse_error = True
+
+                if not parse_error:
+                    new_formula = sne.transform(tree)
+                    self.set_cell_contents(sn, loc, new_formula)
+
+        # update sheet name in self.sheets, self.graph.ingoing, self.graph.outgoing
+        old_index = list(self.sheets.keys()).index(sheet_name.lower())
+        self.sheets[new_sheet_name] = self.sheets.pop(sheet_name)
+        self.move_sheet(new_sheet_name, old_index)
+
+        self.graph.outgoing[new_sheet_name] = self.graph.outgoing.pop(sheet_name)
+        self.graph.ingoing[new_sheet_name] = self.graph.ingoing.pop(sheet_name)
+
+        # edge case:
+        # wb = sheets.Workbook()
+        # wb.new_sheet()
+        # wb.set_cell_contents('Sheet1', 'A1', '=A2')
+        # wb.set_cell_contents('Sheet2', 'A1', '=Sheet1!A2')
+        # ingoing:
+            # (Sheet1, A2): (Sheet1, A1), (Sheet2, A1)
+        # outgoing:
+            # (Sheet1, A1): (Sheet1, A2)
+            # (Sheet2, A1): (Sheet1, A2)
+        # wb.rename_sheet('Sheet1', 'SheetBla')
+        # ingoing:
+            # (SheetBla, A2): (SheetBla, A1), (Sheet2, A1)
+        # outgoing:
+            # (SheetBla, A1): (SheetBla, A2)
+            # (Sheet2, A1): (SheetBla, A2)
+        # what happens?
+
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
         # ordered sequence of sheets.  The index can range from 0 to
@@ -583,7 +638,7 @@ class Workbook:
 
         sheets_list = list(self.sheets.items())
 
-        sheet_to_move = sheets_list.pop(sheets_list.index((sheet_name.lower(), self.sheets[sheet_name.lower()])))
+        sheet_to_move = sheets_list.pop(list(self.sheets.keys()).index((sheet_name.lower())))
 
         sheets_list.insert(index, sheet_to_move)
 

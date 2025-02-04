@@ -5,9 +5,9 @@ from .CellError import CellError, CellErrorType
 
 class SheetNameExtractor(lark.visitors.Transformer):
 
-    def __init__(self, old_name, new_name):
-        self.old_name = old_name
-        self.new_name = new_name
+    def __init__(self, sheet_name, new_sheet_name):
+        self.sheet_name = sheet_name
+        self.new_sheet_name = new_sheet_name
     
     def mul_expr(self, tree):
         return str(tree[0]) + ' ' + str(tree[1]) + ' ' + str(tree[2]) 
@@ -39,9 +39,9 @@ class SheetNameExtractor(lark.visitors.Transformer):
             return str(tree[0])
         if len(tree) == 2:
             curr_name = str(tree[0])
-            if curr_name == self.old_name:
+            if curr_name == self.sheet_name:
                 # change this node 
-                new_str = self.new_name + '!' + str(tree[1])
+                new_str = self.new_sheet_name + '!' + str(tree[1])
                 return new_str
         else:
             assert False, 'Invalid formula. Format must be in ZZZZ9999.'
