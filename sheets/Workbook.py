@@ -262,10 +262,10 @@ class Workbook:
         curr_sheet.resize(location)
         curr_cell = curr_sheet.get_cell(location)
 
-        orig_outgoing = self.graph.outgoing_get(sheet_name, location)
-
-        for sn, loc in orig_outgoing:
-            self.graph.ingoing_remove(sn, loc, sheet_name, location)
+        if not self.is_deleting:
+            orig_outgoing = self.graph.outgoing_get(sheet_name, location)
+            for sn, loc in orig_outgoing:
+                self.graph.ingoing_remove(sn, loc, sheet_name, location)
 
         outgoing = []
         if contents is not None:
@@ -420,6 +420,8 @@ class Workbook:
             # parse ref if necessary
             if ('!' in ref):
                 curr_sheet_name = ref[:ref.index('!')]
+                if (len(curr_sheet_name) > 2 and curr_sheet_name[0] == '\'' and curr_sheet_name[-1] == '\''):
+                    curr_sheet_name = curr_sheet_name[1:-1]
                 curr_location = ref[ref.index('!') + 1:]
             else:
                 curr_sheet_name = sheet_name

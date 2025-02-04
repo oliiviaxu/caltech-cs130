@@ -56,6 +56,17 @@ class SpreadsheetTests(unittest.TestCase):
 
         with self.assertRaises(KeyError):
             wb2.del_sheet('Sheet4')
+
+        # edge case
+        wb3 = sheets.Workbook()
+        wb3.new_sheet()
+        wb3.new_sheet()
+        wb3.new_sheet()
+        wb3.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!A1')
+        wb3.set_cell_contents('Sheet2', 'A1', '=1 + Sheet3!A1')
+        print('##################')
+        wb3.del_sheet('Sheet2')
+        print('##################')
     
     def test_spreadsheet_cells(self):
         wb = sheets.Workbook()
@@ -193,6 +204,14 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents(sheet_name, 'B2'), '=A1+3')
         self.assertEqual(wb.get_cell_value(sheet_name, 'A1'), decimal.Decimal(5))
         self.assertEqual(wb.get_cell_value(sheet_name, 'B2'), decimal.Decimal(8))
+    
+    def test_sheet_with_quotes(self):
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet 1')
+
+        wb.new_sheet('Sheet2')
+        wb.set_cell_contents('Sheet2', 'A1', "=1 + 'Sheet 1'!A1")
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 1)
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
