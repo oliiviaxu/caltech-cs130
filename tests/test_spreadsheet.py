@@ -178,6 +178,9 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet()
         wb.new_sheet()
 
+        wb.set_cell_contents('Sheet1', 'A1', '5')
+        wb.set_cell_contents('Sheet1', 'B2', '=A1+3')
+
         index, sheet_name = wb.copy_sheet('Sheet1')
 
         with self.assertRaises(KeyError):
@@ -185,6 +188,11 @@ class SpreadsheetTests(unittest.TestCase):
         
         self.assertEqual(index, 3)
         self.assertEqual(sheet_name, 'Sheet1_1')
+
+        self.assertEqual(wb.get_cell_contents(sheet_name, 'A1'), '5')
+        self.assertEqual(wb.get_cell_contents(sheet_name, 'B2'), '=A1+3')
+        self.assertEqual(wb.get_cell_value(sheet_name, 'A1'), decimal.Decimal(5))
+        self.assertEqual(wb.get_cell_value(sheet_name, 'B2'), decimal.Decimal(8))
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

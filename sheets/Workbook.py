@@ -616,7 +616,7 @@ class Workbook:
 
         for row_idx in range(sheet_to_copy.num_rows):
             for col_idx in range(sheet_to_copy.num_cols):
-                curr_contents = sheet_to_copy[row_idx][col_idx].contents
+                curr_contents = sheet_to_copy.cells[row_idx][col_idx].contents
                 loc = Sheet.to_sheet_coords(col_idx, row_idx)
                 self.set_cell_contents(new_name, loc, curr_contents)
 
