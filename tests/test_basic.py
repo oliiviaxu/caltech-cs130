@@ -32,7 +32,7 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1')
         wb.new_sheet()
         self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
 
         wb.del_sheet('Sheet2')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
@@ -40,7 +40,7 @@ class BasicTests(unittest.TestCase):
 
         wb.new_sheet()
         self.assertEqual(wb.get_sheet_extent('Sheet2'), (0, 0))
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), None)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
     
     def test_unset_cells(self):
         wb = sheets.Workbook()
@@ -414,6 +414,8 @@ class BasicTests(unittest.TestCase):
             wb3.set_cell_contents("Sheet1", "C1", "5.3")
         output = temp_stdout.getvalue()
         self.assertEqual(output, (
+            "Number of Cell(s) changed: 1\n"
+            "Cell(s) changed: [('sheet1', 'a1')]\n"
             "Number of Cell(s) changed: 2\n"
             "Cell(s) changed: [('sheet1', 'b1'), ('sheet1', 'a1')]\n"
             "Number of Cell(s) changed: 1\n"

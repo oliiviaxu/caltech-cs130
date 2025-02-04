@@ -152,8 +152,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             reference = tree.children[0].value.lower()
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
-            if (self.ref_info[reference] == None):
-                return decimal.Decimal('0')
             return self.ref_info[reference]
         elif (len(tree.children) == 2):
             sheet = tree.children[0].value.lower()
@@ -161,8 +159,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             reference = sheet + '!' + location
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
-            if (self.ref_info[reference] == None):
-                return decimal.Decimal('0')
             return self.ref_info[reference]
         else:
             assert False, 'Length of tree for cell is not one or two'

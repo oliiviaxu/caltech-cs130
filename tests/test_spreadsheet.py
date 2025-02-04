@@ -64,9 +64,7 @@ class SpreadsheetTests(unittest.TestCase):
         wb3.new_sheet()
         wb3.set_cell_contents('Sheet1', 'A1', '=1 + Sheet2!A1')
         wb3.set_cell_contents('Sheet2', 'A1', '=1 + Sheet3!A1')
-        print('##################')
         wb3.del_sheet('Sheet2')
-        print('##################')
     
     def test_spreadsheet_cells(self):
         wb = sheets.Workbook()
