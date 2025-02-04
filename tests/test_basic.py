@@ -140,6 +140,14 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=1.5 * 2')
         self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '3')
 
+        wb.set_cell_contents('Sheet1', 'A1', '=-4.0000')
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '-4')
+
+        wb.set_cell_contents('Sheet1', 'A1', '1')
+        wb.set_cell_contents('Sheet1', 'B1', '2')
+        wb.set_cell_contents('Sheet1', 'C1', '=A1 & B1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), '12')
+
     def test_cell_reference(self):
         wb = sheets.Workbook()
         wb.new_sheet()

@@ -220,8 +220,6 @@ class Workbook:
                     if (visit_value is None):
                         cell.value = decimal.Decimal('0')
                     else:
-                        if (not isinstance(visit_value, CellError) and Cell.is_number(visit_value)):
-                            visit_value = decimal.Decimal(Cell.strip_trailing_zeros(str(visit_value)))
                         cell.value = visit_value
         elif contents.startswith("'"):
             cell.value = contents[1:]
