@@ -217,6 +217,60 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet('Sheet2')
         wb.set_cell_contents('Sheet2', 'A1', "=1 + 'Sheet 1'!A1")
         self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 1)
+    
+    def test_rename_sheet(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        
+        # basic test
+        wb.set_cell_contents('Sheet2', 'A1', '=4 + Sheet1!A1')
+        wb.rename_sheet('Sheet1', 'SheetBla')
+
+        self.assertEqual(wb.list_sheets(), ['SheetBla', 'Sheet2'])
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=4 + SheetBla!A1')
+
+        # test that Sheet1 dependency graph is changed
+        self.assertEqual("Sheet1" not in wb.graph.ingoing and "Sheet1" not in wb.graph.outgoing, True)
+        self.assertEqual(wb.graph.outgoing_get('Sheet2', 'A1'), [('SheetBla', 'A1')])
+
+        # test multiplication, addition, unary, parethesis kept
+        wb.set_cell_contents('Sheet2', 'A1', '=(SheetBla!A1 * 4.0 / (SheetBla!A2 + 1))')
+        wb.set_cell_contents('Sheet2', 'A2', '=-SheetBla!A1')
+        wb.rename_sheet('SheetBla', 'Sheet1')
+
+        self.assertEqual(wb.list_sheets(), ['Sheet1', 'Sheet2'])
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=(Sheet1!A1 * 4.0 / (Sheet1!A2 + 1))')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A2'), '=-Sheet1!A1')
+
+        # test sheet names with quotes are handled correctly
+        wb.set_cell_contents('Sheet2', 'A1', "='Sheet1'!A5 + 'Sheet2'!A6")
+        wb.rename_sheet('Sheet1', 'SheetBla')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=SheetBla!A5 + Sheet2!A6")
+
+        wb.new_sheet('Sheet 3')
+        wb.set_cell_contents('Sheet2', 'A1', "='SheetBla'!A5 + 'Sheet 3'!A6")
+        wb.rename_sheet('SheetBla', 'Sheet1')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=Sheet1!A5 + 'Sheet 3'!A6")
+        
+        # Formula-updates are only performed on formulas affected by the sheet-rename operation, unparseable formulas untouched
+        wb2 = sheets.Workbook()
+        wb2.new_sheet()
+        wb2.new_sheet()
+
+        wb2.set_cell_contents('Sheet2', 'A1', "=A4 + Sheet5!A7 + 'B1'")
+        wb2.set_cell_contents('Sheet2', 'A2', '34')
+        wb2.set_cell_contents('Sheet2', 'A3', "=Sheet1!A1 + 4")
+        wb2.set_cell_contents('Sheet2', 'A4', "=Sheet1!A4 + Sheet1!A") # unparseable
+        wb2.rename_sheet('Sheet1', 'SheetBla')
+
+        self.assertEqual(wb2.get_cell_contents('Sheet2', 'A1'), "=A4 + Sheet5!A7 + 'B1'")
+        self.assertEqual(wb2.get_cell_contents('Sheet2', 'A2'), "34")
+        self.assertEqual(wb2.get_cell_contents('Sheet2', 'A3'), "=SheetBla!A1 + 4")
+        self.assertEqual(wb2.get_cell_contents('Sheet2', 'A4'), "=Sheet1!A4 + Sheet1!A") # unchanged
+
+        # Renaming a sheet may cause some invalid cell-reference to become valid. Make sure that all cell updates are performed correctly, even in these unusual cases.
+        # KeyError, ValueError
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

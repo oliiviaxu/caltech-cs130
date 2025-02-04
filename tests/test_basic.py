@@ -455,9 +455,11 @@ class BasicTests(unittest.TestCase):
         # test deleting sheet causes notification
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
+            wb.set_cell_contents('Sheet2', 'A5', '4.5')
             wb.del_sheet('Sheet2')
         output = temp_stdout.getvalue()
         self.assertEqual(output, (
+            "Cell(s) changed: [('sheet2', 'a5')]\n"
             "Cell(s) changed: [('sheet1', 'a1')]\n"
         ))
 

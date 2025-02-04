@@ -1,6 +1,6 @@
 from __future__ import annotations
-from .Sheet import *
-from .Cell import *
+from .Sheet import Sheet
+from .Cell import Cell
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
 from collections import OrderedDict
@@ -8,7 +8,11 @@ from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO, 
 import os
 import lark
 import json
-from .DependencyGraph import *
+from .DependencyGraph import DependencyGraph
+from .transformer import SheetNameExtractor
+from .interpreter import FormulaEvaluator
+import decimal
+import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
@@ -554,8 +558,8 @@ class Workbook:
         #
         # If the new_sheet_name is an empty string or is otherwise invalid, a
         # ValueError is raised.
-        
-        pass
+        if (sheet_name.lower() not in self.sheets):
+            raise KeyError(f'Sheet name {sheet_name} not found.')
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
