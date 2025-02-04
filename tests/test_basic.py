@@ -128,12 +128,18 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A2', '-4')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
 
-        # TODO: figure out why we fail automated test which is multiplication between number and cell with whitespace
-        # related to 'Other Totals'!G15 maybe?
         wb.set_cell_contents('Sheet1', 'A1', '=    4  *    A2  ')
         wb.set_cell_contents('Sheet1', 'A2', '=     4.5     ')
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 18)
-    
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '18')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=B1 * C1')
+        wb.set_cell_contents('Sheet1', 'B1', '=0.5')
+        wb.set_cell_contents('Sheet1', 'C1', '=0.2')
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '0.1')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1.5 * 2')
+        self.assertEqual(str(wb.get_cell_value('Sheet1', 'A1')), '3')
+
     def test_cell_reference(self):
         wb = sheets.Workbook()
         wb.new_sheet()
