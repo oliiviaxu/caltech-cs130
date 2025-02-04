@@ -22,9 +22,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def change_type(val_1, val_2) -> Any:
         # helper function for implicit type conversion needed in add_expr and mul_expr
         if val_1 is None:
-            val_1 = 0
+            val_1 = decimal.Decimal(0)
         if val_2 is None:
-            val_2 = 0
+            val_2 = decimal.Decimal(0)
 
         if isinstance(val_1, CellError) or isinstance(val_2, CellError):
             return val_1, val_2
