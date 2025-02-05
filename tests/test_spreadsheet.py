@@ -217,6 +217,11 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet('Sheet2')
         wb.set_cell_contents('Sheet2', 'A1', "=1 + 'Sheet 1'!A1")
         self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 1)
+
+        wb.set_cell_contents('Sheet2', 'A5', '4')
+        wb.set_cell_contents('Sheet2', 'A2', "='Sheet2'!A5 + 5")
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A2'), decimal.Decimal('9'))
+        self.assertEqual(wb.graph.ingoing_get('Sheet2', 'A5'), [('sheet2', 'a2')])
     
     def test_rename_sheet_1(self):
         wb = sheets.Workbook()
@@ -298,11 +303,10 @@ class SpreadsheetTests(unittest.TestCase):
         # more sheet names with quotes
         wb.set_cell_contents('Sheet2', 'A1', "='Sheet1'!A5 + 'Sheet2'!A6")
         wb.rename_sheet('Sheet1', 'Sheet Bla')
-        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=SheetBla!A5 + Sheet2!A6")
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "='Sheet Bla'!A5 + Sheet2!A6")
 
-        wb.new_sheet('Sheet 3')
-        wb.set_cell_contents('Sheet2', 'A1', "='SheetBla'!A5 + 'Sheet 3'!A6")
-        wb.rename_sheet('SheetBla', 'Sheet1')
+        wb.set_cell_contents('Sheet2', 'A1', "='Sheet Bla'!A5 + 'Sheet 3'!A6")
+        wb.rename_sheet('Sheet Bla', 'Sheet1')
         self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=Sheet1!A5 + 'Sheet 3'!A6")
         
         # Formula-updates are only performed on formulas affected by the sheet-rename operation, unparseable formulas untouched
@@ -320,9 +324,29 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb2.get_cell_contents('Sheet2', 'A2'), "34")
         self.assertEqual(wb2.get_cell_contents('Sheet2', 'A3'), "=SheetBla!A1 + 4")
         self.assertEqual(wb2.get_cell_contents('Sheet2', 'A4'), "=Sheet1!A4 + Sheet1!A") # unchanged
-
-        # Renaming a sheet may cause some invalid cell-reference to become valid. Make sure that all cell updates are performed correctly, even in these unusual cases.
+        
         # KeyError, ValueError
+        with self.assertRaises(KeyError):
+            wb2.rename_sheet('Sheet7', 'Sheet15')
+        
+        wb2.new_sheet('Lorem ipsum')
+        invalid_sheet_names = ['', ' Sheet', '~', 'Lorem ipsum', 'Sheet\' name', 'Sheet \" name']
+        for sheet_name in invalid_sheet_names:
+            with self.assertRaises(ValueError):
+                wb2.rename_sheet('Sheet2', sheet_name)
+    
+    def test_rename_sheet_update(self):
+        # Renaming a sheet may cause some invalid cell-reference to become valid. 
+        # Make sure that all cell updates are performed correctly, even in these unusual cases.
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=SheetBla!A1')
+        wb.set_cell_contents('Sheet2', 'A1', '5')
+        wb.rename_sheet('Sheet2', 'SheetBla')
+
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

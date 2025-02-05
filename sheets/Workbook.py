@@ -310,6 +310,9 @@ class Workbook:
                         ref_sheet_name = sheet_name
                         ref_location = ref
                     
+                    if (len(ref_sheet_name) > 2 and ref_sheet_name[0] == "'" and ref_sheet_name[-1] == "'"):
+                        ref_sheet_name = ref_sheet_name[1:-1]
+                    
                     if (Workbook.is_valid_location(ref_location)):
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
@@ -560,24 +563,25 @@ class Workbook:
         # ValueError is raised.
         if (sheet_name.lower() not in self.sheets):
             raise KeyError(f'Sheet name {sheet_name} not found.')
+        if (new_sheet_name == '' or '\'' in new_sheet_name or '\"' in new_sheet_name or new_sheet_name[0] in [' ', '\t', '\n'] or new_sheet_name[-1] in [' ', '\t', '\n']):
+            raise ValueError('Spreadsheet names cannot start or end with whitespace characters, and they cannot be an empty string.')
+        
+        for char in new_sheet_name:
+            if (char != ' ' and not char.isalnum() and char not in '.?!,:;!@#$%^&*()-_'):
+                raise ValueError('Spreadsheet name can be comprised of letters, numbers, spaces, and these punctuation characters: .?!,:;!@#$%^&*()-_')
+    
+        if (new_sheet_name.lower() in self.sheets):
+            raise ValueError('Spreadsheet names must be unique.')
 
         sne = SheetNameExtractor(sheet_name, new_sheet_name)
-        # look at all ingoings with old sheet_name
-        """
-        Sheet1A1 -> Sheet2A2
-
-        Rename Sheet2 -> SheetBla
-
-        Sheet2 has an ingoing which is Sheet1A1, so we want to update Sheet1A1
-
-        sheet1.outgoing (which should contain Sheet2A2)
-        
-        """
         
         sheet_name = sheet_name.lower()
         
         self.graph.outgoing[new_sheet_name.lower()] = self.graph.outgoing[sheet_name]
-        self.graph.ingoing[new_sheet_name.lower()] = self.graph.ingoing[sheet_name]
+        if (new_sheet_name.lower() in self.graph.ingoing):
+            self.graph.ingoing[new_sheet_name.lower()] = {**self.graph.ingoing[new_sheet_name.lower()], **self.graph.ingoing[sheet_name]}
+        else:
+            self.graph.ingoing[new_sheet_name.lower()] = self.graph.ingoing[sheet_name]
         
         # resolve internal errors (when the references are within current sheet_name)
         sheet_ingoings = self.graph.ingoing[new_sheet_name.lower()]
@@ -613,7 +617,7 @@ class Workbook:
 
                 if not parse_error:
                     new_formula = sne.transform(tree)
-                    self.set_cell_contents(sn, loc, '=' + new_formula) # TODO: may have to change this
+                    self.set_cell_contents(sn, loc, '=' + new_formula)
 
         # changes the ingoing of the outgoings
         for loc in sheet_outgoings:
@@ -633,6 +637,11 @@ class Workbook:
 
         self.graph.ingoing.pop(sheet_name)
         self.graph.outgoing.pop(sheet_name)
+
+        print(self.graph.ingoing)
+        for loc in self.graph.ingoing[new_sheet_name.lower()]:
+            print(self.get_cell_contents(new_sheet_name, loc))
+            self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
