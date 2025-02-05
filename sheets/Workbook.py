@@ -545,6 +545,13 @@ class Workbook:
         # this requirement, the behavior is undefined.
         self.notify_functions.append(notify_function)
 
+    def update_cell_sn(self, sheet_name):
+        sheet = self.sheets[sheet_name.lower()]
+        for row_idx in range(sheet.num_rows):
+            for col_idx in range(sheet.num_cols):
+                curr_cell = sheet.cells[row_idx][col_idx]
+                curr_cell.sheet_name = sheet_name
+
     def rename_sheet(self, sheet_name: str, new_sheet_name: str) -> None:
         # Rename the specified sheet to the new sheet name.  Additionally, all
         # cell formulas that referenced the original sheet name are updated to
@@ -577,6 +584,7 @@ class Workbook:
         
         sheet_name = sheet_name.lower()
         
+        # copying old_sheet_name info in self.graph.ingoings, outgoings over to new_sheet_name
         self.graph.outgoing[new_sheet_name.lower()] = self.graph.outgoing[sheet_name]
         if (new_sheet_name.lower() in self.graph.ingoing):
             self.graph.ingoing[new_sheet_name.lower()] = {**self.graph.ingoing[new_sheet_name.lower()], **self.graph.ingoing[sheet_name]}
@@ -634,12 +642,14 @@ class Workbook:
         self.sheets[new_sheet_name.lower()] = self.sheets.pop(sheet_name.lower()) # sheet object
         self.sheets[new_sheet_name.lower()].sheet_name = new_sheet_name
         self.move_sheet(new_sheet_name.lower(), old_index)
+        
+        self.update_cell_sn(new_sheet_name)     
 
         self.graph.ingoing.pop(sheet_name)
         self.graph.outgoing.pop(sheet_name)
 
-        # for loc in self.graph.ingoing[new_sheet_name.lower()]:
-        #     self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
+        for loc in self.graph.ingoing[new_sheet_name.lower()]:
+            self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's

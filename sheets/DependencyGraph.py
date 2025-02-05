@@ -39,7 +39,7 @@ class DependencyGraph:
             self.outgoing[sheet_name] = {}
         sheet_outgoing = self.outgoing[sheet_name]
         sheet_outgoing[location] = outgoing_arr
-    
+
     def outgoing_add(self, sheet_name_1, loc_1, sheet_name_2, loc_2):
         sheet_name_1 = sheet_name_1.lower()
         loc_1 = loc_1.lower()

@@ -5,13 +5,15 @@ from .CellError import CellError, CellErrorType
 import re
 
 class SheetNameExtractor(lark.visitors.Transformer):
-    def sheet_name_needs_quotes(sheet_name):
-        pattern = r"^[A-Za-z_][A-Za-z0-9_]*$"
-        return not bool(re.fullmatch(pattern, sheet_name))
 
     def __init__(self, sheet_name, new_sheet_name):
         self.sheet_name = sheet_name
         self.new_sheet_name = new_sheet_name
+
+    @staticmethod
+    def sheet_name_needs_quotes(sheet_name):
+        pattern = r"^[A-Za-z_][A-Za-z0-9_]*$"
+        return not bool(re.fullmatch(pattern, sheet_name))
     
     def mul_expr(self, tree):
         return str(tree[0]) + ' ' + str(tree[1]) + ' ' + str(tree[2]) 
@@ -64,6 +66,10 @@ class SheetNameExtractor(lark.visitors.Transformer):
                     curr_name = self.new_sheet_name
                     if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                         curr_name = "'" + curr_name + "'"
+            
+
+            
+            
             return curr_name + '!' + str(tree[1])
         else:
             assert False, 'Invalid formula. Format must be in ZZZZ9999.'
