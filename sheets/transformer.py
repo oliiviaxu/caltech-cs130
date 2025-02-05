@@ -39,9 +39,10 @@ class SheetNameExtractor(lark.visitors.Transformer):
             return str(tree[0])
         if len(tree) == 2:
             curr_name = str(tree[0])
+            if (len(curr_name) > 2 and curr_name[0] == '\'' and curr_name[-1] == '\''):
+                pass
             if curr_name == self.sheet_name:
-                # change this node 
-                new_str = self.new_sheet_name + '!' + str(tree[1])
-                return new_str
+                curr_name = self.new_sheet_name
+            return curr_name + '!' + str(tree[1])
         else:
             assert False, 'Invalid formula. Format must be in ZZZZ9999.'

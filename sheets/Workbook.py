@@ -573,10 +573,35 @@ class Workbook:
         sheet1.outgoing (which should contain Sheet2A2)
         
         """
-        # self.
-        sheet_ingoings = self.graph.ingoing[sheet_name]
+        
+        sheet_name = sheet_name.lower()
+        
+        self.graph.outgoing[new_sheet_name.lower()] = self.graph.outgoing[sheet_name]
+        self.graph.ingoing[new_sheet_name.lower()] = self.graph.ingoing[sheet_name]
+        
+        # resolve internal errors (when the references are within current sheet_name)
+        sheet_ingoings = self.graph.ingoing[new_sheet_name.lower()]
         for loc in sheet_ingoings:
             cell_ingoings = sheet_ingoings[loc]
+            for i in range(len(cell_ingoings)):
+                sn, new_loc = cell_ingoings[i]
+                if (sn == sheet_name):
+                    cell_ingoings[i] = (new_sheet_name.lower(), new_loc)
+
+        sheet_outgoings = self.graph.outgoing[new_sheet_name.lower()]
+        for loc in sheet_outgoings:
+            cell_outgoings = sheet_outgoings[loc]
+            for i in range(len(cell_outgoings)):
+                sn, new_loc = cell_outgoings[i]
+                if (sn == sheet_name):
+                    cell_outgoings[i] = (new_sheet_name.lower(), new_loc)
+
+        # changing the sheet to be changed's ingoing cells' outgoing lists, 
+        # which contain the sheet to be changed
+
+        # this changes the contents, as well as the outgoing of the ingoings
+        for loc in sheet_ingoings:
+            cell_ingoings = sheet_ingoings[loc].copy()
             for sn, loc in cell_ingoings:
                 # update outgoing of this cell
                 parser = lark.Lark.open(lark_path, start='formula')
@@ -588,33 +613,26 @@ class Workbook:
 
                 if not parse_error:
                     new_formula = sne.transform(tree)
-                    self.set_cell_contents(sn, loc, new_formula)
+                    self.set_cell_contents(sn, loc, '=' + new_formula) # TODO: may have to change this
 
+        # changes the ingoing of the outgoings
+        for loc in sheet_outgoings:
+            cell_outgoings = sheet_outgoings[loc]
+            for sn, loc in cell_outgoings:
+                # access ingoing of this cell and modify
+                ingoing_lst = self.graph.ingoing_get(sn, loc)
+                for i, (ingoing_sn, ingoing_loc) in enumerate(ingoing_lst):
+                      if ingoing_sn == sheet_name:
+                          ingoing_lst[i] = (new_sheet_name.lower(), ingoing_loc)
+                                                                                                                                                                                    
         # update sheet name in self.sheets, self.graph.ingoing, self.graph.outgoing
         old_index = list(self.sheets.keys()).index(sheet_name.lower())
-        self.sheets[new_sheet_name] = self.sheets.pop(sheet_name)
-        self.move_sheet(new_sheet_name, old_index)
+        self.sheets[new_sheet_name.lower()] = self.sheets.pop(sheet_name.lower()) # sheet object
+        self.sheets[new_sheet_name.lower()].sheet_name = new_sheet_name
+        self.move_sheet(new_sheet_name.lower(), old_index)
 
-        self.graph.outgoing[new_sheet_name] = self.graph.outgoing.pop(sheet_name)
-        self.graph.ingoing[new_sheet_name] = self.graph.ingoing.pop(sheet_name)
-
-        # edge case:
-        # wb = sheets.Workbook()
-        # wb.new_sheet()
-        # wb.set_cell_contents('Sheet1', 'A1', '=A2')
-        # wb.set_cell_contents('Sheet2', 'A1', '=Sheet1!A2')
-        # ingoing:
-            # (Sheet1, A2): (Sheet1, A1), (Sheet2, A1)
-        # outgoing:
-            # (Sheet1, A1): (Sheet1, A2)
-            # (Sheet2, A1): (Sheet1, A2)
-        # wb.rename_sheet('Sheet1', 'SheetBla')
-        # ingoing:
-            # (SheetBla, A2): (SheetBla, A1), (Sheet2, A1)
-        # outgoing:
-            # (SheetBla, A1): (SheetBla, A2)
-            # (Sheet2, A1): (SheetBla, A2)
-        # what happens?
+        self.graph.ingoing.pop(sheet_name)
+        self.graph.outgoing.pop(sheet_name)
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's

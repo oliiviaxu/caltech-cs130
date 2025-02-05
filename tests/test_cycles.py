@@ -13,11 +13,12 @@ class CycleDetectionTests(unittest.TestCase):
     def test_large_cycle(self):
         wb = sheets.Workbook()
         wb.new_sheet()
+        num_cells_in_cycle = 100
         
-        for i in range(1, 100):
+        for i in range(1, num_cells_in_cycle):
             wb.set_cell_contents('Sheet1', f'A{i}', f'=A{i + 1}')
 
-        wb.set_cell_contents('Sheet1', 'A100', '=A1')
+        wb.set_cell_contents('Sheet1', f'A{num_cells_in_cycle}', '=A1')
         cell = wb.sheets['sheet1'].cells[0][0]
         self.assertEqual(wb.detect_cycle(cell), True)        
 

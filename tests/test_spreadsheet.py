@@ -218,6 +218,48 @@ class SpreadsheetTests(unittest.TestCase):
         wb.set_cell_contents('Sheet2', 'A1', "=1 + 'Sheet 1'!A1")
         self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), 1)
     
+    def test_rename_sheet_1(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        
+        # basic test
+        wb.set_cell_contents('Sheet2', 'A1', '=4 + Sheet1!A1')
+        wb.set_cell_contents('Sheet1', 'B1', '=1 + Sheet2!B1')
+        wb.rename_sheet('Sheet1', 'SheetBla')
+        self.assertEqual(wb.graph.outgoing, {'sheet2': {'a1': [('sheetbla', 'a1')]}, 'sheetbla': {'b1': [('sheet2', 'b1')]}})
+        self.assertEqual(wb.graph.ingoing, {'sheet2': {'b1': [('sheetbla', 'b1')]}, 'sheetbla': {'a1': [('sheet2', 'a1')]}})
+
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=4 + SheetBla!A1')
+        self.assertEqual(wb.get_cell_contents('SheetBla', 'B1'), '=1 + Sheet2!B1')
+    
+    def test_rename_sheet_2(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=A2')
+        wb.rename_sheet('Sheet1', 'blah')
+        self.assertEqual(wb.graph.outgoing, {'blah': {'a1': [('blah', 'a2')]}})
+        self.assertEqual(wb.graph.ingoing, {'blah': {'a2': [('blah', 'a1')]}})
+    
+    def test_rename_sheet_3(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1 + Sheet3!A1')
+        wb.set_cell_contents('Sheet2', 'B1', '=Sheet1!B1 + Sheet3!B1')
+        wb.set_cell_contents('Sheet1', 'C1', '=Sheet2!C1 + D1')
+        wb.rename_sheet('Sheet1', 'blah')
+        self.assertEqual(wb.list_sheets(), ['blah', 'Sheet2', 'Sheet3'])
+        self.assertEqual('sheet1' not in wb.graph.ingoing and 'sheet1' not in wb.graph.outgoing, True)
+        self.assertEqual(sorted(wb.graph.outgoing_get('blah', 'a1')), sorted([('sheet2', 'a1'), ('sheet3', 'a1')]))
+        self.assertEqual(sorted(wb.graph.outgoing_get('blah', 'c1')), sorted([('sheet2', 'c1'), ('blah', 'd1')]))
+        self.assertEqual(wb.graph.ingoing_get('blah', 'b1'), [('sheet2', 'b1')])
+        self.assertEqual(wb.graph.ingoing_get('blah', 'd1'), [('blah', 'c1')])
+        self.assertEqual(sorted(wb.graph.outgoing_get('Sheet2', 'B1')), sorted([('sheet3', 'b1'), ('blah', 'b1')]))
+        self.assertEqual(sorted(wb.graph.ingoing_get('Sheet2', 'A1')), sorted([('blah', 'a1')]))
+        self.assertEqual(sorted(wb.graph.ingoing_get('Sheet3', 'A1')), sorted([('blah', 'a1')]))
+
     def test_rename_sheet(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -231,8 +273,8 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=4 + SheetBla!A1')
 
         # test that Sheet1 dependency graph is changed
-        self.assertEqual("Sheet1" not in wb.graph.ingoing and "Sheet1" not in wb.graph.outgoing, True)
-        self.assertEqual(wb.graph.outgoing_get('Sheet2', 'A1'), [('SheetBla', 'A1')])
+        self.assertEqual('sheet1' not in wb.graph.ingoing and 'sheet1' not in wb.graph.outgoing, True)
+        self.assertEqual(wb.graph.outgoing_get('Sheet2', 'A1'), [('sheetbla', 'a1')])
 
         # test multiplication, addition, unary, parethesis kept
         wb.set_cell_contents('Sheet2', 'A1', '=(SheetBla!A1 * 4.0 / (SheetBla!A2 + 1))')
@@ -246,6 +288,16 @@ class SpreadsheetTests(unittest.TestCase):
         # test sheet names with quotes are handled correctly
         wb.set_cell_contents('Sheet2', 'A1', "='Sheet1'!A5 + 'Sheet2'!A6")
         wb.rename_sheet('Sheet1', 'SheetBla')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=SheetBla!A5 + Sheet2!A6")
+
+        wb.new_sheet('Sheet 3')
+        wb.set_cell_contents('Sheet2', 'A1', "='SheetBla'!A5 + 'Sheet 3'!A6")
+        wb.rename_sheet('SheetBla', 'Sheet1')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=Sheet1!A5 + 'Sheet 3'!A6")
+
+        # more sheet names with quotes
+        wb.set_cell_contents('Sheet2', 'A1', "='Sheet1'!A5 + 'Sheet2'!A6")
+        wb.rename_sheet('Sheet1', 'Sheet Bla')
         self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), "=SheetBla!A5 + Sheet2!A6")
 
         wb.new_sheet('Sheet 3')
