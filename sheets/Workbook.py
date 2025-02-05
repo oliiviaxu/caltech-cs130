@@ -638,10 +638,8 @@ class Workbook:
         self.graph.ingoing.pop(sheet_name)
         self.graph.outgoing.pop(sheet_name)
 
-        print(self.graph.ingoing)
-        for loc in self.graph.ingoing[new_sheet_name.lower()]:
-            print(self.get_cell_contents(new_sheet_name, loc))
-            self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
+        # for loc in self.graph.ingoing[new_sheet_name.lower()]:
+        #     self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
