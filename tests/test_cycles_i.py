@@ -2,12 +2,6 @@
 import unittest
 import coverage
 import sheets
-import os
-import lark
-import decimal
-import json
-import contextlib
-import cProfile
 import random
 
 class CycleDetectionTests(unittest.TestCase):
