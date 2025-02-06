@@ -10,7 +10,6 @@ class CycleDetectionTests(unittest.TestCase):
     def make_large_cycle(wb, num_cells_in_cycle):
         for i in range(1, num_cells_in_cycle):
             wb.set_cell_contents('Sheet1', f'A{i}', f'=A{i + 1}')
-
         wb.set_cell_contents('Sheet1', f'A{num_cells_in_cycle}', '=A1')
 
     def test_large_cycle(self):
@@ -30,36 +29,27 @@ class CycleDetectionTests(unittest.TestCase):
         # small cycles with 2 cells
         for _ in range(num_small_cycles):
             wb = sheets.Workbook()
-            sheet_num_1, sheet_num_2 = random.randint(0, 10), random.randint(0, 10)
-            sheet_name_1, sheet_name_2 = f'sheet{sheet_num_1}', f'sheet{sheet_num_2}'
+            wb.new_sheet()
+            wb.new_sheet()
 
-            wb.new_sheet(sheet_name_1)
-            if sheet_name_1 != sheet_name_2:
-                wb.new_sheet(sheet_name_2)
+            wb.set_cell_contents('sheet1', 'A1', f'=sheet2!A2')
+            wb.set_cell_contents('sheet2', 'A2', f'=sheet1!A1')
 
-            wb.set_cell_contents(sheet_name_1, 'A1', f'={sheet_name_2}!A2')
-            wb.set_cell_contents(sheet_name_2, 'A2', f'={sheet_name_1}!A1')
-
-            cell = wb.sheets[sheet_name_1.lower()].get_cell('A1')
+            cell = wb.sheets['sheet1'].get_cell('A1')
             self.assertEqual(wb.detect_cycle(cell), True)
         
         # small cycles with 3 cells
         for _ in range(num_small_cycles):
             wb = sheets.Workbook()
-            sheet_num_1, sheet_num_2, sheet_num_3 = random.randint(0, 5), random.randint(0, 5), random.randint(0, 5)
-            sheet_name_1, sheet_name_2, sheet_name_3 = f'sheet{sheet_num_1}', f'sheet{sheet_num_2}', f'sheet{sheet_num_3}'
+            wb.new_sheet()
+            wb.new_sheet()
+            wb.new_sheet()
 
-            wb.new_sheet(sheet_name_1)
-            if sheet_name_1!= sheet_name_2:
-                wb.new_sheet(sheet_name_2)
-            if sheet_name_1!= sheet_name_3 and sheet_name_2!= sheet_name_3:
-                wb.new_sheet(sheet_name_3)
+            wb.set_cell_contents('sheet1', 'A1', f'=sheet2!A2')
+            wb.set_cell_contents('sheet2', 'A2', f'=sheet3!A3')
+            wb.set_cell_contents('sheet3', 'A3', f'=sheet1!A1')
 
-            wb.set_cell_contents(sheet_name_1, 'A1', f'={sheet_name_2}!A2')
-            wb.set_cell_contents(sheet_name_2, 'A2', f'={sheet_name_3}!A3')
-            wb.set_cell_contents(sheet_name_3, 'A3', f'={sheet_name_1}!A1')
-
-            cell = wb.sheets[sheet_name_1.lower()].get_cell('A1')
+            cell = wb.sheets['sheet1'].get_cell('A1')
             self.assertEqual(wb.detect_cycle(cell), True)
 
 

@@ -58,16 +58,19 @@ Informal Design Reviews (16 pts)
 R1.  [4pts] What insights did your team gain regarding the design of *your
      own* spreadsheet engine code?  What parts of your design are you happy
      with?  What parts might require further attention in the future?
+     - 
 
 
 R2.  [4pts] Did you feel like you were effective at helping other teams
      assess *their* software designs?  Briefly discuss what went well, and
      what could have gone better, in your interview of another team.
+     - 
 
 
 R3.  [4pts] How closely did your team's design match the designs of the
      other teams you talked with?  Briefly discuss significant similaries
      and differences between your team's approach and other teams' approaches.
+     - parent child 
 
 
 R4.  [4pts] Which GRASP principles were the most pertinent in your
@@ -86,6 +89,11 @@ to identify where your program is spending the bulk of its time.
 A1.  [4pts] Briefly enumerate the performance tests you created to exercise
      your implementation, along with the teammates that collaborated to
      implement each of them.
+     - test large cycles
+     - test small cycles
+     - test long chain
+     - test many references
+     
 
 
 A2.  [2pts] What profiler did you choose to run your performance tests with?
