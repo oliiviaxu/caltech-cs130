@@ -1,4 +1,5 @@
-# python -m unittest discover -s tests
+# python -m unittest discover -s tests/unit -t tests
+
 import unittest
 import coverage
 import sheets
@@ -13,7 +14,7 @@ import contextlib
 from io import StringIO
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
-lark_path = os.path.join(current_dir, '../sheets/formulas.lark')
+lark_path = os.path.join(current_dir, '../../sheets/formulas.lark')
 
 class BasicTests(unittest.TestCase):
 

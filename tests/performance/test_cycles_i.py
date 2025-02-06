@@ -35,8 +35,7 @@ class CycleDetectionTests(unittest.TestCase):
             p.sort_stats('cumtime')
             p.print_stats()
 
-        print(f"--->>> Ending Test: {self._testMethodName}\n")
-    
+        # print(f"--->>> Ending Test: {self._testMethodName}\n")
     
     def test_large_cycle(self):
         wb = sheets.Workbook()
