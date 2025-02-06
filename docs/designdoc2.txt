@@ -201,15 +201,45 @@ A2.  [2pts] What profiler did you choose to run your performance tests with?
 A3.  [6pts] What are ~3 of the most significant hot-spots you identified in your
      performance testing?  Did you expect these hot-spots, or were they
      surprising to you?
-     - set_cell_contents 
-     - 
+     Through our performance testing using cProfile, we identified these hotspots:
+
+     - set_cell_contents: This function consistently appeared as a major contributor 
+     to execution time in our tests. This was expected, as set_cell_contents involves 
+     updating both the cell's content and the dependency graph, which can be 
+     computationally expensive, especially when dealing with large chains or webs 
+     of cell dependencies.
+
+     - handle_update_tree: This function emerged as a significant hot-spot, 
+     particularly in tests involving long chains of dependencies. This was not 
+     surprising, as handle_update_tree is responsible for updating all dependent 
+     cells and recalculating their values, which can be time-consuming when a single 
+     update triggers a cascade of changes across many cells.
+
+    - evaluate_cell: This function showed up as a hot-spot in tests where we created 
+    long chains as well as when many cells depend on a cell. This is expected because 
+    evaluate_cell iterates through all cell references in a formula, and when many 
+    cells rely on the same cell, evaluating those cells can become computationally 
+    intensive. 
 
 
 A4.  [4pts] Reflect on the experience of pair-programming as you constructed
      these tests.  What went well with it?  What would you like to try to do
      better in the future?
-     - Initially when writing the performance tests I (Olivia) thought that
-     
+     - Initially, I (Olivia) focused on designing complex and obscure tests. 
+     However, Wilson provided the insightful suggestion to simplify the tests, 
+     emphasizing that simplicity doesn't compromise their ability to uncover 
+     code vulnerabilities. This collaborative exchange led to more effective 
+     test designs. 
+     - Wilson pointed out a lot of areas where my tests were not consistent. 
+     For instance, in my asserts I would call detect_cycle, where instead it was
+     more concise and accurate to check the value of the cells in a cycle and
+     ensure that they were set to CIRCREF. 
+     - In the future, we aim to expand our performance testing to 
+     include a wider range of spreadsheet functionalities, such as deleting 
+     sheets, to ensure comprehensive performance evaluation across the application. 
+     Additionally, we plan to explore more advanced profiling techniques 
+     and tools to gain deeper insights into performance bottlenecks and optimize 
+     our code further.
 
 
 Section F:  CS130 Project 2 Feedback [OPTIONAL]
