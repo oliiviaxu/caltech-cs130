@@ -2,7 +2,7 @@
 Helper functions for creating dependencies between cells based on common structures.
 """
 
-def create_chain(wb, sheet_name, num_cells_in_cycle, last_cell_val):
+def create_chain(wb, sheet_name, num_cells_in_cycle):
     """
     Create a chain of cell dependencies in the specified sheet.
     Each cell depends on the next cell in the chain.
@@ -14,9 +14,9 @@ def create_chain(wb, sheet_name, num_cells_in_cycle, last_cell_val):
     for i in range(1, num_cells_in_cycle):
         wb.set_cell_contents(sheet_name, f'A{i}', f'=A{i+1}')
     # Set the last cell to a number
-    wb.set_cell_contents(sheet_name, f'A{num_cells_in_cycle}', str(last_cell_val))
+    wb.set_cell_contents(sheet_name, f'A{num_cells_in_cycle}', '1')
 
-def create_chain_2(wb, sn_1, sn_2, num_cells_in_cycle, last_cell_val):
+def create_chain_2(wb, sn_1, sn_2, num_cells_in_cycle):
     """
     Create a chain of cell dependencies between 2 sheets.
     :param wb: The workbook object.
@@ -28,7 +28,7 @@ def create_chain_2(wb, sn_1, sn_2, num_cells_in_cycle, last_cell_val):
         wb.set_cell_contents(sn_1, f'A{i}', f'={sn_2}!A{i}')
         wb.set_cell_contents(sn_2, f'A{i}', f'={sn_1}!A{i + 1}')
 
-    wb.set_cell_contents(sn_1, f'A{num_cells_in_cycle}', last_cell_val)
+    wb.set_cell_contents(sn_1, f'A{num_cells_in_cycle}', '1')
 
 def create_web(wb, sheet_name, num_cells):
     """

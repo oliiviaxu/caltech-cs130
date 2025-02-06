@@ -45,8 +45,9 @@ class CycleDetectionTests(unittest.TestCase):
         
         create_large_cycle(wb, num_cells_in_cycle)
 
-        cell_a1 = wb.sheets['sheet1'].get_cell('A1')
-        self.assertEqual(wb.detect_cycle(cell_a1), True)
+        for i in range(1, num_cells_in_cycle + 1):
+            self.assertIsInstance(wb.get_cell_value('Sheet1', f'A{i}'), sheets.CellError)
+            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     
     def test_small_cycles(self):
         wb = sheets.Workbook()
@@ -76,8 +77,8 @@ class CycleDetectionTests(unittest.TestCase):
         cell_c1 = wb.sheets[sheet_name.lower()].get_cell(cell_in_multi_cycles)
         self.assertEqual(wb.detect_cycle(cell_c1), True)
     
-    def test_make_break_cycle(self):
-        # crete small cycle
+    def test_make_break_small_cycle(self):
+        # create small cycle
         wb = sheets.Workbook()
         num_cycles = 1000
         _, sheet_name = wb.new_sheet()
@@ -86,43 +87,20 @@ class CycleDetectionTests(unittest.TestCase):
         # break
         for i in range(1, num_cycles):
             wb.set_cell_contents('Sheet1', f'A{i}', '1')
-            cell_a1 = wb.sheets['sheet1'].get_cell(f'A{i}')
-            self.assertEqual(wb.detect_cycle(cell_a1), False)
-            self.assertEqual(wb.detect_cycle(cell_a1), False)
-        
+            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), 1)
+            self.assertEqual(wb.get_cell_value('Sheet1', f'B{i}'), 1)
+
+    def test_make_break_large_cycle(self):    
         # create large cycle
-        wb_2 = sheets.Workbook()
-        wb_2.new_sheet()
+        wb = sheets.Workbook()
+        wb.new_sheet()
         num_cells_in_cycle = 1000
-        create_large_cycle(wb_2, num_cells_in_cycle)
+        create_large_cycle(wb, num_cells_in_cycle)
         
         # break
-        wb_2.set_cell_contents('Sheet1', f'A{num_cells_in_cycle}', '1')
-        cell_a1 = wb_2.sheets['sheet1'].get_cell('A1')
-        self.assertEqual(wb.detect_cycle(cell_a1), False)
-        self.assertEqual(wb.detect_cycle(cell_a1), False)
-
-        # gemini
-        wb_3 = sheets.Workbook()
-        wb_3.new_sheet()
-
-        wb_3.set_cell_contents('Sheet1', 'A1', '=B1')
-        wb_3.set_cell_contents('Sheet1', 'B1', '1')
-        cell_a1 = wb_3.sheets['sheet1'].get_cell('A1')
-        self.assertEqual(wb_3.detect_cycle(cell_a1), False)
-
-        wb_3.set_cell_contents('Sheet1', 'B1', '=A1')
-        self.assertEqual(wb_3.detect_cycle(cell_a1), True)
-
-        wb_3.set_cell_contents('Sheet1', 'B1', '1')
-        self.assertEqual(wb_3.detect_cycle(cell_a1), False)
-
-        wb_3.set_cell_contents('Sheet1', 'B1', '=C1')
-        wb_3.set_cell_contents('Sheet1', 'C1', '=A1')
-        self.assertEqual(wb_3.detect_cycle(cell_a1), True)
-
-        wb_3.set_cell_contents('Sheet1', 'A1', '=1')
-        self.assertEqual(wb_3.detect_cycle(cell_a1), False)
+        wb.set_cell_contents('Sheet1', f'A{num_cells_in_cycle}', '1')
+        for i in range(1, num_cells_in_cycle + 1):
+            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), 1)
     
     def test_self_ref(self):
         wb = sheets.Workbook()

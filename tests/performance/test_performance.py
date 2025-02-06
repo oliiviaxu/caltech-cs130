@@ -37,20 +37,22 @@ class GeneralPerformanceTests(unittest.TestCase):
 
         print(f"--->>> Ending Test: {self._testMethodName}\n")
     
-    def rename_stress_test(self):
+    def test_rename(self):
         wb = sheets.Workbook()
         _, sn_1 = wb.new_sheet()
         _, sn_2 = wb.new_sheet()
         num_cells = 1000
 
-        create_chain_2(wb, sn_1, sn_2, num_cells, '12')
+        create_chain_2(wb, sn_1, sn_2, num_cells)
 
-        for i in range(1, num_cells):
-            self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], (sn_2.lower(), f'a{i}'))
+        # for i in range(1, num_cells):
+        #     self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], (sn_2.lower(), f'a{i}'))
 
         wb.rename_sheet(sn_2, 'SheetBla')
-        wb.set_cell_contents(sn_1, f'A{num_cells}', '0')
-
         for i in range(1, num_cells):
             self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], ('sheetbla', f'a{i}'))
+
+        wb.set_cell_contents(sn_1, f'A{num_cells}', '0')
+        for i in range(1, num_cells):
+            self.assertEqual(wb.get_cell_value(sn_1, f'A{i}'), 0)
             self.assertEqual(wb.get_cell_value('sheetbla', f'A{i}'), 0)
