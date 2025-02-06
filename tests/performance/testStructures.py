@@ -16,6 +16,20 @@ def create_chain(wb, sheet_name, num_cells_in_cycle, last_cell_val):
     # Set the last cell to a number
     wb.set_cell_contents(sheet_name, f'A{num_cells_in_cycle}', str(last_cell_val))
 
+def create_chain_2(wb, sn_1, sn_2, num_cells_in_cycle, last_cell_val):
+    """
+    Create a chain of cell dependencies between 2 sheets.
+    :param wb: The workbook object.
+    :param sheet_name: The name of the sheet.
+    :param num_cells_in_cycle: The number of cells in the chain.
+    :param last_cell_val: The value of the last cell in the chain.
+    """
+    for i in range(1, num_cells_in_cycle):
+        wb.set_cell_contents(sn_1, f'A{i}', f'={sn_2}!A{i}')
+        wb.set_cell_contents(sn_2, f'A{i}', f'={sn_1}!A{i + 1}')
+
+    wb.set_cell_contents(sn_1, f'A{num_cells_in_cycle}', last_cell_val)
+
 def create_web(wb, sheet_name, num_cells):
     """
     Create a web of cell dependencies in the specified sheet.

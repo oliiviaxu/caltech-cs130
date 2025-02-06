@@ -1,6 +1,3 @@
-# TODO:Alternately, you might also have updates where each cell is referenced by many other cells, 
-# perhaps with much shallower chains, but still with large amounts of cell updates. 
-
 # python -m unittest tests.performance.test_updates
 import os
 import unittest

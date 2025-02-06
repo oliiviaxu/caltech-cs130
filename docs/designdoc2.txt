@@ -161,21 +161,23 @@ A1.  [4pts] Briefly enumerate the performance tests you created to exercise
      - test small cycles
      - test long chain
      - test many references
+     TODO: 
      
-
-
 A2.  [2pts] What profiler did you choose to run your performance tests with?
      Why?  Give an example of how to invoke one of your tests with the profiler.
+     TODO: 
 
 
 A3.  [6pts] What are ~3 of the most significant hot-spots you identified in your
      performance testing?  Did you expect these hot-spots, or were they
      surprising to you?
+     TODO: 
 
 
 A4.  [4pts] Reflect on the experience of pair-programming as you constructed
      these tests.  What went well with it?  What would you like to try to do
      better in the future?
+     TODO: 
 
 
 Section F:  CS130 Project 2 Feedback [OPTIONAL]
