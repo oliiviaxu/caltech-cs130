@@ -1,4 +1,5 @@
-# python -m unittest tests.test_cycles
+# python -m unittest tests.performance.test_cycles
+
 import os
 import unittest
 import coverage

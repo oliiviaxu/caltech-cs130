@@ -22,7 +22,8 @@ L2.  [2pts] What did each teammate focus on during this project?
 Olivia: 
 - Saving workbook as json
 - Reordering and copying sheets
-- Performance analysis
+- Fixing project 1 errors
+- Performance analysis tests and profiler
 
 Wilson:
 - Loading workbook as json
@@ -157,27 +158,58 @@ to identify where your program is spending the bulk of its time.
 A1.  [4pts] Briefly enumerate the performance tests you created to exercise
      your implementation, along with the teammates that collaborated to
      implement each of them.
-     - test large cycles
-     - test small cycles
-     - test long chain
-     - test many references
-     TODO: 
+     - test large cycles (Wilson, Olivia)
+     - test small cycles (Wilson, Olivia)
+     - test long chain 
+     - testing many references (one cell has many references)
+     - test rename sheet operations (using a long chain between two sheets)
+     - test cycle making and breaking
+     - test circular references
+
+     We organized our test suite in a way that separates unit and integration
+     tests. Those enumerated above are found in tests/performance directory. The
+     performance tests are further grouped into different classes for testing 
+     updates, cycles, and general performance. 
      
 A2.  [2pts] What profiler did you choose to run your performance tests with?
      Why?  Give an example of how to invoke one of your tests with the profiler.
-     TODO: 
 
+    - We chose to use the cProfile module for our performance tests. It was 
+    recommended in the spec and we felt that it was well-documented and has 
+    good support from other Python packages and tools, such as pstats for analyzing 
+    the output and SnakeViz for visualizing the call graph that we want to
+    use in the future.
+    
+    We use the setUp and tearDown methods in our unittest.TestCase classes to 
+    ensure that profiling is set up and executed for each test method automatically. 
+    This allows us to profile all test methods (those enumerated above in A1) 
+    without adding any explicit profiling code within each test.
+
+    To invoke the CycleDetectionTests with the profiler, we use the following 
+    command in the terminal:
+
+    (Bash)
+
+    python -m unittest tests.performance.test_cycles
+
+    This command runs the cProfile profiler on the test_cycles module, generating 
+    profiling data for each test method within that module. The output is saved 
+    in a file, which is then processed and sorted by cumulative time (cumtime) 
+    using pstats library. This sorting helps us quickly identify the most time-consuming 
+    functions and potential bottlenecks in our code.
 
 A3.  [6pts] What are ~3 of the most significant hot-spots you identified in your
      performance testing?  Did you expect these hot-spots, or were they
      surprising to you?
-     TODO: 
+     - set_cell_contents 
+     - 
 
 
 A4.  [4pts] Reflect on the experience of pair-programming as you constructed
      these tests.  What went well with it?  What would you like to try to do
      better in the future?
-     TODO: 
+     - Initially when writing the performance tests I (Olivia) thought that
+     
 
 
 Section F:  CS130 Project 2 Feedback [OPTIONAL]
