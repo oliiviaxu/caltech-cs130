@@ -230,8 +230,9 @@ A4.  [4pts] Reflect on the experience of pair-programming as you constructed
      emphasizing that simplicity doesn't compromise their ability to uncover 
      code vulnerabilities. This collaborative exchange led to more effective 
      test designs. 
-     - Wilson pointed out a lot of areas where my tests were not consistent. 
-     For instance, in my asserts I would call detect_cycle, where instead it was
+     - Wilson pointed out areas where my tests were not consistent, or where
+     the tests themselves could be optimized. For instance, in some assert
+     statements I would call detect_cycle, where instead it was
      more concise and accurate to check the value of the cells in a cycle and
      ensure that they were set to CIRCREF. 
      - In the future, we aim to expand our performance testing to 
