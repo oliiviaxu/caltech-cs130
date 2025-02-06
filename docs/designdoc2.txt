@@ -20,17 +20,22 @@ L1.  [2pts] Enumerate all teammates here.
 
 L2.  [2pts] What did each teammate focus on during this project?
 Olivia: 
-- 
+- Saving workbook as json
+- Reordering and copying sheets
+- Performance analysis
 
 Wilson:
-- 
+- Loading workbook as json
+- Renaming sheet
+- Writing correctness tests
+- Fixing project 1 errors
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
 Olivia: 
-- 
+- 15
 
 Wilson:
-- 
+- 15
 
 Spreadsheet Engine Design (11 pts)
 ----------------------------------
@@ -39,18 +44,50 @@ D1.  [3pts] Briefly describe how your workbook-loading code operates.  Does
      it do anything sophisticated to optimize the performance of loading a
      workbook, such as deferring cell-value update calculations, or analyzing
      the graph of cell dependencies?
-
+- Load workbook is not sophisticated at the moment:
+    - It loops through all sheets, and for each sheet, it loops through all the
+      cell contents and makes a call to set_cell_contents
+- This approach has no performance optimizations, although that is some technical
+  debt we will incur
 
 D2.  [4pts] Sheet-level operations like copying a sheet, deleting a sheet,
      renaming a sheet, or even creating a new sheet, can cause cell values
      to be updated.  How does your workbook identify such cells and ensure
      that they are updated properly?
-
+- The workbook identifies cells that needs to cause updates through the dependency
+  graph, which stores outgoing and ingoing connections in a separate class
+- Each operation handles the new cell value updates differently:
+    - Copying a sheet/creating a new sheet:
+        - After the sheet is created, we look through the dependency graph
+          for any ingoing connections with the new sheet name, and propagate
+          updates from there
+    - Deleting a sheet:
+        - When deleting a sheet, we look through all outgoings from this sheet,
+          and remove those edges by also removing the ingoings from the outgoing cells
+        - In addition, for all ingoing edges to the sheet, we propagate bad reference
+          errors by using set_cell_contents to set the contents to be a bad reference
+          before we actually delete the cell
+    - Renaming a sheet:
+        - Similar to deleting a sheet, we update the ingoing edges of all the outgoing
+          cells and all the outgoing edges of the ingoing cells to reflect the new sheet
+          name
+        - Once the dependency graph is corrected for the new sheet name, we can propagate
+          cell updates by a call to set_cell_contents for each cell with ingoing edges in
+          the sheet
 
 D3.  [4pts] When renaming a sheet, cells with formulas that explicitly
      reference the renamed sheet must be updated with the new sheet name.
      Give an overview of how your implementation updates these formulas.
-
+- We first find the cells that reference the renamed sheet through the
+  dependency graph's ingoing edges
+- For these cells, we used a transformer to change the formula
+    - First use the same lark grammar to parse the formula
+    - Feed into a transformer, which essentially creates a string copy of
+      the formula, with a small exception: when it finds cell references,
+      if it finds a cell reference with the old sheet name, it converts it
+      to the new sheet name. The transformer also handles other cases related
+      to sheet quotes (removing sheet quotes when they are unnecessary).
+    - We call set_cell_contents using the new formula from the transformer
 
 Informal Design Reviews (16 pts)
 --------------------------------
@@ -58,25 +95,56 @@ Informal Design Reviews (16 pts)
 R1.  [4pts] What insights did your team gain regarding the design of *your
      own* spreadsheet engine code?  What parts of your design are you happy
      with?  What parts might require further attention in the future?
-     - 
-
+- We learned that our design is very similar to other teams, and we confirmed
+  that our approach has intuitive motivations
+- We are especially happy with our dependency graph implementation, as it is
+  loosely coupled with other aspects of the code
+- We will have to tweak our automatic updating of cells due to performance issues
+- Our cell detection may also have to change slightly due to performance issues
+- We may consider implementing a CellValue class once there are a larger variety
+  of cell types such as Dates
 
 R2.  [4pts] Did you feel like you were effective at helping other teams
      assess *their* software designs?  Briefly discuss what went well, and
      what could have gone better, in your interview of another team.
-     - 
-
+- We believed we were effective at helping the other team identify issues with
+  the way they handled the updating of cells after new_sheet, del_sheet, rename_sheet,
+  copy_sheet
+    - They had an inefficient way of reupdating the cells that we helped them diagnose
+- What went well:
+    - Having a list of important questions to ask was helpful, it allowed for a
+      guided and informative discussion
+- What could have gone better:
+    - When the other team had a different way of implementing some aspect of the project,
+      it was sometimes difficult to understand
+        - We somewhat mitigated this problem by asking how their code solves a specific
+          example
 
 R3.  [4pts] How closely did your team's design match the designs of the
      other teams you talked with?  Briefly discuss significant similaries
      and differences between your team's approach and other teams' approaches.
-     - parent child 
-
+- Our design shared some traits with all teams: having a Sheet class and Cell class,
+  not having a CellValue class
+- Our design was almost identical to the team that interviewed us, which made us happy
+  because it validated lots of our design choices
+    - We had a dependency graph class similar to theirs (map for ingoing and outgoing edges)
+- The team that we interviewed implemented a dependency graph exactly how we implemented
+  it before - we decided to refactor it to avoid inefficient updating of cells upon sheet
+  operations
+    - They said they were incurring technical debt by not refactoring their code,
+      as they have an inefficient way of handling updating of cells in some scenarios
 
 R4.  [4pts] Which GRASP principles were the most pertinent in your
      discussions?  How much of your discussions referenced the GRASP
      principles?
-
+- The most pertinent principle was coupling - we discussed the coupling of the dependency
+  graph in both interviews
+    - We agreed that more loosely coupled dependency graph made it more robust and effective
+- We also agreed on high cohesion - a Sheet class and Cell class contributed
+  to this cohesion
+- With one of our groups, we agreed that the Workbook class had the most code due to the
+  principle of information expert - the Workbook has information about all the sheets
+  and cells, making it the ideal location for many operations
 
 Performance Analysis (16 pts)
 -----------------------------
