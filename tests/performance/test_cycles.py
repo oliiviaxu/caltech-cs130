@@ -1,4 +1,4 @@
-# python -m unittest tests.test_cycles_i
+# python -m unittest tests.test_cycles
 import os
 import unittest
 import coverage
@@ -35,12 +35,12 @@ class CycleDetectionTests(unittest.TestCase):
             p.sort_stats('cumtime')
             p.print_stats()
 
-        # print(f"--->>> Ending Test: {self._testMethodName}\n")
+        print(f"--->>> Ending Test: {self._testMethodName}\n")
     
     def test_large_cycle(self):
         wb = sheets.Workbook()
         wb.new_sheet()
-        num_cells_in_cycle = 5
+        num_cells_in_cycle = 1000
         
         create_large_cycle(wb, num_cells_in_cycle)
 
@@ -49,7 +49,7 @@ class CycleDetectionTests(unittest.TestCase):
     
     def test_small_cycles(self):
         wb = sheets.Workbook()
-        num_cycles = 5
+        num_cycles = 1000
         _, sheet_name = wb.new_sheet()
         create_small_cycles(wb, sheet_name, num_cycles)
 
@@ -63,7 +63,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_cell_in_multiple_cycles(self):
         wb = sheets.Workbook()
         _, sheet_name = wb.new_sheet()
-        num_cycles = 5
+        num_cycles = 1000
 
         cell_in_multi_cycles = 'C1'
 
@@ -78,7 +78,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_make_break_cycle(self):
         # crete small cycle
         wb = sheets.Workbook()
-        num_cycles = 5
+        num_cycles = 1000
         _, sheet_name = wb.new_sheet()
         create_small_cycles(wb, sheet_name, num_cycles)
 
@@ -92,7 +92,7 @@ class CycleDetectionTests(unittest.TestCase):
         # create large cycle
         wb_2 = sheets.Workbook()
         wb_2.new_sheet()
-        num_cells_in_cycle = 5
+        num_cells_in_cycle = 1000
         create_large_cycle(wb_2, num_cells_in_cycle)
         
         # break
@@ -126,7 +126,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_self_ref(self):
         wb = sheets.Workbook()
         _, sheet_name = wb.new_sheet()
-        num_cells = 5
+        num_cells = 1000
         create_chain(wb, sheet_name, num_cells, '12')
         
         wb.set_cell_contents(sheet_name, f'A{num_cells}', f'=A{num_cells}')
