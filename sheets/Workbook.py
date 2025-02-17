@@ -202,14 +202,8 @@ class Workbook:
             return
         
         if contents.startswith('='):
-            # parse formula into tree
-            parse_error = False
-            try:
-                tree = parser.parse(cell.contents)
-            except:
-                parse_error = True
-
-            if parse_error:
+            tree = cell.tree
+            if cell.parse_error:
                 cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
             else:
                 if self.detect_cycle(cell):
@@ -281,18 +275,26 @@ class Workbook:
         if contents == '':
             contents = None
         
-        curr_cell.contents = contents
-
         # Only need to change cell.outgoing if a formula is used in the cell
         if contents is None:
+            curr_cell.contents = contents
             curr_sheet.check_shrink(location)
         elif contents.startswith('='):
             # parse formula into tree
             parse_error = False
-            try:
-                tree = parser.parse(contents)
-            except:
-                parse_error = True
+            if contents == curr_cell.contents:
+                if curr_cell.parse_error:
+                    parse_error = True
+                else:
+                    tree = curr_cell.tree
+            else:
+                try:
+                    tree = parser.parse(contents)
+                    curr_cell.tree = tree
+                    curr_cell.parse_error = False
+                except:
+                    parse_error = True
+                    curr_cell.parse_error = True
 
             if not parse_error:
                 # Obtain references
@@ -315,6 +317,7 @@ class Workbook:
                     if (Workbook.is_valid_location(ref_location)):
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
+        curr_cell.contents = contents
         for sn, loc in outgoing:
             self.graph.ingoing_add(sn, loc, sheet_name, location)
 
@@ -613,24 +616,23 @@ class Workbook:
         # this changes the contents, as well as the outgoing of the ingoings
         for loc in sheet_ingoings:
             cell_ingoings = sheet_ingoings[loc].copy()
-            for sn, loc in cell_ingoings:
-                # update outgoing of this cell
-                parse_error = False
-                try:
-                    tree = parser.parse(self.get_cell_contents(sn, loc))
-                except:
-                    parse_error = True
+            for sn, loc2 in cell_ingoings:
+                if sn == new_sheet_name:
+                    continue
 
-                if not parse_error:
-                    new_formula = sne.transform(tree)
-                    self.set_cell_contents(sn, loc, '=' + new_formula)
+                # update outgoing of this cell
+                if self.get_cell_contents(sn, loc2).startswith('='):
+                    cell = self.get_cell(sn, loc2)
+                    if not cell.parse_error:
+                        new_formula = sne.transform(cell.tree)
+                        self.set_cell_contents(sn, loc2, '=' + new_formula)
 
         # changes the ingoing of the outgoings
         for loc in sheet_outgoings:
             cell_outgoings = sheet_outgoings[loc]
-            for sn, loc in cell_outgoings:
+            for sn, loc2 in cell_outgoings:
                 # access ingoing of this cell and modify
-                ingoing_lst = self.graph.ingoing_get(sn, loc)
+                ingoing_lst = self.graph.ingoing_get(sn, loc2)
                 for i, (ingoing_sn, ingoing_loc) in enumerate(ingoing_lst):
                       if ingoing_sn == sheet_name:
                           ingoing_lst[i] = (new_sheet_name.lower(), ingoing_loc)

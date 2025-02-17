@@ -13,6 +13,8 @@ class Cell:
         self.location = location.lower()
         self.contents = contents
         self.value = None
+        self.tree = None
+        self.parse_error = False
     
     def is_number(s):
         try:

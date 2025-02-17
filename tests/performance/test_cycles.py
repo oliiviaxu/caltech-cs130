@@ -12,7 +12,7 @@ from .testStructures import create_large_cycle, create_small_cycles, create_chai
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
-num_iterations = 10
+num_iterations = 100
 
 class CycleDetectionTests(unittest.TestCase):
 
