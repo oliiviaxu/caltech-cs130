@@ -1,0 +1,13 @@
+exclude = [".venv", "dist", "build", "tests"]
+
+line-length = 79
+indent-width = 4
+
+[lint]
+# Enable flake8-bugbear (`B`) rules, in addition to the defaults.
+select = ["E4", "E7", "E9", "F", "B"]
+
+[format]
+quote-style = "single"
+indent-style = "space"
+

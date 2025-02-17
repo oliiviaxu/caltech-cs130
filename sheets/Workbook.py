@@ -4,7 +4,7 @@ from .Cell import Cell
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
 from collections import OrderedDict
-from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO, OrderedDict
+from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
 import os
 import lark
 import json
@@ -65,7 +65,7 @@ class Workbook:
         
         sheet_names_lower = [sheet_name.lower() for sheet_name in self.list_sheets()]
 
-        if (sheet_name == None):
+        if sheet_name is None:
             num = 1
             while True:
                 new_name = 'Sheet' + str(num)
@@ -331,7 +331,7 @@ class Workbook:
             for notify_function in self.notify_functions:
                 try:
                     notify_function(self, pending_notifications)
-                except Exception as e:
+                except Exception:
                     pass
 
     def get_cell_contents(self, sheet_name: str, location: str) -> Optional[str]:

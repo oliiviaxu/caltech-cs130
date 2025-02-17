@@ -4,3 +4,4 @@ __pycache__/
 .vscode/
 .DS_Store
 tests/performance/cProfile_output
+.ruff_cache

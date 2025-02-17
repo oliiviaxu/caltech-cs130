@@ -1,9 +1,9 @@
 import decimal
 from .CellError import CellError, CellErrorType
 import lark
-from typing import Tuple
-from .Cell import *
+from .Cell import Cell 
 from lark.visitors import visit_children_decor
+from typing import Any
 
 class FormulaEvaluator(lark.visitors.Interpreter):
     def __init__(self, sheet_name, ref_info):
@@ -99,9 +99,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if (val_1 is None):
             val_1 = decimal.Decimal('0')
 
-        if type(val_1) == CellError:
+        if type(val_1) is CellError:
             return val_1
-        if type(val_1) == str:
+        if type(val_1) is str:
             if Cell.is_number(val_1):
                 val_1 = decimal.Decimal(Cell.strip_trailing_zeros(str(val_1)))
             else:
@@ -119,9 +119,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         assert len(values) == 2, 'Unexpected number of args'
 
         val_1, val_2 = values[0], values[1]
-        if type(val_1) == CellError:
+        if type(val_1) is CellError:
             return val_1
-        elif type(val_2) == CellError:
+        elif type(val_2) is CellError:
             return val_2
         
         val_1, val_2 = FormulaEvaluator.change_type_concat(val_1, val_2)

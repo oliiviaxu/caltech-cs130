@@ -13,7 +13,7 @@
 # NOTE:  THIS FILE WILL NOT WORK AS-IS.  You are expected to incorporate it
 #        into your project in whatever way you see fit.
 import enum
-from typing import Optional, List, Tuple, Any
+from typing import Optional
 
 class CellErrorType(enum.Enum):
     '''

@@ -1,7 +1,4 @@
-from lark import Lark, Transformer
-import decimal
-from .Cell import *
-from .CellError import CellError, CellErrorType
+import lark
 import re
 
 class SheetNameExtractor(lark.visitors.Transformer):
@@ -66,10 +63,6 @@ class SheetNameExtractor(lark.visitors.Transformer):
                     curr_name = self.new_sheet_name
                     if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                         curr_name = "'" + curr_name + "'"
-            
-
-            
-            
             return curr_name + '!' + str(tree[1])
         else:
             assert False, 'Invalid formula. Format must be in ZZZZ9999.'
