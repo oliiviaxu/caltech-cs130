@@ -1,1 +1,8 @@
 Performance Log
+
+Theory - We think that our cell updates are slow
+Rationale - Here are some profiler data / measurements that indicate this is the problem
+
+
+
+Outcome - 
