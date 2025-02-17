@@ -16,6 +16,7 @@ import re
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
+parser = lark.Lark.open(lark_path, start='formula')
 
 class Workbook:
     # A workbook containing zero or more named spreadsheets.
@@ -202,7 +203,6 @@ class Workbook:
         
         if contents.startswith('='):
             # parse formula into tree
-            parser = lark.Lark.open(lark_path, start='formula')
             parse_error = False
             try:
                 tree = parser.parse(cell.contents)
@@ -288,7 +288,6 @@ class Workbook:
             curr_sheet.check_shrink(location)
         elif contents.startswith('='):
             # parse formula into tree
-            parser = lark.Lark.open(lark_path, start='formula')
             parse_error = False
             try:
                 tree = parser.parse(contents)
@@ -616,7 +615,6 @@ class Workbook:
             cell_ingoings = sheet_ingoings[loc].copy()
             for sn, loc in cell_ingoings:
                 # update outgoing of this cell
-                parser = lark.Lark.open(lark_path, start='formula')
                 parse_error = False
                 try:
                     tree = parser.parse(self.get_cell_contents(sn, loc))

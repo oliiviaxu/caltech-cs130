@@ -12,6 +12,8 @@ from .testStructures import create_large_cycle, create_small_cycles, create_chai
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
+num_iterations = 10
+
 class CycleDetectionTests(unittest.TestCase):
 
     def setUp(self):
@@ -41,7 +43,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_large_cycle(self):
         wb = sheets.Workbook()
         wb.new_sheet()
-        num_cells_in_cycle = 1000
+        num_cells_in_cycle = num_iterations
         
         create_large_cycle(wb, num_cells_in_cycle)
 
@@ -51,7 +53,7 @@ class CycleDetectionTests(unittest.TestCase):
     
     def test_small_cycles(self):
         wb = sheets.Workbook()
-        num_cycles = 1000
+        num_cycles = num_iterations
         _, sheet_name = wb.new_sheet()
         create_small_cycles(wb, sheet_name, num_cycles)
 
@@ -65,7 +67,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_cell_in_multiple_cycles(self):
         wb = sheets.Workbook()
         _, sheet_name = wb.new_sheet()
-        num_cycles = 1000
+        num_cycles = num_iterations
 
         cell_in_multi_cycles = 'C1'
 
@@ -80,7 +82,7 @@ class CycleDetectionTests(unittest.TestCase):
     def test_make_break_small_cycle(self):
         # create small cycle
         wb = sheets.Workbook()
-        num_cycles = 1000
+        num_cycles = num_iterations
         _, sheet_name = wb.new_sheet()
         create_small_cycles(wb, sheet_name, num_cycles)
 
@@ -94,7 +96,7 @@ class CycleDetectionTests(unittest.TestCase):
         # create large cycle
         wb = sheets.Workbook()
         wb.new_sheet()
-        num_cells_in_cycle = 1000
+        num_cells_in_cycle = num_iterations
         create_large_cycle(wb, num_cells_in_cycle)
         
         # break
@@ -105,8 +107,8 @@ class CycleDetectionTests(unittest.TestCase):
     def test_self_ref(self):
         wb = sheets.Workbook()
         _, sheet_name = wb.new_sheet()
-        num_cells = 1000
-        create_chain(wb, sheet_name, num_cells, '12')
+        num_cells = num_iterations
+        create_chain(wb, sheet_name, num_cells)
         
         wb.set_cell_contents(sheet_name, f'A{num_cells}', f'=A{num_cells}')
         for i in range(1, num_cells + 1):

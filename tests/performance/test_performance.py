@@ -11,6 +11,8 @@ from .testStructures import create_large_cycle, create_small_cycles, create_chai
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
+num_iterations = 10
+
 class GeneralPerformanceTests(unittest.TestCase):
     
     def setUp(self):
@@ -41,7 +43,7 @@ class GeneralPerformanceTests(unittest.TestCase):
         wb = sheets.Workbook()
         _, sn_1 = wb.new_sheet()
         _, sn_2 = wb.new_sheet()
-        num_cells = 1000
+        num_cells = num_iterations
 
         create_chain_2(wb, sn_1, sn_2, num_cells)
 

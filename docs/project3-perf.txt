@@ -1,8 +1,23 @@
 Performance Log
 
-Theory - We think that our cell updates are slow
-Rationale - Here are some profiler data / measurements that indicate this is the problem
+Theory - We think that our cell updates are slow because we open the parser too many times.
+Rationale - According to the profiler, lark open takes up a large proportion of the runtime.
+This is the top of the profiler for test_long_chain, with 10 iterations, 1.077s:
+ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    1.072    1.072 case.py:548(_callTestMethod)
+        1    0.000    0.000    1.072    1.072 test_updates.py:41(test_long_chain)
+       11    0.000    0.000    1.071    0.097 Workbook.py:239(set_cell_contents)
+       74    0.000    0.000    1.000    0.014 lark.py:561(open)
+       74    0.002    0.000    0.996    0.013 lark.py:267(__init__)
+       11    0.002    0.000    0.914    0.083 Workbook.py:154(handle_update_tree)
 
-
-
-Outcome - 
+Outcome - After we made changes, here is what happened to the measurements. Yay we were right! / Sigh we were wrong!
+Same profiler for test_long_chain, which now runs in 0.149s:
+ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+    1    0.000    0.000    0.144    0.144 case.py:632(_callTestMethod)
+    1    0.000    0.000    0.144    0.144 test_updates.py:43(test_long_chain)
+    11    0.000    0.000    0.144    0.013 Workbook.py:239(set_cell_contents)
+    74    0.000    0.000    0.134    0.002 lark.py:637(parse)
+    74    0.000    0.000    0.134    0.002 parser_frontends.py:100(parse)
+    74    0.001    0.000    0.134    0.002 earley.py:263(parse)
+    11    0.000    0.000    0.125    0.011 Workbook.py:155(handle_update_tree)

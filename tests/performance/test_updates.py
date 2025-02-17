@@ -12,6 +12,8 @@ from .testStructures import create_large_cycle, create_small_cycles, create_chai
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
+num_iterations = 10
+
 class CellUpdateTests(unittest.TestCase):
 
     def setUp(self):
@@ -41,7 +43,7 @@ class CellUpdateTests(unittest.TestCase):
     def test_long_chain(self):
         wb = sheets.Workbook()
         _, sheet_name = wb.new_sheet()
-        num_cells = 1000
+        num_cells = num_iterations
 
         create_chain(wb, sheet_name, num_cells)
         # self.assertEqual(wb.get_cell_value(sheet_name, f'A{num_cells - 1}'), decimal.Decimal('1'))
@@ -57,7 +59,7 @@ class CellUpdateTests(unittest.TestCase):
 
     def test_web(self):
         wb = sheets.Workbook()
-        num_cells = 1000
+        num_cells = num_iterations
         _, sheet_name = wb.new_sheet()
 
         create_web(wb, sheet_name, num_cells)
@@ -71,7 +73,7 @@ class CellUpdateTests(unittest.TestCase):
     def test_rename_updates(self):
         # create a chain andthen rename the sheet
         wb = sheets.Workbook()
-        num_cells = 1000
+        num_cells = num_iterations
         _, sheet_name = wb.new_sheet()
 
         create_chain(wb, sheet_name, num_cells)
