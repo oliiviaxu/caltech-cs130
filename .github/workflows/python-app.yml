@@ -28,8 +28,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install ruff
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Run Ruff
-      run: ruff check --fix
+    - name: Run Ruff with safe fixes
+      run: ruff check --fix.
     - name: Test with unittest
       run: |
         python -m unittest discover -s tests/unit -t tests
