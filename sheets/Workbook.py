@@ -162,12 +162,14 @@ class Workbook:
         
         visited[cell] = True
         queue = [cell]
+        first = True
         
         while len(queue):
             curr_cell = queue.pop(0)
 
             prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            self.evaluate_cell(curr_cell)
+            self.evaluate_cell(curr_cell, first)
+            first = False
             new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
             if (prev_value != new_value):
                 pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
@@ -214,7 +216,7 @@ class Workbook:
                 out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
                 stack.append((ingoing_cell, set(visited_in_path)))
     
-    def evaluate_cell(self, cell):
+    def evaluate_cell(self, cell, first=False):
         contents = cell.contents
         if (contents is None):
             cell.value = None
@@ -225,7 +227,7 @@ class Workbook:
             if cell.parse_error:
                 cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
             else:
-                if self.detect_cycle(cell):
+                if first and self.detect_cycle(cell):
                     cell.value = CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found')
                 else:
                     # obtain reference info from tree with visitor
