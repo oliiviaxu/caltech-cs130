@@ -14,4 +14,4 @@ class CellRefFinder(lark.Visitor):
         elif len(tree.children) == 2:
             self.refs.add(str(tree.children[0]) + '!' + str(tree.children[1]).lower())
         else:
-            assert False, 'Invalid formula. Format must be in ZZZZ9999.'
+            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')

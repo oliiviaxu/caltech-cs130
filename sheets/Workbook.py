@@ -4,7 +4,7 @@ from .Cell import Cell
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
 from collections import OrderedDict, deque
-from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
+from typing import List, Optional, Tuple, Any, Callable, Iterable, TextIO
 import os
 import lark
 import json
@@ -159,6 +159,7 @@ class Workbook:
         self.calculate_out_degree(cell, set(), out_degree)
 
         visited = {key: False for key in out_degree} # cells "connected" to src
+        
         visited[cell] = True
         queue = [cell]
         
@@ -186,14 +187,32 @@ class Workbook:
         
         return pending_notifications
     
+    # def calculate_out_degree(self, cell, visited, out_degree):
+    #     if (cell in visited):
+    #         return
+    #     visited.add(cell)
+    #     for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
+    #         ingoing_cell = self.get_cell(sn, loc)
+    #         out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
+    #         self.calculate_out_degree(ingoing_cell, visited, out_degree)
+    
     def calculate_out_degree(self, cell, visited, out_degree):
-        if (cell in visited):
-            return
-        visited.add(cell)
-        for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
-            ingoing_cell = self.get_cell(sn, loc)
-            out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
-            self.calculate_out_degree(ingoing_cell, visited, out_degree)
+
+        stack = deque([(cell, set())])
+
+        while stack:
+            curr_cell, visited_in_path = stack.pop()
+
+            if curr_cell in visited_in_path:
+                continue
+
+            visited_in_path.add(curr_cell)
+            visited.add(curr_cell)
+
+            for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
+                ingoing_cell = self.get_cell(sn, loc)
+                out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
+                stack.append((ingoing_cell, set(visited_in_path)))
     
     def evaluate_cell(self, cell):
         contents = cell.contents
@@ -292,7 +311,7 @@ class Workbook:
                     tree = parser.parse(contents)
                     curr_cell.tree = tree
                     curr_cell.parse_error = False
-                except:
+                except lark.exceptions.LarkError:
                     parse_error = True
                     curr_cell.parse_error = True
 

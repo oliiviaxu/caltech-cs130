@@ -65,4 +65,4 @@ class SheetNameExtractor(lark.visitors.Transformer):
                         curr_name = "'" + curr_name + "'"
             return curr_name + '!' + str(tree[1])
         else:
-            assert False, 'Invalid formula. Format must be in ZZZZ9999.'
+            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')

@@ -71,7 +71,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
                 elif operator == '-':
                     return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 - res_2)))
                 else:
-                    assert False, f'Unexpected operation: {operator}'
+                    raise AssertionError(f'Unexpected operation: {operator}')
         
     @visit_children_decor
     def mul_expr(self, values):
@@ -91,7 +91,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
                     return CellError(CellErrorType.DIVIDE_BY_ZERO, 'Cannot divide by zero')
                 return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 / res_2)))
             else:
-                assert False, f'Unexpected operation: {operator}'
+                raise AssertionError(f'Unexpected operation: {operator}')
     
     @visit_children_decor
     def unary_op(self, values):
@@ -112,7 +112,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         elif operator == '-':
             return -decimal.Decimal(Cell.strip_trailing_zeros(str(val_1)))
         else:
-            assert False, f'Unexpected operation: {operator}'
+            raise AssertionError(f'Unexpected operation: {operator}')
 
     @visit_children_decor
     def concat_expr(self, values):
@@ -161,4 +161,4 @@ class FormulaEvaluator(lark.visitors.Interpreter):
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
             return self.ref_info[reference]
         else:
-            assert False, 'Length of tree for cell is not one or two'
+            raise AssertionError('Length of tree for cell is not one or two')
