@@ -3,7 +3,7 @@ from .Sheet import Sheet
 from .Cell import Cell
 from .CellError import CellError, CellErrorType
 from .visitor import CellRefFinder
-from collections import OrderedDict
+from collections import OrderedDict, deque
 from typing import List, Optional, Tuple, Any, Set, Callable, Iterable, TextIO
 import os
 import lark
@@ -359,23 +359,29 @@ class Workbook:
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
     
-    def dfs(self, sheet_name, location, visited: Set[str]) -> bool:
+    def has_cycle(self, src) -> bool:
         """
         Perform DFS to detect cycles.
         :param node: The current cell node.
         :param visited: A set of visited cell locations.
         :return: True if a cycle is detected, False otherwise.
         """
-        has_cycle = False
-        outgoing = self.graph.outgoing_get(sheet_name, location)
-        for sn, loc in outgoing:
-            ref_id = sn + '!' + loc
-            if (ref_id in visited):
+        stack = deque([(src.sheet_name, src.location, set())])
+
+        while stack:
+            sheet_name, location, visited_in_path = stack.pop()
+            ref_id = sheet_name + '!' + location
+
+            if ref_id in visited_in_path:
                 return True
-            visited.add(ref_id)
-            has_cycle = has_cycle or self.dfs(sn, loc, visited)
-            visited.remove(ref_id)
-        return has_cycle
+
+            visited_in_path.add(ref_id)
+
+            outgoing = self.graph.outgoing_get(sheet_name, location)
+            for next_sheet, next_loc in outgoing:
+                stack.append((next_sheet, next_loc, set(visited_in_path)))
+
+        return False
 
     def detect_cycle(self, src: Cell) -> bool:
         """
@@ -383,11 +389,7 @@ class Workbook:
         :param src: The source cell node.
         :return: True if a cycle is detected, False otherwise.
         """
-
-        visited = set()
-        id = src.sheet_name + '!' + src.location
-        visited.add(id)
-        return self.dfs(src.sheet_name, src.location, visited)
+        return self.has_cycle(src)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified

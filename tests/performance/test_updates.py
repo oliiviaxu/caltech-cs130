@@ -12,7 +12,7 @@ from .testStructures import create_large_cycle, create_small_cycles, create_chai
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
-num_iterations = 200
+num_iterations = 500
 
 class CellUpdateTests(unittest.TestCase):
 
