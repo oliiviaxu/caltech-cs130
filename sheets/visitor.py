@@ -10,8 +10,11 @@ class CellRefFinder(lark.Visitor):
     def cell(self, tree):
         # visitor method processes a parse tree node 
         if len(tree.children) == 1:
-            self.refs.add(str(tree.children[0]).lower())
+            location = str(tree.children[0]).lower().replace('$', '')
+            self.refs.add(location)
         elif len(tree.children) == 2:
-            self.refs.add(str(tree.children[0]) + '!' + str(tree.children[1]).lower())
+            sheet_name = str(tree.children[0])
+            location = str(tree.children[1]).lower().replace('$', '')
+            self.refs.add(sheet_name + '!' + location)
         else:
             raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')

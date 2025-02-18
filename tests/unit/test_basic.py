@@ -486,6 +486,31 @@ class BasicTests(unittest.TestCase):
 
         # TODO: renaming causes notification
 
+    def test_absolute_cellref(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        
+        # basic functionality
+        wb.set_cell_contents('Sheet1', 'B1', '4')
+        wb.set_cell_contents('Sheet1', 'A1', '=$B$1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=B$1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=$B1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 4)
+
+        wb.set_cell_contents('Sheet1', 'A10', '5')
+        wb.set_cell_contents('Sheet1', 'C1', '=Sheet1!$A$10')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+
+        wb.set_cell_contents('Sheet1', 'C1', '=Sheet1!A$10')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+
+        wb.set_cell_contents('Sheet1', 'C1', '=Sheet1!$A10')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+
 if __name__ == "__main__":
     cov = coverage.Coverage()
     cov.start()
@@ -498,4 +523,3 @@ if __name__ == "__main__":
     # adding sheets, deleting sheets implementing - but not copying/renaming sheets yet
     # test case - wb.set_cell_contents('Sheet1', 'A1', '=Sheet1_1!A2')
     # then wb.copy_sheet('Sheet1')
-# TODO: quoted sheet name tests

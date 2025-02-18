@@ -149,13 +149,13 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def cell(self, tree):
         # first parse the value into sheet (if given) and location
         if (len(tree.children) == 1):
-            reference = tree.children[0].value.lower()
+            reference = tree.children[0].value.lower().replace('$', '')
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
             return self.ref_info[reference]
         elif (len(tree.children) == 2):
             sheet = tree.children[0].value.lower()
-            location = tree.children[1].value.lower()
+            location = tree.children[1].value.lower().replace('$', '')
             reference = sheet + '!' + location
             if reference not in self.ref_info:
                 return CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}')
