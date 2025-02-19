@@ -9,7 +9,7 @@ import os
 import lark
 import json
 from .DependencyGraph import DependencyGraph
-from .transformer import SheetNameExtractor
+from .transformer import SheetNameExtractor, CellRefUpdater
 from .interpreter import FormulaEvaluator
 import decimal
 import re
@@ -788,7 +788,66 @@ class Workbook:
         # If a formula being moved contains a relative or mixed cell-reference
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
-        pass
+        if sheet_name.lower() not in self.sheets.keys() or \
+        (to_sheet and (to_sheet.lower() not in self.sheets.keys())):
+            raise KeyError('Sheet not found.')
+        
+        if (not Workbook.is_valid_location(start_location)) \
+        or (not Workbook.is_valid_location(end_location)) \
+        or (not Workbook.is_valid_location(to_location)):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+        
+        # TODO: If the target area would extend outside the valid area of the
+        # spreadsheet (i.e. beyond cell ZZZZ9999), a ValueError is raised. 
+
+        start_col, start_row = Sheet.split_cell_ref(start_location)
+        end_col, end_row = Sheet.split_cell_ref(end_location)
+
+        top_left_corner = (min(start_col, end_col), min(start_row, end_row)) # (col_idx, row_idx)
+        bottom_right_corner = (max(start_col, end_col), max(start_row, end_row)) # (col_idx, row_idx)
+
+        to_loc_col, to_loc_row = Sheet.split_cell_ref(to_location) # (col_idx, row_idx)
+        
+        # find delta_x and delta_y 
+        delta_x = to_loc_col - top_left_corner[0] # change in column 
+        delta_y = to_loc_row - top_left_corner[1] # change in row
+
+        # populating our original contents grid, holds the original cell
+        # contents
+        m = bottom_right_corner[0] - top_left_corner[0] + 1
+        n = bottom_right_corner[1] - top_left_corner[1] + 1
+
+        contents_grid = [[0 for _ in range(m)] for _ in range(n)]
+
+        cru = CellRefUpdater(delta_x, delta_y) # column, row
+
+        for i in range(n):
+            for j in range(m):
+                source_col = top_left_corner[0] + j
+                source_row = top_left_corner[1] + i
+
+                orig_loc = Sheet.to_sheet_coords(source_col, source_row)
+
+                cell = self.get_cell(sheet_name, orig_loc)
+                
+                new_formula = cru.transform(cell.tree)
+                if new_formula:
+                    # print(new_formula)
+                    contents_grid[i][j] = '=' + new_formula
+                else:
+                    # print(cell.contents)
+                    contents_grid[i][j] = cell.contents
+
+                self.set_cell_contents(sheet_name, orig_loc, None) # TODO: not sure about this one
+
+        for i in range(to_loc_row, to_loc_row + n):
+            for j in range(to_loc_col, to_loc_col + m):
+                grid_i, grid_j = i - to_loc_row, j - to_loc_col
+                updated_contents = contents_grid[grid_i][grid_j]
+
+                loc = Sheet.to_sheet_coords(j, i)
+
+                self.set_cell_contents(sheet_name, loc, updated_contents)
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:

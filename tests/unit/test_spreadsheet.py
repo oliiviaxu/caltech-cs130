@@ -353,6 +353,25 @@ class SpreadsheetTests(unittest.TestCase):
         wb.rename_sheet('Sheet2', 'SheetBla')
 
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
+    
+    def test_move_cells(self):
+        # very basic test case
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents("Sheet1", "A1", "1")
+        wb.set_cell_contents("Sheet1", "A2", "=D1")
+        wb.set_cell_contents("Sheet1", "B1", "=C1")
+        wb.set_cell_contents("Sheet1", "B2", "3")
+
+        wb.move_cells("Sheet1", "A1", "B2", "C1", None)
+
+        cell_d1 = wb.get_cell("sheet1", "D1")
+        cell_c2 = wb.get_cell("sheet1", "C2")
+        self.assertEqual(cell_d1.contents, "=E1" )
+        self.assertEqual(cell_c2.contents, "=F1" )
+
+        
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
