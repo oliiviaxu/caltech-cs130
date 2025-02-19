@@ -832,7 +832,7 @@ class Workbook:
                 orig_loc = Sheet.to_sheet_coords(source_col, source_row)
 
                 cell = self.get_cell(sheet_name, orig_loc)
-                if (cell.contents.startswith('=')):
+                if (cell.contents and cell.contents.startswith('=')):
                     new_formula = updater.transform(cell.tree)
                     contents_grid[i][j] = '=' + new_formula
                 else:

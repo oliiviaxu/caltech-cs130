@@ -13,16 +13,19 @@ class Sheet:
             return None
         col_idx, row_idx = Sheet.split_cell_ref(location)
         return self.cells[row_idx][col_idx]
+    
+    def index_to_col(col_index):
+        col = ""
+        while col_index >= 0:
+            col = chr(65 + col_index % 26) + col
+            col_index = col_index // 26 - 1
+        return col
 
     def to_sheet_coords(col_index, row_index):
         """
         Converts 0-indexed coordinates (col_index, row_index) to spreadsheet coordinates.
         """
-        col = ""
-        while col_index >= 0:
-            col = chr(65 + col_index % 26) + col
-            col_index = col_index // 26 - 1
-
+        col = Sheet.index_to_col(col_index)
         row = str(row_index + 1)
         return col + row
     
@@ -32,12 +35,28 @@ class Sheet:
         for i in range(len(column)):
             index += 26 ** i * (ord(column[len(column) - 1 - i]) - ord('a') + 1)
         return index - 1
+
+    def is_col_mixed_ref(location: str) -> bool:
+        return location[0] == '$'
+
+    def is_row_mixed_ref(location: str) -> bool:
+        return '$' in location[1:]
     
     def split_cell_ref(location: str) -> Tuple[int, int]:
         i = 0
+        # check if column has $
+        col_start = 0
+        if location[0] == '$':
+            i += 1
+            col_start = 1
         while i < len(location) and location[i].isalpha():
             i += 1
-        col, row = location[:i], location[i:]
+        col = location[col_start:i]
+        # check if row has $
+        if location[i] == '$':
+            row = location[i + 1:]
+        else:
+            row = location[i:]
         return Sheet.str_to_index(col), int(row) - 1
 
     def out_of_bounds(self, location):

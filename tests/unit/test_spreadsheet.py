@@ -379,9 +379,19 @@ class SpreadsheetTests(unittest.TestCase):
         cell_c2 = wb.get_cell("sheet1", "C2")
         self.assertEqual(cell_d1.contents, "=E1" )
         self.assertEqual(cell_c2.contents, "=F1" )
+
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet2", "A1", "1")
+        wb.set_cell_contents("Sheet2", "B1", "=A1")
+
+        wb.move_cells("Sheet2", "A1", "B1", "C3", None)
+
+        cell_c3 = wb.get_cell("sheet2", "C3")
+        cell_d3 = wb.get_cell("sheet2", "D3")
+        self.assertEqual(cell_c3.contents, "1")
+        self.assertEqual(cell_d3.contents, "=C3" )        
         
         # test for to_sheet not being None
-        # TODO: not sure
         wb.new_sheet()
         wb.set_cell_contents("Sheet1", "A1", "1")
         wb.set_cell_contents("Sheet1", "A2", "=D1")
@@ -414,6 +424,70 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb_2.get_cell_contents("Sheet1", "B2"), "2")
         self.assertEqual(wb_2.get_cell_contents("Sheet1", "C1"), "3")
         self.assertEqual(wb_2.get_cell_contents("Sheet1", "C2"), "4")
+
+        # test absolute
+        wb_3 = sheets.Workbook()
+        wb_3.new_sheet()
+        wb_3.set_cell_contents("Sheet1", "A1", "1")
+        wb_3.set_cell_contents("Sheet1", "B1", "=$A$1")
+
+        wb_3.move_cells("Sheet1", "A1", "B1", "C1")
+        self.assertEqual(wb_3.get_cell_contents("Sheet1", "D1"), "=$A$1")
+        self.assertEqual(wb_3.get_cell_value("Sheet1", "D1"), decimal.Decimal('0'))
+
+        # test mixed reference whrere column is not modified
+        wb_3.new_sheet()
+        wb_3.set_cell_contents("Sheet2", "A1", "1")
+        wb_3.set_cell_contents("Sheet2", "B2", "=$A1")
+        
+        wb_3.move_cells("Sheet2", "A1", "B2", "B3")
+        self.assertEqual(wb_3.get_cell_contents("Sheet2", "C4"), "=$A3")
+
+        # test mixed reference whrere row is not modified
+        wb_3.new_sheet()
+        wb_3.set_cell_contents("Sheet3", "A1", "1")
+        wb_3.set_cell_contents("Sheet3", "B2", "=A$1")
+        
+        wb_3.move_cells("Sheet3", "A1", "B2", "B3")
+        self.assertEqual(wb_3.get_cell_contents("Sheet3", "C4"), "=B$1")
+
+        # test moving backwards (-delta_x and -delta_y)
+        wb_4 = sheets.Workbook()
+        wb_4.new_sheet()
+        wb_4.set_cell_contents("Sheet1", "C1", "=$D1")
+        wb_4.set_cell_contents("Sheet1", "D1", "=1")
+
+        wb_4.move_cells("Sheet1", "C1", "D1", "A2")
+        self.assertEqual(wb_4.get_cell_contents("Sheet1", "A2"), "=$D2")
+
+        # test using other corners
+        wb_4.new_sheet()
+        wb_4.set_cell_contents("Sheet2", "A1", "=1")
+        wb_4.set_cell_contents("Sheet2", "B3", "=A1")
+
+        wb_4.move_cells("Sheet2", "B1", "A3", "C1")
+        self.assertEqual(wb_4.get_cell_contents("Sheet2", "D3"), "=C1")
+
+        # move only one cell
+        wb_4.set_cell_contents("Sheet2", "F1", "=1")
+        wb_4.set_cell_contents("Sheet2", "G1", "=F1")
+
+        wb_4.move_cells("Sheet2", "G1", "G1", "H1")
+        self.assertEqual(wb_4.get_cell_contents("Sheet2", "H1"), "=G1")
+
+        # test #REF
+        wb_5 = sheets.Workbook()
+        wb_5.new_sheet()
+        wb_5.set_cell_contents("Sheet1", "A1", "=2.2")
+        wb_5.set_cell_contents("Sheet1", "A2", "=4.5")
+        wb_5.set_cell_contents("Sheet1", "B1", "=5.3")
+        wb_5.set_cell_contents("Sheet1", "B2", "=3.1")
+        wb_5.set_cell_contents("Sheet1", "C1", "=A1*B1")
+        wb_5.set_cell_contents("Sheet1", "C2", "=A2*B2")
+
+        wb_5.move_cells("Sheet1", "C1", "C2", "B1")
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B1'), "=#REF! * A1")
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")
 
 
 if __name__ == "__main__":

@@ -1,6 +1,8 @@
 import lark
 import re
 from .Sheet import Sheet
+from .CellError import CellError, CellErrorType
+
 
 class SheetNameExtractor(lark.visitors.Transformer):
 
@@ -103,15 +105,45 @@ class CellRefUpdater(lark.visitors.Transformer): # TODO: change this name
     def string(self, tree):
         return str(tree[0])
 
-    def get_new_location(self, orig_location):
+    def update_contents(self, orig_location):
+        # NOTE: As with the previous project, your formula-updating code must 
+        # preserve the parentheses of the original formula, but it may modify 
+        # the whitespace of the formula. Try to choose an approach that maximizes 
+        # the usability of your spreadsheet engine.
+
+        if Sheet.is_col_mixed_ref(orig_location) and Sheet.is_row_mixed_ref(orig_location):
+            return orig_location
+        
         col_idx, row_idx = Sheet.split_cell_ref(orig_location)
-        new_loc = Sheet.to_sheet_coords(col_idx + self.delta_x, row_idx + self.delta_y)
-        return new_loc
-    
+        max_col, max_row = Sheet.str_to_index('ZZZZ'), 999
+
+        if Sheet.is_row_mixed_ref(orig_location):
+            new_col_idx = col_idx + self.delta_x
+            if new_col_idx < 0 or new_col_idx >= max_col:
+                return '#REF!'
+
+            new_col = Sheet.index_to_col(new_col_idx)
+            return new_col + '$' + str(row_idx + 1)
+        elif Sheet.is_col_mixed_ref(orig_location):
+            new_row_idx = row_idx + self.delta_y
+            if new_row_idx < 0 or new_row_idx >= max_row:
+                return '#REF!'
+            
+            new_row = new_row_idx + 1
+            return '$' + Sheet.index_to_col(col_idx) + str(new_row)
+        else:
+            new_col_idx = col_idx + self.delta_x
+            new_row_idx = row_idx + self.delta_y
+
+            if new_col_idx < 0 or new_col_idx >= max_col or new_row_idx < 0 or new_row_idx >= max_row:
+                return '#REF!'
+
+            return Sheet.to_sheet_coords(new_col_idx, new_row_idx)
+        
     def cell(self, tree):
         # processes a parse tree node 
         if len(tree) == 1: # cell ref with no sheetname, just location
-            return self.get_new_location(str(tree[0]))
+            return self.update_contents(str(tree[0]))
         if len(tree) == 2: # cell ref with sheetname 
             curr_name = str(tree[0])
             # check if has quotes.
@@ -136,7 +168,7 @@ class CellRefUpdater(lark.visitors.Transformer): # TODO: change this name
                     if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                         curr_name = "'" + curr_name + "'"
 
-            location = self.get_new_location(str(tree[1]))
-            return curr_name + '!' + location
+            formula = self.update_contents(str(tree[1]))
+            return curr_name + '!' + formula
         else:
             raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')
