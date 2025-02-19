@@ -390,8 +390,8 @@ class SpreadsheetTests(unittest.TestCase):
         wb.move_cells("Sheet1", "A1", "B2", "C1", "Sheet2")
 
         self.assertEqual(wb.get_cell_contents("Sheet2", "C1"), "1")
-        self.assertEqual(wb.get_cell_contents("Sheet2", "C2"), "=Sheet1!F1")
-        self.assertEqual(wb.get_cell_contents("Sheet2", "D1"), "=Sheet1!E1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "C2"), "=F1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "D1"), "=E1")
         self.assertEqual(wb.get_cell_contents("Sheet2", "D2"), "3")
 
         # test for overlapping

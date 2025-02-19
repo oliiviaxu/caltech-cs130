@@ -832,19 +832,13 @@ class Workbook:
                 orig_loc = Sheet.to_sheet_coords(source_col, source_row)
 
                 cell = self.get_cell(sheet_name, orig_loc)
-                
-                new_formula = updater.transform(cell.tree)
-                if new_formula:
-                    if '!' not in new_formula and to_sheet: # TODO im not sure
-                        contents_grid[i][j] = '=' + sheet_name + '!' +  new_formula
-                        # print(contents_grid[i][j])
-                    else:
-                        contents_grid[i][j] = '=' + new_formula
+                if (cell.contents.startswith('=')):
+                    new_formula = updater.transform(cell.tree)
+                    contents_grid[i][j] = '=' + new_formula
                 else:
-                    # print(cell.contents)
                     contents_grid[i][j] = cell.contents
 
-                self.set_cell_contents(sheet_name, orig_loc, None) # TODO: not sure
+                self.set_cell_contents(sheet_name, orig_loc, None)
 
         for i in range(to_loc_row, to_loc_row + n):
             for j in range(to_loc_col, to_loc_col + m):
@@ -852,7 +846,7 @@ class Workbook:
                 updated_contents = contents_grid[grid_i][grid_j]
 
                 loc = Sheet.to_sheet_coords(j, i)
-
+                
                 if to_sheet:
                     self.set_cell_contents(to_sheet, loc, updated_contents)
                 else:
