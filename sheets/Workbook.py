@@ -796,9 +796,7 @@ class Workbook:
         or (not Workbook.is_valid_location(end_location)) \
         or (not Workbook.is_valid_location(to_location)):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
-        
-        # TODO: If the target area would extend outside the valid area of the
-        # spreadsheet (i.e. beyond cell ZZZZ9999), a ValueError is raised. 
+
 
         start_col, start_row = Sheet.split_cell_ref(start_location)
         end_col, end_row = Sheet.split_cell_ref(end_location)
@@ -812,14 +810,19 @@ class Workbook:
         delta_x = to_loc_col - top_left_corner[0] # change in column 
         delta_y = to_loc_row - top_left_corner[1] # change in row
 
-        # populating our original contents grid, holds the original cell
-        # contents
+        new_bottom_right_col = to_loc_col + (end_col - start_col)
+        new_bottom_right_row = to_loc_row + (end_row - start_row)
+
+        # Check if the new bottom-right corner is valid
+        if not Workbook.is_valid_location(Sheet.to_sheet_coords(new_bottom_right_col, new_bottom_right_row)):
+            raise ValueError("Target area extends beyond the valid spreadsheet area.")
+
         m = bottom_right_corner[0] - top_left_corner[0] + 1
         n = bottom_right_corner[1] - top_left_corner[1] + 1
 
-        contents_grid = [[0 for _ in range(m)] for _ in range(n)]
+        contents_grid = [[0 for _ in range(m)] for _ in range(n)] # holds the updated contents
 
-        cru = CellRefUpdater(delta_x, delta_y) # column, row
+        updater = CellRefUpdater(delta_x, delta_y) # column, row
 
         for i in range(n):
             for j in range(m):
@@ -830,15 +833,18 @@ class Workbook:
 
                 cell = self.get_cell(sheet_name, orig_loc)
                 
-                new_formula = cru.transform(cell.tree)
+                new_formula = updater.transform(cell.tree)
                 if new_formula:
-                    # print(new_formula)
-                    contents_grid[i][j] = '=' + new_formula
+                    if '!' not in new_formula and to_sheet: # TODO im not sure
+                        contents_grid[i][j] = '=' + sheet_name + '!' +  new_formula
+                        # print(contents_grid[i][j])
+                    else:
+                        contents_grid[i][j] = '=' + new_formula
                 else:
                     # print(cell.contents)
                     contents_grid[i][j] = cell.contents
 
-                self.set_cell_contents(sheet_name, orig_loc, None) # TODO: not sure about this one
+                self.set_cell_contents(sheet_name, orig_loc, None) # TODO: not sure
 
         for i in range(to_loc_row, to_loc_row + n):
             for j in range(to_loc_col, to_loc_col + m):
@@ -847,7 +853,14 @@ class Workbook:
 
                 loc = Sheet.to_sheet_coords(j, i)
 
-                self.set_cell_contents(sheet_name, loc, updated_contents)
+                if to_sheet:
+                    self.set_cell_contents(to_sheet, loc, updated_contents)
+                else:
+                    self.set_cell_contents(sheet_name, loc, updated_contents)
+        
+        # TODO:  If a formula being moved contains a relative or mixed cell-reference
+        # that will become invalid after updating the cell-reference, then the
+        # cell-reference is replaced with a #REF! error-literal in the formula.
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:

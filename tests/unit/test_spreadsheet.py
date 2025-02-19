@@ -355,6 +355,15 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
     
     def test_move_cells(self):
+        # KeyError, ValueError
+        wb_0 = sheets.Workbook()
+        with self.assertRaises(KeyError):
+            wb_0.move_cells('Sheet7', 'A1', 'B1', 'C1')
+        
+        wb_0.new_sheet()
+        with self.assertRaises(ValueError):
+            wb_0.move_cells('Sheet1', 'A1', 'B1', 'ZZZZ998')
+
         # very basic test case
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -370,8 +379,42 @@ class SpreadsheetTests(unittest.TestCase):
         cell_c2 = wb.get_cell("sheet1", "C2")
         self.assertEqual(cell_d1.contents, "=E1" )
         self.assertEqual(cell_c2.contents, "=F1" )
-
         
+        # test for to_sheet not being None
+        # TODO: not sure
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "1")
+        wb.set_cell_contents("Sheet1", "A2", "=D1")
+        wb.set_cell_contents("Sheet1", "B1", "=C1")
+        wb.set_cell_contents("Sheet1", "B2", "3")
+        wb.move_cells("Sheet1", "A1", "B2", "C1", "Sheet2")
+
+        self.assertEqual(wb.get_cell_contents("Sheet2", "C1"), "1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "C2"), "=Sheet1!F1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "D1"), "=Sheet1!E1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "D2"), "3")
+
+        # test for overlapping
+        wb_2 = sheets.Workbook()
+        wb_2.new_sheet()
+
+        # Set up overlapping data
+        wb_2.set_cell_contents("Sheet1", "A1", "1")
+        wb_2.set_cell_contents("Sheet1", "A2", "2")
+        wb_2.set_cell_contents("Sheet1", "B1", "3")
+        wb_2.set_cell_contents("Sheet1", "B2", "4")
+
+        # Move cells A1-B2 to B1 (overlapping move within the same sheet)
+        wb_2.move_cells("Sheet1", "A1", "B2", "B1")
+
+        # Check if the cells were moved correctly (accounting for overlap)
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "A1"), None)
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "A2"), None)
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "B1"), "1")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "B2"), "2")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "C1"), "3")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "C2"), "4")
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
