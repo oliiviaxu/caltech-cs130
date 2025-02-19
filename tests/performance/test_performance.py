@@ -68,10 +68,9 @@ class GeneralPerformanceTests(unittest.TestCase):
         for i in range(3, num_numbers):
             wb.set_cell_contents("Sheet1", f"A{i}", f"=A{i-1}+A{i-2}")
 
-        wb.set_cell_contents('Sheet1', 'A1', '2')
-        
         a = 2
         b = 1
+        wb.set_cell_contents('Sheet1', 'A1', str(a))
         for i in range(3, num_numbers):
             self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), a + b)
             a, b = b, (a + b)
