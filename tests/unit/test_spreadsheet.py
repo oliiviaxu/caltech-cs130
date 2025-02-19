@@ -539,9 +539,95 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value("Sheet2", "B4"), decimal.Decimal('2'))
         self.assertEqual(wb.get_cell_value("Sheet2", "C4"), decimal.Decimal('3'))
 
-        # TODO: test mixed and absolute references
+        # test for overlapping
+        wb_2 = sheets.Workbook()
+        wb_2.new_sheet()
 
+        # Set up overlapping data
+        wb_2.set_cell_contents("Sheet1", "A1", "1")
+        wb_2.set_cell_contents("Sheet1", "A2", "2")
+        wb_2.set_cell_contents("Sheet1", "B1", "3")
+        wb_2.set_cell_contents("Sheet1", "B2", "4")
 
+        # Move cells A1-B2 to B1 (overlapping move within the same sheet)
+        wb_2.copy_cells("Sheet1", "A1", "B2", "B1")
+
+        # Check if the cells were moved correctly (accounting for overlap)
+        self.assertEqual(wb_2.get_cell_value("Sheet1", "A1"), decimal.Decimal('1'))
+        self.assertEqual(wb_2.get_cell_value("Sheet1", "A2"), decimal.Decimal('2'))
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "B1"), "1")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "B2"), "2")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "C1"), "3")
+        self.assertEqual(wb_2.get_cell_contents("Sheet1", "C2"), "4")
+
+        # test absolute
+        wb_3 = sheets.Workbook()
+        wb_3.new_sheet()
+        wb_3.set_cell_contents("Sheet1", "A1", "1")
+        wb_3.set_cell_contents("Sheet1", "B1", "=$A$1")
+
+        wb_3.copy_cells("Sheet1", "A1", "B1", "C1")
+        self.assertEqual(wb_3.get_cell_contents("Sheet1", "D1"), "=$A$1")
+        self.assertEqual(wb_3.get_cell_value("Sheet1", "D1"), decimal.Decimal('1'))
+        self.assertEqual(wb_3.get_cell_value("Sheet1", "A1"), decimal.Decimal('1'))
+
+        # TODO: test mixed reference whrere column is not modified
+
+        # TODO: test mixed reference whrere row is not modified
+
+        # test moving backwards (-delta_x and -delta_y)
+        wb_4 = sheets.Workbook()
+        wb_4.new_sheet()
+        wb_4.set_cell_contents("Sheet1", "C1", "=$D1")
+        wb_4.set_cell_contents("Sheet1", "D1", "=1")
+
+        wb_4.copy_cells("Sheet1", "C1", "D1", "A2")
+        self.assertEqual(wb_4.get_cell_contents("Sheet1", "A2"), "=$D2")
+        # self.assertEqual(wb_3.get_cell_value("Sheet1", "A2"), decimal.Decimal('1')) # TODO: idk how this supp. to work
+
+        # test using other corners
+        wb_4.new_sheet()
+        wb_4.set_cell_contents("Sheet2", "A1", "=1")
+        wb_4.set_cell_contents("Sheet2", "B3", "=A1")
+
+        wb_4.copy_cells("Sheet2", "B1", "A3", "C1")
+        self.assertEqual(wb_4.get_cell_contents("Sheet2", "D3"), "=C1")
+
+        # test #REF (given test case)
+        wb_5 = sheets.Workbook()
+        wb_5.new_sheet()
+        wb_5.set_cell_contents("Sheet1", "A1", "=2.2")
+        wb_5.set_cell_contents("Sheet1", "A2", "=4.5")
+        wb_5.set_cell_contents("Sheet1", "B1", "=5.3")
+        wb_5.set_cell_contents("Sheet1", "B2", "=3.1")
+        wb_5.set_cell_contents("Sheet1", "C1", "=A1*B1")
+        wb_5.set_cell_contents("Sheet1", "C2", "=A2*B2")
+
+        wb_5.move_cells("Sheet1", "C1", "C2", "B1")
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B1'), "=#REF! * A1")
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")
+
+        # Simple, given test case
+        wb_6 = sheets.Workbook()
+        wb_6.new_sheet()
+        wb_6.set_cell_contents("Sheet1", "A1", "'123")
+        wb_6.set_cell_contents("Sheet1", "B1", "5.3")
+        wb_6.set_cell_contents("Sheet1", "C1", "=A1*B1")
+
+        wb_6.copy_cells("Sheet1", "A1", "C1", "A2")
+        self.assertEqual(wb_6.get_cell_contents('Sheet1', 'A2'), "'123")
+        self.assertEqual(wb_6.get_cell_contents('Sheet1', 'B2'), "5.3")
+        self.assertEqual(wb_6.get_cell_contents('Sheet1', 'C2'), "=A2 * B2") # NOTE: spacing for copy cells -> should we change it?
+
+        wb_6.new_sheet()
+        wb_6.set_cell_contents("Sheet2", "A1", "'123")
+        wb_6.set_cell_contents("Sheet2", "B1", "5.3")
+        wb_6.set_cell_contents("Sheet2", "C1", "=A1*B1")
+
+        wb_6.copy_cells("Sheet2", "A1", "C1", "B2")
+        self.assertEqual(wb_6.get_cell_contents('Sheet2', 'B2'), "'123")
+        self.assertEqual(wb_6.get_cell_contents('Sheet2', 'C2'), "5.3")
+        self.assertEqual(wb_6.get_cell_contents('Sheet2', 'D2'), "=B2 * C2")
 
 
 if __name__ == "__main__":
