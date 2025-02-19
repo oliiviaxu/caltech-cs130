@@ -9,7 +9,7 @@ import os
 import lark
 import json
 from .DependencyGraph import DependencyGraph
-from .transformer import SheetNameExtractor, CellRefUpdater
+from .transformer import SheetNameExtractor, FormulaUpdater
 from .interpreter import FormulaEvaluator
 import decimal
 import re
@@ -805,10 +805,6 @@ class Workbook:
         bottom_right_corner = (max(start_col, end_col), max(start_row, end_row)) # (col_idx, row_idx)
 
         to_loc_col, to_loc_row = Sheet.split_cell_ref(to_location) # (col_idx, row_idx)
-        
-        # find delta_x and delta_y 
-        delta_x = to_loc_col - top_left_corner[0] # change in column 
-        delta_y = to_loc_row - top_left_corner[1] # change in row
 
         new_bottom_right_col = to_loc_col + (end_col - start_col)
         new_bottom_right_row = to_loc_row + (end_row - start_row)
@@ -822,7 +818,10 @@ class Workbook:
 
         contents_grid = [[0 for _ in range(m)] for _ in range(n)] # holds the updated contents
 
-        updater = CellRefUpdater(delta_x, delta_y) # column, row
+        # find delta_x and delta_y 
+        delta_x = to_loc_col - top_left_corner[0] # change in column 
+        delta_y = to_loc_row - top_left_corner[1] # change in row
+        updater = FormulaUpdater(delta_x, delta_y) # column, row
 
         for i in range(n):
             for j in range(m):
@@ -851,10 +850,6 @@ class Workbook:
                     self.set_cell_contents(to_sheet, loc, updated_contents)
                 else:
                     self.set_cell_contents(sheet_name, loc, updated_contents)
-        
-        # TODO:  If a formula being moved contains a relative or mixed cell-reference
-        # that will become invalid after updating the cell-reference, then the
-        # cell-reference is replaced with a #REF! error-literal in the formula.
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
@@ -898,4 +893,64 @@ class Workbook:
         # If a formula being copied contains a relative or mixed cell-reference
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
-        pass
+
+        if sheet_name.lower() not in self.sheets.keys() or \
+        (to_sheet and (to_sheet.lower() not in self.sheets.keys())):
+            raise KeyError('Sheet not found.')
+        
+        if (not Workbook.is_valid_location(start_location)) \
+        or (not Workbook.is_valid_location(end_location)) \
+        or (not Workbook.is_valid_location(to_location)):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+
+
+        start_col, start_row = Sheet.split_cell_ref(start_location)
+        end_col, end_row = Sheet.split_cell_ref(end_location)
+
+        top_left_corner = (min(start_col, end_col), min(start_row, end_row)) # (col_idx, row_idx)
+        bottom_right_corner = (max(start_col, end_col), max(start_row, end_row)) # (col_idx, row_idx)
+
+        to_loc_col, to_loc_row = Sheet.split_cell_ref(to_location) # (col_idx, row_idx)
+
+        new_bottom_right_col = to_loc_col + (end_col - start_col)
+        new_bottom_right_row = to_loc_row + (end_row - start_row)
+
+        # Check if the new bottom-right corner is valid
+        if not Workbook.is_valid_location(Sheet.to_sheet_coords(new_bottom_right_col, new_bottom_right_row)):
+            raise ValueError("Target area extends beyond the valid spreadsheet area.")
+        
+        m = bottom_right_corner[0] - top_left_corner[0] + 1
+        n = bottom_right_corner[1] - top_left_corner[1] + 1
+
+        contents_grid = [[0 for _ in range(m)] for _ in range(n)] # holds the updated contents
+
+        # find delta_x and delta_y 
+        delta_x = to_loc_col - top_left_corner[0] # change in column 
+        delta_y = to_loc_row - top_left_corner[1] # change in row
+        updater = FormulaUpdater(delta_x, delta_y) # column, row
+
+        for i in range(n):
+            for j in range(m):
+                source_col = top_left_corner[0] + j
+                source_row = top_left_corner[1] + i
+
+                orig_loc = Sheet.to_sheet_coords(source_col, source_row)
+
+                cell = self.get_cell(sheet_name, orig_loc)
+                if (cell.contents and cell.contents.startswith('=')):
+                    new_formula = updater.transform(cell.tree)
+                    contents_grid[i][j] = '=' + new_formula
+                else:
+                    contents_grid[i][j] = cell.contents
+
+        for i in range(to_loc_row, to_loc_row + n):
+            for j in range(to_loc_col, to_loc_col + m):
+                grid_i, grid_j = i - to_loc_row, j - to_loc_col
+                updated_contents = contents_grid[grid_i][grid_j]
+
+                loc = Sheet.to_sheet_coords(j, i)
+                
+                if to_sheet:
+                    self.set_cell_contents(to_sheet, loc, updated_contents)
+                else:
+                    self.set_cell_contents(sheet_name, loc, updated_contents)

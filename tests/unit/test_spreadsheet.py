@@ -488,6 +488,60 @@ class SpreadsheetTests(unittest.TestCase):
         wb_5.move_cells("Sheet1", "C1", "C2", "B1")
         self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B1'), "=#REF! * A1")
         self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")
+    
+    def test_copy_cells(self):
+        wb_0 = sheets.Workbook()
+        with self.assertRaises(KeyError):
+            wb_0.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        
+        wb_0.new_sheet()
+        with self.assertRaises(ValueError):
+            wb_0.move_cells('Sheet1', 'A1', 'B1', 'ZZZZ998')
+        
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents("Sheet1", "A1", "1")
+        wb.set_cell_contents("Sheet1", "A2", "=D1")
+        wb.set_cell_contents("Sheet1", "B1", "=C1")
+        wb.set_cell_contents("Sheet1", "B2", "3")
+        wb.set_cell_contents("Sheet1", "D1", "=2")
+        wb.set_cell_contents("Sheet1", "C1", "=2")
+
+        wb.copy_cells("Sheet1", "A1", "B2", "B1", None)
+
+        self.assertEqual(wb.get_cell_value("Sheet1", "A1"), decimal.Decimal('1'))
+        self.assertEqual(wb.get_cell_value("Sheet1", "A2"), decimal.Decimal('2'))
+
+        self.assertEqual(wb.get_cell_contents("Sheet1", "B2"), "=E1")
+        self.assertEqual(wb.get_cell_contents("Sheet1", "B1"), "1")
+        self.assertEqual(wb.get_cell_contents("Sheet1", "B2"), "=E1")
+        self.assertEqual(wb.get_cell_contents("Sheet1", "C1"), "=D1")
+        self.assertEqual(wb.get_cell_contents("Sheet1", "C2"), "3")
+
+        # TEST #REF!
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet2", "B3", "1")
+        wb.set_cell_contents("Sheet2", "C3", "=C1")
+        wb.set_cell_contents("Sheet2", "B4", "=D1")
+        wb.set_cell_contents("Sheet2", "C4", "3")
+        wb.set_cell_contents("Sheet2", "C1", "1")
+        wb.set_cell_contents("Sheet2", "D1", "2")
+
+        wb.copy_cells("Sheet2", "B3", "C4", "A2", None)
+
+        self.assertEqual(wb.get_cell_contents("Sheet2", "A2"), "1")
+        self.assertEqual(wb.get_cell_contents("Sheet2", "A3"), '=#REF!')
+        self.assertEqual(wb.get_cell_contents("Sheet2", "B2"), '=#REF!')
+        self.assertEqual(wb.get_cell_contents("Sheet2", "B3"), "3")
+
+        self.assertEqual(wb.get_cell_value("Sheet2", "C3"), decimal.Decimal('1'))
+        self.assertEqual(wb.get_cell_value("Sheet2", "B4"), decimal.Decimal('2'))
+        self.assertEqual(wb.get_cell_value("Sheet2", "C4"), decimal.Decimal('3'))
+
+        # TODO: test mixed and absolute references
+
+
 
 
 if __name__ == "__main__":

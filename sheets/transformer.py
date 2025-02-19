@@ -1,8 +1,6 @@
 import lark
 import re
 from .Sheet import Sheet
-from .CellError import CellError, CellErrorType
-
 
 class SheetNameExtractor(lark.visitors.Transformer):
 
@@ -70,7 +68,7 @@ class SheetNameExtractor(lark.visitors.Transformer):
         else:
             raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')
 
-class CellRefUpdater(lark.visitors.Transformer): # TODO: change this name
+class FormulaUpdater(lark.visitors.Transformer):
 
     def __init__(self, delta_x, delta_y):
         self.delta_x = delta_x
@@ -106,10 +104,6 @@ class CellRefUpdater(lark.visitors.Transformer): # TODO: change this name
         return str(tree[0])
 
     def update_contents(self, orig_location):
-        # NOTE: As with the previous project, your formula-updating code must 
-        # preserve the parentheses of the original formula, but it may modify 
-        # the whitespace of the formula. Try to choose an approach that maximizes 
-        # the usability of your spreadsheet engine.
 
         if Sheet.is_col_mixed_ref(orig_location) and Sheet.is_row_mixed_ref(orig_location):
             return orig_location
