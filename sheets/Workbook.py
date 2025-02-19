@@ -155,8 +155,7 @@ class Workbook:
     def handle_update_tree(self, cell):
         pending_notifications = []
 
-        out_degree = {}
-        self.calculate_out_degree(cell, set(), out_degree)
+        out_degree = self.calculate_out_degree(cell)
 
         visited = {key: False for key in out_degree} # cells "connected" to src
         
@@ -198,23 +197,22 @@ class Workbook:
     #         out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
     #         self.calculate_out_degree(ingoing_cell, visited, out_degree)
     
-    def calculate_out_degree(self, cell, visited, out_degree):
-
-        stack = deque([(cell, set())])
+    def calculate_out_degree(self, cell):
+        stack = [cell]
+        visited = set()
+        out_degree = {}
 
         while stack:
-            curr_cell, visited_in_path = stack.pop()
-
-            if curr_cell in visited_in_path:
+            cell = stack.pop()
+            if cell in visited:
                 continue
-
-            visited_in_path.add(curr_cell)
-            visited.add(curr_cell)
-
-            for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
+            visited.add(cell)
+            for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
                 ingoing_cell = self.get_cell(sn, loc)
                 out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
-                stack.append((ingoing_cell, set(visited_in_path)))
+                stack.append(ingoing_cell)
+
+        return out_degree
     
     def evaluate_cell(self, cell, first=False):
         contents = cell.contents
@@ -387,21 +385,29 @@ class Workbook:
         :param visited: A set of visited cell locations.
         :return: True if a cycle is detected, False otherwise.
         """
-        stack = deque([(src.sheet_name, src.location, set())])
-
+        iters = 0
+        visited = set()
+        curr_path = set()
+        stack = [(src.sheet_name, src.location, False)]
         while stack:
-            sheet_name, location, visited_in_path = stack.pop()
+            iters += 1
+            sheet_name, location, processed = stack.pop()
             ref_id = sheet_name + '!' + location
+            if not processed:
+                if ref_id in visited:
+                    continue
+                if ref_id in curr_path:
+                    return True
 
-            if ref_id in visited_in_path:
-                return True
+                curr_path.add(ref_id)
+                stack.append((sheet_name, location, True))
 
-            visited_in_path.add(ref_id)
-
-            outgoing = self.graph.outgoing_get(sheet_name, location)
-            for next_sheet, next_loc in outgoing:
-                stack.append((next_sheet, next_loc, set(visited_in_path)))
-
+                outgoing = self.graph.outgoing_get(sheet_name, location)
+                for next_sheet, next_loc in outgoing:
+                    stack.append((next_sheet, next_loc, False))
+            else:
+                curr_path.remove(ref_id)
+                visited.add(ref_id)
         return False
 
     def detect_cycle(self, src: Cell) -> bool:
@@ -522,7 +528,6 @@ class Workbook:
         return wb
 
     def save_workbook(self, fp: TextIO) -> None:
-        # TODO 
         # Instance method (not a static/class method) to save a workbook to a
         # text file or file-like object in JSON format.  Note that the _caller_
         # of this function is expected to have opened the file; this function

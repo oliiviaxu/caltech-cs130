@@ -5,6 +5,8 @@ from .Cell import Cell
 from lark.visitors import visit_children_decor
 from typing import Any
 
+decimal.getcontext().prec = 500
+
 class FormulaEvaluator(lark.visitors.Interpreter):
     def __init__(self, sheet_name, ref_info):
         self.sheet_name = sheet_name

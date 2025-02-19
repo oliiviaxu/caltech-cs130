@@ -571,9 +571,25 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb_3.get_cell_value("Sheet1", "D1"), decimal.Decimal('1'))
         self.assertEqual(wb_3.get_cell_value("Sheet1", "A1"), decimal.Decimal('1'))
 
-        # TODO: test mixed reference whrere column is not modified
+        # test mixed reference where column is absolute
+        wb_3.new_sheet()
+        wb_3.set_cell_contents('Sheet2', 'A1', '=$B4')
+        wb_3.set_cell_contents('Sheet2', 'B4', '1')
 
-        # TODO: test mixed reference whrere row is not modified
+        wb_3.copy_cells('Sheet2', 'A1', 'A1', 'D7')
+        wb_3.set_cell_contents('Sheet2', 'B10', '4')
+        self.assertEqual(wb_3.get_cell_contents('Sheet2', 'D7'), '=$B10')
+        self.assertEqual(wb_3.get_cell_value('Sheet2', 'D7'), decimal.Decimal('4'))
+
+        # test mixed reference where row is absolute
+        wb_3.new_sheet()
+        wb_3.set_cell_contents('Sheet3', 'A1', '=C$4')
+        wb_3.set_cell_contents('Sheet3', 'C4', '1')
+
+        wb_3.copy_cells('Sheet3', 'A1', 'A1', 'D7')
+        wb_3.set_cell_contents('Sheet3', 'F4', '4')
+        self.assertEqual(wb_3.get_cell_contents('Sheet3', 'D7'), '=F$4')
+        self.assertEqual(wb_3.get_cell_value('Sheet3', 'D7'), decimal.Decimal('4'))
 
         # test moving backwards (-delta_x and -delta_y)
         wb_4 = sheets.Workbook()
@@ -617,7 +633,7 @@ class SpreadsheetTests(unittest.TestCase):
         wb_6.copy_cells("Sheet1", "A1", "C1", "A2")
         self.assertEqual(wb_6.get_cell_contents('Sheet1', 'A2'), "'123")
         self.assertEqual(wb_6.get_cell_contents('Sheet1', 'B2'), "5.3")
-        self.assertEqual(wb_6.get_cell_contents('Sheet1', 'C2'), "=A2 * B2") # NOTE: spacing for copy cells -> should we change it?
+        self.assertEqual(wb_6.get_cell_contents('Sheet1', 'C2'), "=A2 * B2")
 
         wb_6.new_sheet()
         wb_6.set_cell_contents("Sheet2", "A1", "'123")

@@ -27,9 +27,6 @@ class DependencyGraph:
         if (sheet_name not in self.ingoing or location not in self.ingoing[sheet_name]):
             return []
         return self.ingoing[sheet_name][location]
-    
-    # TODO: updating dep graph when setting cell contents, calls both 
-    # outgoing and ingoing
 
     def outgoing_set(self, sheet_name, location, outgoing_arr):
         sheet_name = sheet_name.lower()
