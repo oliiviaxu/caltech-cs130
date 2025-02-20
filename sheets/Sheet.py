@@ -14,6 +14,7 @@ class Sheet:
         col_idx, row_idx = Sheet.split_cell_ref(location)
         return self.cells[row_idx][col_idx]
     
+    @staticmethod
     def index_to_col(col_index):
         col = ""
         while col_index >= 0:

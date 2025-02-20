@@ -671,7 +671,19 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet2', 'E6'), '=G9 / H13')
         self.assertEqual(wb.get_cell_contents('Sheet2', 'E7'), '=D6 - D7')
 
+        # to another sheet that doesn't exist
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '1')
+        wb.set_cell_contents('Sheet1', 'B1', '1')
+
+        with self.assertRaises(KeyError):
+            wb.move_cells('Sheet1', 'A1', 'B1', 'A1', 'Sheet2')
+
         # different corners (same case as above)
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
         wb.new_sheet()
         wb.set_cell_contents('Sheet1', 'A1', '4')
         wb.set_cell_contents('Sheet1', 'A2', '5')
@@ -773,7 +785,35 @@ class SpreadsheetTests(unittest.TestCase):
 
         self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=$B2 + D$2')
 
-    
+        # error propagation
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A99999')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # complete overlap
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=1')
+        wb.set_cell_contents('Sheet1', 'B1', '=$A2')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'A1')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=1')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'B1'), '=$A2')
+
     def test_copy_cells_edge(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -791,8 +831,21 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet2', 'E6'), '=G9 / H13')
         self.assertEqual(wb.get_cell_contents('Sheet2', 'E7'), '=D6 - D7')
 
-        # different corners (same case as above)
+        # sheet that doesn't exist
+        wb = sheets.Workbook()
         wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '1')
+        wb.set_cell_contents('Sheet1', 'B1', '1')
+
+        with self.assertRaises(KeyError):
+            wb.move_cells('Sheet1', 'A1', 'B1', 'A1', 'Sheet2')
+
+        # different corners (same case as above)
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet()
+
         wb.set_cell_contents('Sheet1', 'A1', '4')
         wb.set_cell_contents('Sheet1', 'A2', '5')
         wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
@@ -892,6 +945,48 @@ class SpreadsheetTests(unittest.TestCase):
         wb.move_cells('Sheet1', 'A1', 'A1', 'C2')
 
         self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=$B2 + D$2')
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=B1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=1')
+        wb.set_cell_contents('Sheet1', 'B1', '=A99999')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        # complete overlap
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=1')
+        wb.set_cell_contents('Sheet1', 'B1', '=$A2')
+        
+        wb.move_cells('Sheet1', 'A1', 'B1', 'A1')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=1')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'B1'), '=$A2')
+
+        # copying empty cells
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'D1', '=1')
+        wb.set_cell_contents('Sheet1', 'E1', '=2')
+        wb.set_cell_contents('Sheet1', 'D2', '=3')
+        wb.set_cell_contents('Sheet1', 'E2', '=4')
+
+        wb.move_cells('Sheet1', 'A1', 'B2', 'D1')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'D1'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'E1'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'D2'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'E2'), None)
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

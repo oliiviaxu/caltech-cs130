@@ -75,30 +75,71 @@ class GeneralPerformanceTests(unittest.TestCase):
         for i in range(3, num_numbers):
             self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), decimal.Decimal(a + b))
             a, b = b, (a + b)
+    
+    @staticmethod
+    def index_to_col(col_index):
+        col = ""
+        while col_index >= 0:
+            col = chr(65 + col_index % 26) + col
+            col_index = col_index // 26 - 1
+        return col
 
     def test_pascals_triangle(self):
         wb = sheets.Workbook()
         wb.new_sheet()
 
-        def index_to_col(col_index):
-            col = ""
-            while col_index >= 0:
-                col = chr(65 + col_index % 26) + col
-                col_index = col_index // 26 - 1
-            return col
-
         num_rows = 50
         wb.set_cell_contents("Sheet1", "A1", "1")
         for i in range(1, num_rows):
             wb.set_cell_contents("Sheet1", f"A{i + 1}", "1")
-            wb.set_cell_contents("Sheet1", f"{index_to_col(i)}{i + 1}", "1")
+            wb.set_cell_contents("Sheet1", f"{GeneralPerformanceTests.index_to_col(i)}{i + 1}", "1")
             for j in range(1, i):
-                wb.set_cell_contents("Sheet1", f"{index_to_col(j)}{i + 1}",
-                                     f"={index_to_col(j - 1)}{i}+{index_to_col(j)}{i}")
+                wb.set_cell_contents("Sheet1", f"{GeneralPerformanceTests.index_to_col(j)}{i + 1}",
+                                     f"={GeneralPerformanceTests.index_to_col(j - 1)}{i}+{GeneralPerformanceTests.index_to_col(j)}{i}")
 
         # Calculate and verify row sums
         for i in range(num_rows):
             sum = 0
             for j in range(i + 1):
-                sum += wb.get_cell_value('Sheet1', f'{index_to_col(j)}{i + 1}')
+                sum += wb.get_cell_value('Sheet1', f'{GeneralPerformanceTests.index_to_col(j)}{i + 1}')
             self.assertEqual(sum, 2 ** i)
+    
+    def test_copy_cells(self):
+        # test copying an entire sheet to a new sheet
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        num_cells = 1000
+        last_cell = GeneralPerformanceTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+
+        for i in range(1, num_cells):
+            wb.set_cell_contents('Sheet1', f"A{i}", "1")
+                
+        wb.move_cells('Sheet1', 'A1', last_cell, 'A1', 'Sheet2')
+        
+        for i in range(1, num_cells):
+            self.assertEqual(wb.get_cell_value('Sheet1', f"A{i}"), None)
+            self.assertEqual(wb.get_cell_value('Sheet2', f"A{i}"), "1")
+
+        self.assertEqual(wb.get_cell_value('Sheet2', last_cell), "1")
+    
+    def test_copy_cells(self):
+        # test copying an entire sheet to a new sheet
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        num_cells = 1000
+        last_cell = GeneralPerformanceTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+
+        for i in range(1, num_cells):
+            wb.set_cell_contents('Sheet1', f"A{i}", "1")
+        
+        wb.copy_cells('Sheet1', 'A1', last_cell, 'A1', 'Sheet2')
+        
+        for i in range(1, num_cells):
+            self.assertEqual(wb.get_cell_value('Sheet1', f"A{i}"), "1")
+            self.assertEqual(wb.get_cell_value('Sheet2', f"A{i}"), "1")
+
+        self.assertEqual(wb.get_cell_value('Sheet2', last_cell), "1")
