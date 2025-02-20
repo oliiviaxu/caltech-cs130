@@ -275,6 +275,13 @@ class SpreadsheetTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
         wb.new_sheet()
+
+        # other basic test
+        wb2 = sheets.Workbook()
+        wb2.new_sheet()
+        wb2.set_cell_contents('Sheet1', 'A1', '=Sheet1!A2')
+        wb2.rename_sheet('Sheet1', 'Sheet8')
+        self.assertEqual(wb2.get_cell_contents('Sheet8', 'A1'), '=Sheet8!A2')
         
         # basic test
         wb.set_cell_contents('Sheet2', 'A1', '=4 + Sheet1!A1')
