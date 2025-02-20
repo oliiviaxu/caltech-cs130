@@ -706,10 +706,14 @@ class SpreadsheetTests(unittest.TestCase):
             wb.move_cells('Sheet1', 'A1', 'ZZZ100', 'ZZZA1')
 
         # references have sheet name
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet('Sheet 3')
         wb.set_cell_contents('Sheet1', 'A1', '4')
         wb.set_cell_contents('Sheet1', 'A2', '5')
         wb.set_cell_contents('Sheet1', 'B1', '=Sheet2!D4 / E8') # D4: (+2, +3), E8: (+3, +7)
-        wb.set_cell_contents('Sheet1', 'B2', '=A1 - Sheet2!A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - \'Sheet 3\'!A2') # A1: (-1, -1), A2: (-1, 0)
         wb.move_cells('Sheet1', 'A1', 'B2', 'D6')
 
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
@@ -717,10 +721,21 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D6'), '4')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D7'), '5')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E6'), '=Sheet2!G9 / H13')
-        self.assertEqual(wb.get_cell_contents('Sheet1', 'E7'), '=D6 - Sheet2!D7')
-        # #REF!
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'E7'), '=D6 - \'Sheet 3\'!D7')
 
-        pass
+        # #REF! in both directions
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        wb.set_cell_contents('Sheet1', 'A2', '5')
+        wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.move_cells('Sheet1', 'A2', 'B1', 'B1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'B1'), '4')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'B2'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'C1'), '=E4 / F8')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=B1 - B2')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
