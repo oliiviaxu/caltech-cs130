@@ -762,7 +762,6 @@ class Workbook:
         or (not Workbook.is_valid_location(to_location)):
             raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
 
-
         start_col, start_row = Sheet.split_cell_ref(start_location)
         end_col, end_row = Sheet.split_cell_ref(end_location)
 
@@ -771,8 +770,8 @@ class Workbook:
 
         to_loc_col, to_loc_row = Sheet.split_cell_ref(to_location) # (col_idx, row_idx)
 
-        new_bottom_right_col = to_loc_col + (end_col - start_col)
-        new_bottom_right_row = to_loc_row + (end_row - start_row)
+        new_bottom_right_col = to_loc_col + abs(end_col - start_col)
+        new_bottom_right_row = to_loc_row + abs(end_row - start_row)
 
         # Check if the new bottom-right corner is valid
         if not Workbook.is_valid_location(Sheet.to_sheet_coords(new_bottom_right_col, new_bottom_right_row)):
