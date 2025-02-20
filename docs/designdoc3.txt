@@ -55,6 +55,8 @@ D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      aspects of these two operations to reduce the amount of code required to
      implement these operations?  If so, what did you do?  If not, why not?
      
+     TODO 
+     
      We identified that moving/copying regions and renaming a sheet require 
      formula updates. We refactored our implementation by introducing a new 
      transformer class called FormulaUpdater. This class builds upon the 
