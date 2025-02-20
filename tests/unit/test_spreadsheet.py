@@ -699,7 +699,7 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet()
         wb.new_sheet()
         wb.set_cell_contents('Sheet1', 'A1', '4')
-        wb.set_cell_contents('Sheet1', 'ZZZ100', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.set_cell_contents('Sheet1', 'ZZ50', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
         with self.assertRaises(ValueError):
             wb.move_cells('Sheet1', 'A1', 'ZZZ100', 'A9990')
         with self.assertRaises(ValueError):
@@ -721,19 +721,129 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E6'), '=Sheet2!G9 / H13')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E7'), '=D6 - \'Sheet 3\'!D7')
 
-        # #REF! in both directions
+        # #REF! in negative direction
         wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'D4', '=A4')
+        wb.set_cell_contents('Sheet1', 'D5', '=D1')
+        wb.move_cells('Sheet1', 'D5', 'D4', 'A1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=#REF!')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A2'), '=#REF!')
+
+        # #REF! in too large direction
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=AAA1')
+        wb.move_cells('Sheet1', 'A1', 'A1', 'ZZZA1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'ZZZA1'), '=#REF!')
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=A1000')
+        wb.move_cells('Sheet1', 'A1', 'A1', 'A9990')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A9990'), '=#REF!')
+    
+    def test_copy_cells_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        # to another sheet
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        wb.set_cell_contents('Sheet1', 'A2', '5')
+        wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.copy_cells('Sheet1', 'A1', 'B2', 'D6', 'Sheet2')
+
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'D6'), '4')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'D7'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'E6'), '=G9 / H13')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'E7'), '=D6 - D7')
+
+        # different corners (same case as above)
         wb.new_sheet()
         wb.set_cell_contents('Sheet1', 'A1', '4')
         wb.set_cell_contents('Sheet1', 'A2', '5')
         wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
         wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
-        wb.move_cells('Sheet1', 'A2', 'B1', 'B1')
+        wb.copy_cells('Sheet1', 'A2', 'B1', 'D6', 'Sheet3')
 
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D6'), '4')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E6'), '=G9 / H13')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E7'), '=D6 - D7')
+
+        # overlap
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        wb.set_cell_contents('Sheet1', 'A2', '5')
+        wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.copy_cells('Sheet1', 'A2', 'B1', 'B1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '4')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A2'), '5')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'B1'), '4')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'B2'), '5')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'C1'), '=E4 / F8')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=B1 - B2')
+
+        # value error for moving cell outside of bounds
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        wb.set_cell_contents('Sheet1', 'ZZ50', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        with self.assertRaises(ValueError):
+            wb.copy_cells('Sheet1', 'A1', 'ZZZ100', 'A9990')
+        with self.assertRaises(ValueError):
+            wb.copy_cells('Sheet1', 'A1', 'ZZZ100', 'ZZZA1')
+
+        # references have sheet name
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet('Sheet 3')
+        wb.set_cell_contents('Sheet1', 'A1', '4')
+        wb.set_cell_contents('Sheet1', 'A2', '5')
+        wb.set_cell_contents('Sheet1', 'B1', '=Sheet2!D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - \'Sheet 3\'!A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.copy_cells('Sheet1', 'A1', 'B2', 'D6')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'D6'), '4')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'D7'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'E6'), '=Sheet2!G9 / H13')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'E7'), '=D6 - \'Sheet 3\'!D7')
+
+        # #REF! in negative direction
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'D4', '=A4')
+        wb.set_cell_contents('Sheet1', 'D5', '=D1')
+        wb.copy_cells('Sheet1', 'D5', 'D4', 'A1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=#REF!')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A2'), '=#REF!')
+
+        # #REF! in too large direction
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=AAA1')
+        wb.copy_cells('Sheet1', 'A1', 'A1', 'ZZZA1')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'ZZZA1'), '=#REF!')
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=A1000')
+        wb.copy_cells('Sheet1', 'A1', 'A1', 'A9990')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A9990'), '=#REF!')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
