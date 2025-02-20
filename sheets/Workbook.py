@@ -645,7 +645,7 @@ class Workbook:
         for loc in sheet_ingoings:
             cell_ingoings = sheet_ingoings[loc].copy()
             for sn, loc2 in cell_ingoings:
-                if sn == new_sheet_name:
+                if sn == new_sheet_name.lower():
                     continue
 
                 # update outgoing of this cell
