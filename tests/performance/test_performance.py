@@ -1,6 +1,7 @@
 import os
 import unittest
 import coverage
+import decimal
 import sheets
 import cProfile
 from pstats import Stats
@@ -72,7 +73,7 @@ class GeneralPerformanceTests(unittest.TestCase):
         b = 1
         wb.set_cell_contents('Sheet1', 'A1', str(a))
         for i in range(3, num_numbers):
-            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), a + b)
+            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), decimal.Decimal(a + b))
             a, b = b, (a + b)
 
     def test_pascals_triangle(self):
