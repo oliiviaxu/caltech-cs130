@@ -25,14 +25,16 @@ Olivia:
 - Updating the GitHub Actions YAML file to include the Ruff linter
 
 Wilson:
-
+- Writing tests for edge cases of move_cells and copy_cells
+- Fixes to performance (improving dfs algorithm, improving topo sort, caching lark trees)
+- Writing performance tests for fibonacci and pascal's triangle
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
 Olivia: 
 8 hours 
 
 Wilson:
-
+8 hours
 
 Spreadsheet Engine Design (9 pts)
 ----------------------------------
@@ -55,25 +57,16 @@ D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      aspects of these two operations to reduce the amount of code required to
      implement these operations?  If so, what did you do?  If not, why not?
      
-     TODO 
-
-     We identified that moving/copying regions and renaming a sheet require 
-     formula updates. We refactored our implementation by introducing a new 
-     transformer class called FormulaUpdater. This class builds upon the 
-     functionality of our existing SheetNameExtractor (used for renaming sheets) 
-     and adds the capability to handle the distance calculation necessary for
-     moving and copying sheets. Since there were quite a few areas where the 
-     formula updates differed for rename and move/copy cells, we ultimately decided
-     that we would rather duplicate some of the code (specifically the way 
-     whitespace/quotations are handled for rename sheet in the transformer) was 
-     duplicated. We thought that, because of these differences, changing the 
-     SheetNameExtractor to accommodate both scenarios would have introduced 
-     unnecessary complexity and potentially impacted its performance for 
-     renaming sheets, where the additional distance calculations are not needed.
+     We were able to unify moving and copying regions of a sheet into a single
+     helper method, as the operations are incredibly similar. The formula updates
+     for moving and copying regions were carried out by a new transformer class 
+     that had many similarities to the transformer used with rename. We considered 
+     using one transformer for all three tasks, but we ultimately found it easiest 
+     to separate the renaming from the moving/copying cells.
 
 D3.  [3pts] How does your implementation address the challenge of moving or
      copying a region of cells where the source and target regions overlap?
-     Our implementation handles overlapping source and target regions during 
+     - Our implementation handles overlapping source and target regions during 
      move/copy operations by using a temporary grid and in-place updates.
      - A matrix is initialized to store the updated contents 
      of the source region.
@@ -101,9 +94,8 @@ L1.  [5pts] The Project 3 spec includes an example of a subtle implementation
 
 L2.  [4pts] What code-linter did your team use on your project?  Why did you
      choose it?  Was this the first CS130 project in which you used a linter?
-     
      - We used the ruff linter for our project, as recommended in the spec.
-     We chose ruff because our research indicated that it is rapidly gaining 
+     - We chose ruff because our research indicated that it is rapidly gaining 
      popularity within the Python community and is known for its speed and 
      efficiency. We also noticed that it provides a wide range of code 
      quality checks. 
@@ -123,6 +115,7 @@ L3.  [3pts] How did you automate the execution of your code linter?  Did
 L4.  [4pts] Did the use of the linter improve your overall code quality and
      correctness?  Give some specific details in your answer.  Were there any
      serious issues (e.g. buggy language idioms) you were unaware of?
+     
      Yes, using the ruff linter definitely improved our code quality 
      and correctness. It helped us identify and address various issues, 
      both stylistic and potentially problematic.
@@ -152,22 +145,25 @@ investigation, and fix performance issues in your code.
 P1.  [7pts] Give a brief overview of 3-4 of the worst hot-spots you identified
      in your performance testing and analysis. For each one, describe how your
      team was able to resolve it.
-     Our performance analysis using the profiler revealed that set_cell_contents 
-     and handle_update_tree were the most frequently called and slowest functions 
-     in our spreadsheet application. This was a major performance bottleneck,
-     especially for larger spreadsheets with complex dependencies that revealed
-     itself in the different structures that we constructed in our performance tests.
+
+     One of the biggest hotspots in our performance were calls to lark. At first,
+     we were opening the lark grammar once for every formula evaluation, which was
+     extremely slow. We moved the opening of the lark grammar to the top of the file,
+     using it as a global variable. After this change, we found that parsing was taking
+     up the majority of the computation time. This is because our code runs the parser
+     to regenerate the tree for each cell that is updated by our automatic updating,
+     even when the contents do not change. As a result, we modified our code to run the parser
+     and generate the tree only if the cell contents change. This significantly improved
+     our runtime.
 
      Initially, our implementation from Project 2 called detect_cycle every time 
      evaluate_cell was called (which is triggered within the topological sort in 
-     handle_update_tree for automatic updating). This led to a runtime complexity 
-     of roughly O(N^2), where N is the number of cells, because we were redundantly 
+     handle_update_tree for automatic updating). This led to detect_cycle being called
+     O(N^2) times in long chains, where N is the number of cells, because we were redundantly 
      checking for cycles for every cell, regardless of whether the source cell 
-     was involved in a cycle.
-
-     To address this, we optimized the cycle detection by calling detect_cycle 
-     only once per update, rather than for every cell. This significantly reduced 
-     the number of computations and improved the runtime.
+     was involved in a cycle. To address this, we optimized the cycle detection by 
+     calling detect_cycle only once per update, rather than for every cell. This 
+     significantly reduced the number of computations and improved the runtime.
 
      Furthermore, as anticipated from the lecture, we replaced the recursive 
      implementations of our cycle detection and topological sort algorithms with 
@@ -182,12 +178,21 @@ P2.  [4pts] Did your team try anything to resolve performance issues and find
      that it didn't improve things at all - perhaps even made things worse?
      If so, were you able to identify why the intended fix didn't produce the
      desired benefit?
-     TODO
+     
+     Yes - when we tried to turn the cycle detection and topological sort into
+     purely iterative approaches, we wrote inefficient code that was way slower
+     than our recursive approach. We did not identify this issue until we wrote
+     tests for fibonacci, where the profiler identified severe bottlenecks in
+     detect_cycle and the calculations of out degree (for the topsort). The reason
+     the initial iterative code was slower was because we were revisiting cells
+     more than the intended amount, as the visited set was not implemented correctly.
+     After fixing this issue, the fibonacci tests were able to run smoothly.
 
 
 P3.  [4pts] How do you feel that your performance updates affected your code's
      readability and maintainability?  Did it make it better? worse? unchanged?
      Elaborate on your answer.
+
      Readability: The shift to iterative implementations using stacks, while 
      improving performance, did not significantly affect readability. The 
      iterative versions, with their explicit loop structures and stack operations, 
@@ -206,11 +211,8 @@ P4.  [3pts] Did your performance updates cause any regressions in functionality?
      If so, briefly describe any issues that emerged.  How were these issues
      identified (e.g. automated test failures, manual testing, etc.)?  How
      quickly were issues identified?
-     At first, when I (Olivia) implemented iterative implementations of our 
-     originally recursive out degree and cycle detection the code was quite slow, 
-     and I didn't realize until we ran the fib test more. Wilson
-     identified this, and improved our iterative implementation
-     to significantly imrove performance. Issues were identified relatively quickly. 
+
+     No, our performance updates did not cause any regressions in functionality. 
 
 Section F:  CS130 Project 3 Feedback [OPTIONAL]
 -----------------------------------------------

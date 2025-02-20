@@ -10,7 +10,6 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
     74    0.000    0.000    1.000    0.014 lark.py:561(open)
     74    0.002    0.000    0.996    0.013 lark.py:267(__init__)
     11    0.002    0.000    0.914    0.083 Workbook.py:154(handle_update_tree)
-
 Outcome - After we made changes, here is what happened to the measurements. Yay we were right! / Sigh we were wrong!
 Same profiler for test_long_chain, which now runs in 0.149s:
 ncalls  tottime  percall  cumtime  percall filename:lineno(function)
@@ -21,6 +20,8 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
     74    0.000    0.000    0.134    0.002 parser_frontends.py:100(parse)
     74    0.001    0.000    0.134    0.002 earley.py:263(parse)
     11    0.000    0.000    0.125    0.011 Workbook.py:155(handle_update_tree)
+
+
 
 Theory - we are calling parser.parse too many times
 Rationale - See profiler for test_large_cycle:
@@ -44,6 +45,8 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
     5050    0.016    0.000    0.532    0.000 Workbook.py:198(evaluate_cell)
     5050    0.006    0.000    0.364    0.000 Workbook.py:380(detect_cycle)
 
+
+
 Theory - we are calling detect cycle too many times
 Rationale - See profiler for 200 iterations of test_large_cycle:
 ncalls  tottime  percall  cumtime  percall filename:lineno(function)
@@ -55,7 +58,6 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
 20100    0.062    0.000    4.678    0.000 Workbook.py:219(evaluate_cell)
 20100    0.036    0.000    3.950    0.000 Workbook.py:408(detect_cycle)
 20100    2.421    0.000    3.914    0.000 Workbook.py:384(has_cycle)
-
 As we can see, we are calling detect_cycle 20100 times, although there are only 200 cells in the cycle.
 Outcome - we changed our automatic updating to call detect cycle only on the cell being changed directly
 via set_cell_contents - all other cells should update automatically
@@ -71,11 +73,13 @@ ncalls  tottime  percall  cumtime  percall filename:lineno(function)
 60699    0.087    0.000    0.708    0.000 Workbook.py:415(get_cell_value)
 20100    0.051    0.000    0.657    0.000 Workbook.py:219(evaluate_cell)
 
+
+
 Theory - we want to change all of our recursive implementations into iterative ones
 Rationale - From advice from lecture, as well as avoiding errors related to stack overflow 
 Outcome - Changing our recursive implementation for the out degree calculation in our topo sort_key
 as well as for cycle detection code to an iterative one has reduced the runtime significantly. 
-For isntance, the cumulative time was reduced to the following for the Fibonacci test, 
+For instance, the cumulative time was reduced to the following for the Fibonacci test, 
 
          13720943 function calls (13698012 primitive calls) in 2.712 seconds
 
