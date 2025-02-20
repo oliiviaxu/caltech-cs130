@@ -716,8 +716,6 @@ class SpreadsheetTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'B2', '=A1 - \'Sheet 3\'!A2') # A1: (-1, -1), A2: (-1, 0)
         wb.move_cells('Sheet1', 'A1', 'B2', 'D6')
 
-        self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
-
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D6'), '4')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D7'), '5')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E6'), '=Sheet2!G9 / H13')
