@@ -482,9 +482,25 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from the new_sheet call inside copy_sheet
             "Cell(s) changed: [('sheet1_1', 'a1'), ('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents call inside copy_sheet
         ))
-        # TODO: verify that functionality above is correct (should copy sheet cause two cell notifications?)
+    
+    def test_notify_rename(self):
+        # renaming causes notification properly
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet1!B1")
+        wb.set_cell_contents('Sheet2', 'A2', '=Sheet1!B1')
+        wb.set_cell_contents('Sheet2', 'A1', '=SheetBlah!A3 + 1')
 
-        # TODO: renaming causes notification
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+        wb.notify_cells_changed(on_cells_changed)
+
+        temp_stdout = StringIO()
+        with contextlib.redirect_stdout(temp_stdout):
+            wb.rename_sheet('Sheet1', 'SheetBlah')
+        output = temp_stdout.getvalue()
+        # should only have Sheet2, A1
 
     def test_absolute_cellref(self):
         wb = sheets.Workbook()

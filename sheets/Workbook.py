@@ -29,6 +29,8 @@ class Workbook:
         self.sheets = OrderedDict() # lowercase keys
         self.notify_functions = []
         self.is_deleting = False
+        self.is_renaming = False
+        self.renaming_info = {}
 
     def num_sheets(self) -> int:
         return len(self.sheets.keys())
@@ -170,7 +172,7 @@ class Workbook:
             self.evaluate_cell(curr_cell, first)
             first = False
             new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            if (prev_value != new_value):
+            if (prev_value != new_value and not self.is_renaming):
                 pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
 
             visited[curr_cell] = True
@@ -609,6 +611,8 @@ class Workbook:
     
         if (new_sheet_name.lower() in self.sheets):
             raise ValueError('Spreadsheet names must be unique.')
+        
+        self.is_renaming = True
 
         sne = SheetNameExtractor(sheet_name, new_sheet_name)
         
@@ -640,7 +644,6 @@ class Workbook:
 
         # changing the sheet to be changed's ingoing cells' outgoing lists, 
         # which contain the sheet to be changed
-
         # this changes the contents, as well as the outgoing of the ingoings
         for loc in sheet_ingoings:
             cell_ingoings = sheet_ingoings[loc].copy()
@@ -670,14 +673,25 @@ class Workbook:
         self.sheets[new_sheet_name.lower()] = self.sheets.pop(sheet_name.lower()) # sheet object
         self.sheets[new_sheet_name.lower()].sheet_name = new_sheet_name
         self.move_sheet(new_sheet_name.lower(), old_index)
-        
-        self.update_cell_sn(new_sheet_name)     
+
+        self.update_cell_sn(new_sheet_name)
 
         self.graph.ingoing.pop(sheet_name)
         self.graph.outgoing.pop(sheet_name)
 
+        for loc in sheet_ingoings:
+            cell_ingoings = sheet_ingoings[loc].copy()
+            for sn, loc2 in cell_ingoings:
+                if sn == new_sheet_name.lower():
+                    cell = self.get_cell(sn, loc2)
+                    if not cell.parse_error:
+                        new_formula = sne.transform(cell.tree)
+                        self.set_cell_contents(sn, loc2, '=' + new_formula)
+        
+        self.is_renaming = False
         for loc in self.graph.ingoing[new_sheet_name.lower()]:
             self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
+        self.is_renaming = False
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
