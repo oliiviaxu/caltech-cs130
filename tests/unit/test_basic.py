@@ -510,6 +510,16 @@ class BasicTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'C1', '=Sheet1!$A10')
         self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+    
+    def test_string_concat(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '="test"&"#REF!"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'test#REF!')
+
+        wb.set_cell_contents('Sheet1', 'A2', '="Sheet1!A3"&"Hi"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), "Sheet1!A3Hi")
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
