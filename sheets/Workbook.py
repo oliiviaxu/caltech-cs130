@@ -751,48 +751,8 @@ class Workbook:
 
         return (len(self.sheets.keys()) - 1, new_name)
     
-    def move_cells(self, sheet_name: str, start_location: str,
-            end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
-        # Move cells from one location to another, possibly moving them to
-        # another sheet.  All formulas in the area being moved will also have
-        # all relative and mixed cell-references updated by the relative
-        # distance each formula is being copied.
-        #
-        # Cells in the source area (that are not also in the target area) will
-        # become empty due to the move operation.
-        #
-        # The start_location and end_location specify the corners of an area of
-        # cells in the sheet to be moved.  The to_location specifies the
-        # top-left corner of the target area to move the cells to.
-        #
-        # Both corners are included in the area being moved; for example,
-        # copying cells A1-A3 to B1 would be done by passing
-        # start_location="A1", end_location="A3", and to_location="B1".
-        #
-        # The start_location value does not necessarily have to be the top left
-        # corner of the area to move, nor does the end_location value have to be
-        # the bottom right corner of the area; they are simply two corners of
-        # the area to move.
-        #
-        # This function works correctly even when the destination area overlaps
-        # the source area.
-        #
-        # The sheet name matches are case-insensitive; the text must match but
-        # the case does not have to.
-        #
-        # If to_sheet is None then the cells are being moved to another
-        # location within the source sheet.
-        #
-        # If any specified sheet name is not found, a KeyError is raised.
-        # If any cell location is invalid, a ValueError is raised.
-        #
-        # If the target area would extend outside the valid area of the
-        # spreadsheet (i.e. beyond cell ZZZZ9999), a ValueError is raised, and
-        # no changes are made to the spreadsheet.
-        #
-        # If a formula being moved contains a relative or mixed cell-reference
-        # that will become invalid after updating the cell-reference, then the
-        # cell-reference is replaced with a #REF! error-literal in the formula.
+    def transfer_cells(self, sheet_name: str, start_location: str,
+            end_location: str, to_location: str, move: int, to_sheet: Optional[str] = None) -> None:
         if sheet_name.lower() not in self.sheets.keys() or \
         (to_sheet and (to_sheet.lower() not in self.sheets.keys())):
             raise KeyError('Sheet not found.')
@@ -842,7 +802,8 @@ class Workbook:
                 else:
                     contents_grid[i][j] = cell.contents
 
-                self.set_cell_contents(sheet_name, orig_loc, None)
+                if move:
+                    self.set_cell_contents(sheet_name, orig_loc, None)
 
         for i in range(to_loc_row, to_loc_row + n):
             for j in range(to_loc_col, to_loc_col + m):
@@ -855,6 +816,52 @@ class Workbook:
                     self.set_cell_contents(to_sheet, loc, updated_contents)
                 else:
                     self.set_cell_contents(sheet_name, loc, updated_contents)
+
+    
+    def move_cells(self, sheet_name: str, start_location: str,
+            end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
+        # Move cells from one location to another, possibly moving them to
+        # another sheet.  All formulas in the area being moved will also have
+        # all relative and mixed cell-references updated by the relative
+        # distance each formula is being copied.
+        #
+        # Cells in the source area (that are not also in the target area) will
+        # become empty due to the move operation.
+        #
+        # The start_location and end_location specify the corners of an area of
+        # cells in the sheet to be moved.  The to_location specifies the
+        # top-left corner of the target area to move the cells to.
+        #
+        # Both corners are included in the area being moved; for example,
+        # copying cells A1-A3 to B1 would be done by passing
+        # start_location="A1", end_location="A3", and to_location="B1".
+        #
+        # The start_location value does not necessarily have to be the top left
+        # corner of the area to move, nor does the end_location value have to be
+        # the bottom right corner of the area; they are simply two corners of
+        # the area to move.
+        #
+        # This function works correctly even when the destination area overlaps
+        # the source area.
+        #
+        # The sheet name matches are case-insensitive; the text must match but
+        # the case does not have to.
+        #
+        # If to_sheet is None then the cells are being moved to another
+        # location within the source sheet.
+        #
+        # If any specified sheet name is not found, a KeyError is raised.
+        # If any cell location is invalid, a ValueError is raised.
+        #
+        # If the target area would extend outside the valid area of the
+        # spreadsheet (i.e. beyond cell ZZZZ9999), a ValueError is raised, and
+        # no changes are made to the spreadsheet.
+        #
+        # If a formula being moved contains a relative or mixed cell-reference
+        # that will become invalid after updating the cell-reference, then the
+        # cell-reference is replaced with a #REF! error-literal in the formula.
+        self.transfer_cells(sheet_name, start_location, end_location, to_location, True, to_sheet)
+        
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
@@ -898,64 +905,4 @@ class Workbook:
         # If a formula being copied contains a relative or mixed cell-reference
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
-
-        if sheet_name.lower() not in self.sheets.keys() or \
-        (to_sheet and (to_sheet.lower() not in self.sheets.keys())):
-            raise KeyError('Sheet not found.')
-        
-        if (not Workbook.is_valid_location(start_location)) \
-        or (not Workbook.is_valid_location(end_location)) \
-        or (not Workbook.is_valid_location(to_location)):
-            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
-
-
-        start_col, start_row = Sheet.split_cell_ref(start_location)
-        end_col, end_row = Sheet.split_cell_ref(end_location)
-
-        top_left_corner = (min(start_col, end_col), min(start_row, end_row)) # (col_idx, row_idx)
-        bottom_right_corner = (max(start_col, end_col), max(start_row, end_row)) # (col_idx, row_idx)
-
-        to_loc_col, to_loc_row = Sheet.split_cell_ref(to_location) # (col_idx, row_idx)
-
-        new_bottom_right_col = to_loc_col + (end_col - start_col)
-        new_bottom_right_row = to_loc_row + (end_row - start_row)
-
-        # Check if the new bottom-right corner is valid
-        if not Workbook.is_valid_location(Sheet.to_sheet_coords(new_bottom_right_col, new_bottom_right_row)):
-            raise ValueError("Target area extends beyond the valid spreadsheet area.")
-        
-        m = bottom_right_corner[0] - top_left_corner[0] + 1
-        n = bottom_right_corner[1] - top_left_corner[1] + 1
-
-        contents_grid = [[0 for _ in range(m)] for _ in range(n)] # holds the updated contents
-
-        # find delta_x and delta_y 
-        delta_x = to_loc_col - top_left_corner[0] # change in column 
-        delta_y = to_loc_row - top_left_corner[1] # change in row
-        updater = FormulaUpdater(delta_x, delta_y) # column, row
-
-        for i in range(n):
-            for j in range(m):
-                source_col = top_left_corner[0] + j
-                source_row = top_left_corner[1] + i
-
-                orig_loc = Sheet.to_sheet_coords(source_col, source_row)
-
-                cell = self.get_cell(sheet_name, orig_loc)
-                if (cell.contents and cell.contents.startswith('=')):
-                    new_formula = updater.transform(cell.tree)
-                    contents_grid[i][j] = '=' + new_formula
-                else:
-                    contents_grid[i][j] = cell.contents
-
-        for i in range(to_loc_row, to_loc_row + n):
-            for j in range(to_loc_col, to_loc_col + m):
-                grid_i, grid_j = i - to_loc_row, j - to_loc_col
-                updated_contents = contents_grid[grid_i][grid_j]
-
-                loc = Sheet.to_sheet_coords(j, i)
-                
-                if to_sheet:
-                    self.set_cell_contents(to_sheet, loc, updated_contents)
-                else:
-                    self.set_cell_contents(sheet_name, loc, updated_contents)
+        self.transfer_cells(sheet_name, start_location, end_location, to_location, False, to_sheet)

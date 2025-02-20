@@ -19,8 +19,19 @@ L1.  [2pts] Enumerate all teammates here.
 - Wilson Duan, Olivia Xu 
 
 L2.  [2pts] What did each teammate focus on during this project?
+Olivia: 
+- Implementing and testing the move_cells and copy_cells functions
+- Handling mixed/absolute and relative references
+- Updating the GitHub Actions YAML file to include the Ruff linter
+
+Wilson:
+
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
+Olivia: 
+8 hours 
+
+Wilson:
 
 
 Spreadsheet Engine Design (9 pts)
@@ -30,17 +41,51 @@ D1.  [3pts] Moving and copying regions of a sheet are very similar operations,
      with only a few differences between them.  How did your team leverage the
      similarity of these two operations to reduce the amount of code required
      to provide this functionality?
-
+     We noticed that the major difference between move_cells and copy_cells 
+     was that copying would preserve the original source entries (would not 
+     set them to None). To reduce code duplication, we created a helper 
+     function called transfer_cells to handle the common logic of 
+     transferring cell contents, including updating formulas and 
+     handling overlaps. This function takes a boolean parameter named "move",
+     where if it is set to True, it sets the source cells to None (move behaviour),
+     and if False, it does not. 
 
 D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      both involve formula updates.  Was your team able to factor out common
      aspects of these two operations to reduce the amount of code required to
      implement these operations?  If so, what did you do?  If not, why not?
-
+     
+     We identified that moving/copying regions and renaming a sheet require 
+     formula updates. We refactored our implementation by introducing a new 
+     transformer class called FormulaUpdater. This class builds upon the 
+     functionality of our existing SheetNameExtractor (used for renaming sheets) 
+     and adds the capability to handle the distance calculation necessary for
+     moving and copying sheets. Since there were quite a few areas where the 
+     formula updates differed for rename and move/copy cells, we ultimately decided
+     that we would rather duplicate some of the code (specifically the way 
+     whitespace/quotations are handled for rename sheet in the transformer) was 
+     duplicated. We thought that, because of these differences, changing the 
+     SheetNameExtractor to accommodate both scenarios would have introduced 
+     unnecessary complexity and potentially impacted its performance for 
+     renaming sheets, where the additional distance calculations are not needed.
 
 D3.  [3pts] How does your implementation address the challenge of moving or
      copying a region of cells where the source and target regions overlap?
+     Our implementation handles overlapping source and target regions during 
+     move/copy operations by using a temporary grid and in-place updates.
+     - A matrix is initialized to store the updated contents 
+     of the source region.
+     - Formula Update and Storage: The code iterates through the source region,
+     and updates any formulas using the FormulaUpdater transformer, 
+     storing the updated contents (or original values) in the temporary grid.
+     - In-place Clearing (for Move): If it's a move operation, the source cells 
+     are cleared in-place during the iteration through the source region.
+     - The code then iterates through the target region and copies the 
+     corresponding updated contents from the temporary grid to the target cells.
 
+     This approach effectively handles overlaps because the formulas are 
+     updated and stored in the temp grid before any source cells are cleared, 
+     preventing data loss.
 
 Static Code Analysis / Code Linting (16 pts)
 --------------------------------------------
@@ -53,16 +98,42 @@ L1.  [5pts] The Project 3 spec includes an example of a subtle implementation
 
 L2.  [4pts] What code-linter did your team use on your project?  Why did you
      choose it?  Was this the first CS130 project in which you used a linter?
-
+     We used the ruff linter for our project, as recommended in the spec.
+     We chose ruff because our research indicated that it is rapidly gaining 
+     popularity within the Python community and is known for its speed and 
+     efficiency. We also noticed that it provides a wide range of code 
+     quality checks. 
+     - This is the first project in which we used a linter.
 
 L3.  [3pts] How did you automate the execution of your code linter?  Did
      everyone in your team find it easy to run?
-
+     
+     We automated the execution of our code linter, ruff, by configuring 
+     it in a ruff.toml file and integrating it with our existing GitHub 
+     Actions workflow. This configuration ensured that ruff was automatically 
+     run on every pull request and commit, providing continuous feedback on 
+     our code quality. The integration with GitHub Actions made it  
+     easy for everyone on the team to run the linter, as it was seamlessly 
+     incorporated into our development process. 
 
 L4.  [4pts] Did the use of the linter improve your overall code quality and
      correctness?  Give some specific details in your answer.  Were there any
      serious issues (e.g. buggy language idioms) you were unaware of?
+     Yes, using the ruff linter definitely improved our code quality 
+     and correctness. It helped us identify and address various issues, 
+     both stylistic and potentially problematic.
 
+     Stylistic: ruff automatically flagged and helped us correct around 80 
+     stylistic issues (denoted as "safe fixes, fixed with the command 
+     ruff check --safe), such as inconsistent indentation, unused imports, 
+     and unsorted imports.
+
+     Correctness checks: ruff also identified potential correctness issues. 
+     For example, in our visitor/interpreter/transformer code, we were using 
+     assertFalse in a context where we should have been raising an 
+     AssertionError. 
+     (For reference, we fixed this in the following commit
+     - commit hash = d016dbf2623554e2c5adbc93c0c64d0f7a4e307a)
 
 Performance Improvement (18 pts)
 --------------------------------
@@ -75,26 +146,67 @@ improvements can be made.  In this project you will follow through on this
 investigation, and fix performance issues in your code.
 
 P1.  [7pts] Give a brief overview of 3-4 of the worst hot-spots you identified
-     in your performance testing and analysis.  For each one, describe how your
+     in your performance testing and analysis. For each one, describe how your
      team was able to resolve it.
+     Our performance analysis using the profiler revealed that set_cell_contents 
+     and handle_update_tree were the most frequently called and slowest functions 
+     in our spreadsheet application. This was a major performance bottleneck,
+     especially for larger spreadsheets with complex dependencies that revealed
+     itself in the different structures that we constructed in our performance tests.
+
+     Initially, our implementation from Project 2 called detect_cycle every time 
+     evaluate_cell was called (which is triggered within the topological sort in 
+     handle_update_tree for automatic updating). This led to a runtime complexity 
+     of roughly O(N^2), where N is the number of cells, because we were redundantly 
+     checking for cycles for every cell, regardless of whether the source cell 
+     was involved in a cycle.
+
+     To address this, we optimized the cycle detection by calling detect_cycle 
+     only once per update, rather than for every cell. This significantly reduced 
+     the number of computations and improved the runtime.
+
+     Furthermore, as anticipated from the lecture, we replaced the recursive 
+     implementations of our cycle detection and topological sort algorithms with 
+     iterative versions. This change, along with careful optimization of the 
+     iterative code, led to a substantial reduction in runtime and improved the 
+     overall efficiency of our application. This optimization was crucial for 
+     handling larger spreadsheets and complex formulas without encountering stack 
+     overflow errors or performance issues.
 
 
 P2.  [4pts] Did your team try anything to resolve performance issues and find
      that it didn't improve things at all - perhaps even made things worse?
      If so, were you able to identify why the intended fix didn't produce the
      desired benefit?
+     TODO
 
 
 P3.  [4pts] How do you feel that your performance updates affected your code's
      readability and maintainability?  Did it make it better? worse? unchanged?
      Elaborate on your answer.
+     Readability: The shift to iterative implementations using stacks, while 
+     improving performance, did not significantly affect readability. The 
+     iterative versions, with their explicit loop structures and stack operations, 
+     remained relatively intuitive and easy to follow. In some cases, the iterative 
+     versions were even more straightforward than the original recursive 
+     implementations.
 
+     Maintainability: The performance optimizations did introduce some 
+     complexity in certain areas. For example, optimizing the cycle detection 
+     required introducing a new flag, named "first", to avoid redundant cycle
+     detection computations. This is one example of adding some complexity to 
+     the code when improving performance that might require more effort for a 
+     reader to understand and maintain compared to before.
 
 P4.  [3pts] Did your performance updates cause any regressions in functionality?
      If so, briefly describe any issues that emerged.  How were these issues
      identified (e.g. automated test failures, manual testing, etc.)?  How
      quickly were issues identified?
-
+     At first, when I (Olivia) implemented iterative implementations of our 
+     originally recursive out degree and cycle detection the code was quite slow, 
+     and I didn't realize until we ran the fib test more. Wilson
+     identified this, and improved our iterative implementation
+     to significantly imrove performance. Issues were identified relatively quickly. 
 
 Section F:  CS130 Project 3 Feedback [OPTIONAL]
 -----------------------------------------------
