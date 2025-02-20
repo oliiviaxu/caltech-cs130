@@ -20,7 +20,8 @@ L1.  [2pts] Enumerate all teammates here.
 
 L2.  [2pts] What did each teammate focus on during this project?
 Olivia: 
-- Implementing and testing the move_cells and copy_cells functions
+- Implementing move_cells and copy_cells functionality
+- Writing tests for move and copy cells
 - Handling mixed/absolute and relative references
 - Updating the GitHub Actions YAML file to include the Ruff linter
 
@@ -50,7 +51,7 @@ D1.  [3pts] Moving and copying regions of a sheet are very similar operations,
      transferring cell contents, including updating formulas and 
      handling overlaps. This function takes a boolean parameter named "move",
      where if it is set to True, it sets the source cells to None (move behaviour),
-     and if False, it does not. 
+     and if False, it does not (copy behaviour). 
 
 D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      both involve formula updates.  Was your team able to factor out common
@@ -58,7 +59,7 @@ D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      implement these operations?  If so, what did you do?  If not, why not?
      
      We were able to unify moving and copying regions of a sheet into a single
-     helper method, as the operations are incredibly similar. The formula updates
+     helper method, as the operations are similar. The formula updates
      for moving and copying regions were carried out by a new transformer class 
      that had many similarities to the transformer used with rename. We considered 
      using one transformer for all three tasks, but we ultimately found it easiest 
@@ -66,21 +67,19 @@ D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
 
 D3.  [3pts] How does your implementation address the challenge of moving or
      copying a region of cells where the source and target regions overlap?
+
      - Our implementation handles overlapping source and target regions during 
      move/copy operations by using a temporary grid and in-place updates.
      - A matrix is initialized to store the updated contents 
      of the source region.
-     - Formula Update and Storage: The code iterates through the source region,
-     and updates any formulas using the FormulaUpdater transformer, 
-     storing the updated contents (or original values) in the temporary grid.
+     - The code iterates through the source region, and updates any formulas 
+     using the FormulaUpdater transformer, storing the updated contents 
+     (or original values) in the temporary grid.
      - In-place Clearing (for Move): If it's a move operation, the source cells 
      are cleared in-place during the iteration through the source region.
-     - The code then iterates through the target region and copies the 
-     corresponding updated contents from the temporary grid to the target cells.
-
-     This approach effectively handles overlaps because the formulas are 
-     updated and stored in the temp grid before any source cells are cleared, 
-     preventing data loss.
+     - Then we iterate through the target region and copy the 
+     corresponding updated contents from the temporary grid to the target 
+     cells.
 
 Static Code Analysis / Code Linting (16 pts)
 --------------------------------------------
@@ -114,8 +113,8 @@ L3.  [3pts] How did you automate the execution of your code linter?  Did
      Actions workflow. This configuration ensured that ruff was automatically 
      run on every pull request and commit, providing continuous feedback on 
      our code quality. The integration with GitHub Actions made it  
-     easy for everyone on the team to run the linter, as it was seamlessly 
-     incorporated into our development process. 
+     easy for everyone on the team to run the linter, as we integrated it 
+     into our github actions workflow. 
 
 L4.  [4pts] Did the use of the linter improve your overall code quality and
      correctness?  Give some specific details in your answer.  Were there any
@@ -164,7 +163,7 @@ P1.  [7pts] Give a brief overview of 3-4 of the worst hot-spots you identified
      Initially, our implementation from Project 2 called detect_cycle every time 
      evaluate_cell was called (which is triggered within the topological sort in 
      handle_update_tree for automatic updating). This led to detect_cycle being called
-     O(N^2) times in long chains, where N is the number of cells, because we were redundantly 
+     O(N^2) times in long chains, N is the number of cells, because we were redundantly 
      checking for cycles for every cell, regardless of whether the source cell 
      was involved in a cycle. To address this, we optimized the cycle detection by 
      calling detect_cycle only once per update, rather than for every cell. This 
