@@ -745,6 +745,27 @@ class SpreadsheetTests(unittest.TestCase):
         wb.move_cells('Sheet1', 'A1', 'A1', 'A9990')
 
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A9990'), '=#REF!')
+
+        # absolute references across sheets
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'A1', '=$BB$100')
+        wb.set_cell_contents('Sheet1', 'BB100', '=1')
+
+        wb.move_cells('Sheet1', 'A1', 'A1', 'A1', 'Sheet2')
+        self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=$BB$100')
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), decimal.Decimal('0'))
+
+        # mixed references
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=$B1 + B$2')
+        wb.move_cells('Sheet1', 'A1', 'A1', 'C2')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=$B2 + D$2')
+
     
     def test_copy_cells_edge(self):
         wb = sheets.Workbook()

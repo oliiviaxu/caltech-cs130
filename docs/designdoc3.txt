@@ -56,7 +56,7 @@ D2.  [3pts] Similarly, moving/copying regions of a sheet, and renaming a sheet,
      implement these operations?  If so, what did you do?  If not, why not?
      
      TODO 
-     
+
      We identified that moving/copying regions and renaming a sheet require 
      formula updates. We refactored our implementation by introducing a new 
      transformer class called FormulaUpdater. This class builds upon the 
@@ -96,11 +96,13 @@ L1.  [5pts] The Project 3 spec includes an example of a subtle implementation
      bug with the Python counts(s, totals) function as written in the spec.
      Briefly describe the cause of the buggy behavior, and what is the
      recommended approach for avoiding the buggy behavior.
+     
 
 
 L2.  [4pts] What code-linter did your team use on your project?  Why did you
      choose it?  Was this the first CS130 project in which you used a linter?
-     We used the ruff linter for our project, as recommended in the spec.
+     
+     - We used the ruff linter for our project, as recommended in the spec.
      We chose ruff because our research indicated that it is rapidly gaining 
      popularity within the Python community and is known for its speed and 
      efficiency. We also noticed that it provides a wide range of code 
