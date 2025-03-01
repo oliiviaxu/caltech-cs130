@@ -44,6 +44,13 @@ class WorkbookTests(unittest.TestCase):
             p.print_stats()
 
         print(f"--->>> Ending Test: {self._testMethodName}\n")
+
+    def test_load_wb(self):
+        file_path = os.path.join(current_dir, 'fibonacci.json')
+        num_loads = 1
+        for _ in range(num_loads):
+            with open(file_path, "r") as file:
+                _ = sheets.Workbook.load_workbook(file)
     
     def test_rename(self):
         wb = sheets.Workbook()
