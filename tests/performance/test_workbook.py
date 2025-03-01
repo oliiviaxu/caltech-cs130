@@ -5,7 +5,7 @@ import decimal
 import sheets
 import cProfile
 from pstats import Stats
-from .testStructures import create_chain, create_chain_2
+from .testStructures import create_chain, create_chain_2, create_web
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
@@ -113,42 +113,26 @@ class WorkbookTests(unittest.TestCase):
             for j in range(1, chain_size):
                 self.assertEqual(wb.get_cell_contents(new_sn, f'A{j}'), f'={sn_1}!A{j + 1}')
 
-    # def test_move_cells(self):
-    #     # test copying an entire sheet to a new sheet
-    #     wb = sheets.Workbook()
-    #     wb.new_sheet()
-    #     wb.new_sheet()
+    def test_move_cells(self):
+        wb = sheets.Workbook()
+        _, sn = wb.new_sheet()
 
-    #     num_cells = num_iterations
-    #     last_cell = WorkbookTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+        web_size = 10
+        create_web(wb, sn, web_size)
 
-    #     for i in range(1, num_cells):
-    #         wb.set_cell_contents('Sheet1', f"A{i}", "1")
-                
-    #     wb.move_cells('Sheet1', 'A1', last_cell, 'A1', 'Sheet2')
-        
-    #     for i in range(1, num_cells):
-    #         self.assertEqual(wb.get_cell_value('Sheet1', f"A{i}"), None)
-    #         self.assertEqual(wb.get_cell_value('Sheet2', f"A{i}"), "1")
+        num_moves = num_iterations
+        for _ in range(num_moves):
+            wb.move_cells(sn, 'A1', f'B{web_size}', 'C1')
+            wb.move_cells(sn, 'C1', f'D{web_size}', 'A1')
 
-    #     self.assertEqual(wb.get_cell_value('Sheet2', last_cell), "1")
-    
-    # def test_copy_cells(self):
-    #     # test copying an entire sheet to a new sheet
-    #     wb = sheets.Workbook()
-    #     wb.new_sheet()
-    #     wb.new_sheet()
+    def test_copy_cells(self):
+        wb = sheets.Workbook()
+        _, sn = wb.new_sheet()
 
-    #     num_cells = num_iterations
-    #     last_cell = WorkbookTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+        web_size = 10
+        create_web(wb, sn, web_size)
 
-    #     for i in range(1, num_cells):
-    #         wb.set_cell_contents('Sheet1', f"A{i}", "1")
-        
-    #     wb.copy_cells('Sheet1', 'A1', last_cell, 'A1', 'Sheet2')
-        
-    #     for i in range(1, num_cells):
-    #         self.assertEqual(wb.get_cell_value('Sheet1', f"A{i}"), "1")
-    #         self.assertEqual(wb.get_cell_value('Sheet2', f"A{i}"), "1")
-
-    #     self.assertEqual(wb.get_cell_value('Sheet2', last_cell), "1")
+        num_moves = num_iterations
+        for i in range(num_moves):
+            column = WorkbookTests.index_to_col(i * 2 + 2)
+            wb.copy_cells(sn, 'A1', f'B{web_size}', f'{column}1')
