@@ -69,16 +69,3 @@ class CellUpdateTests(unittest.TestCase):
 
         wb.set_cell_contents(sheet_name, 'A1', '0')
         self.many_refs_helper(wb, sheet_name, num_cells, '0')
-
-    def test_rename_updates(self):
-        # create a chain andthen rename the sheet
-        wb = sheets.Workbook()
-        num_cells = num_iterations
-        _, sheet_name = wb.new_sheet()
-
-        create_chain(wb, sheet_name, num_cells)
-
-        wb.rename_sheet(sheet_name, 'SheetBla')
-        for i in range(1, num_cells):
-            outgoing_lst = wb.graph.outgoing_get('SheetBla', f'A{i}')
-            self.assertEqual(outgoing_lst[0], ('sheetbla', f'a{i+1}'))

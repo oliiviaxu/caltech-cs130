@@ -5,14 +5,21 @@ import decimal
 import sheets
 import cProfile
 from pstats import Stats
-from .testStructures import create_large_cycle, create_small_cycles, create_chain_2
+from .testStructures import create_chain, create_chain_2
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 dir = os.path.join(current_dir, 'cProfile_output/')
 
 num_iterations = 100
 
-class GeneralPerformanceTests(unittest.TestCase):
+class WorkbookTests(unittest.TestCase):
+    @staticmethod
+    def index_to_col(col_index):
+        col = ""
+        while col_index >= 0:
+            col = chr(65 + col_index % 26) + col
+            col_index = col_index // 26 - 1
+        return col
     
     def setUp(self):
         self.pr = cProfile.Profile()
@@ -38,51 +45,38 @@ class GeneralPerformanceTests(unittest.TestCase):
 
         print(f"--->>> Ending Test: {self._testMethodName}\n")
     
-    def test_fibonacci(self):
+    def test_rename(self):
         wb = sheets.Workbook()
-        wb.new_sheet()
+        _, sn_1 = wb.new_sheet()
+        _, sn_2 = wb.new_sheet()
+        num_cells = num_iterations
 
-        wb.set_cell_contents("Sheet1", "A1", "1")
-        wb.set_cell_contents("Sheet1", "A2", "1")
+        create_chain_2(wb, sn_1, sn_2, num_cells)
 
-        num_numbers = 1000
-        for i in range(3, num_numbers):
-            wb.set_cell_contents("Sheet1", f"A{i}", f"=A{i-1}+A{i-2}")
+        # for i in range(1, num_cells):
+        #     self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], (sn_2.lower(), f'a{i}'))
 
-        a = 2
-        b = 1
-        wb.set_cell_contents('Sheet1', 'A1', str(a))
-        for i in range(3, num_numbers):
-            self.assertEqual(wb.get_cell_value('Sheet1', f'A{i}'), decimal.Decimal(a + b))
-            a, b = b, (a + b)
+        wb.rename_sheet(sn_2, 'SheetBla')
+        for i in range(1, num_cells):
+            self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], ('sheetbla', f'a{i}'))
+
+        wb.set_cell_contents(sn_1, f'A{num_cells}', '0')
+        for i in range(1, num_cells):
+            self.assertEqual(wb.get_cell_value(sn_1, f'A{i}'), 0)
+            self.assertEqual(wb.get_cell_value('sheetbla', f'A{i}'), 0)
     
-    @staticmethod
-    def index_to_col(col_index):
-        col = ""
-        while col_index >= 0:
-            col = chr(65 + col_index % 26) + col
-            col_index = col_index // 26 - 1
-        return col
-
-    def test_pascals_triangle(self):
+    def test_rename_updates(self):
+        # create a chain andthen rename the sheet
         wb = sheets.Workbook()
-        wb.new_sheet()
+        num_cells = num_iterations
+        _, sheet_name = wb.new_sheet()
 
-        num_rows = 50
-        wb.set_cell_contents("Sheet1", "A1", "1")
-        for i in range(1, num_rows):
-            wb.set_cell_contents("Sheet1", f"A{i + 1}", "1")
-            wb.set_cell_contents("Sheet1", f"{GeneralPerformanceTests.index_to_col(i)}{i + 1}", "1")
-            for j in range(1, i):
-                wb.set_cell_contents("Sheet1", f"{GeneralPerformanceTests.index_to_col(j)}{i + 1}",
-                                     f"={GeneralPerformanceTests.index_to_col(j - 1)}{i}+{GeneralPerformanceTests.index_to_col(j)}{i}")
+        create_chain(wb, sheet_name, num_cells)
 
-        # Calculate and verify row sums
-        for i in range(num_rows):
-            sum = 0
-            for j in range(i + 1):
-                sum += wb.get_cell_value('Sheet1', f'{GeneralPerformanceTests.index_to_col(j)}{i + 1}')
-            self.assertEqual(sum, 2 ** i)
+        wb.rename_sheet(sheet_name, 'SheetBla')
+        for i in range(1, num_cells):
+            outgoing_lst = wb.graph.outgoing_get('SheetBla', f'A{i}')
+            self.assertEqual(outgoing_lst[0], ('sheetbla', f'a{i+1}'))
     
     # def test_move_cells(self):
     #     # test copying an entire sheet to a new sheet
@@ -90,8 +84,8 @@ class GeneralPerformanceTests(unittest.TestCase):
     #     wb.new_sheet()
     #     wb.new_sheet()
 
-    #     num_cells = 1000
-    #     last_cell = GeneralPerformanceTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+    #     num_cells = num_iterations
+    #     last_cell = WorkbookTests.index_to_col(num_cells - 1) + str(num_cells - 1)
 
     #     for i in range(1, num_cells):
     #         wb.set_cell_contents('Sheet1', f"A{i}", "1")
@@ -110,8 +104,8 @@ class GeneralPerformanceTests(unittest.TestCase):
     #     wb.new_sheet()
     #     wb.new_sheet()
 
-    #     num_cells = 1000
-    #     last_cell = GeneralPerformanceTests.index_to_col(num_cells - 1) + str(num_cells - 1)
+    #     num_cells = num_iterations
+    #     last_cell = WorkbookTests.index_to_col(num_cells - 1) + str(num_cells - 1)
 
     #     for i in range(1, num_cells):
     #         wb.set_cell_contents('Sheet1', f"A{i}", "1")
