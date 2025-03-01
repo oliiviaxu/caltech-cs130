@@ -47,37 +47,65 @@ class WorkbookTests(unittest.TestCase):
     
     def test_rename(self):
         wb = sheets.Workbook()
-        _, sn_1 = wb.new_sheet()
-        _, sn_2 = wb.new_sheet()
-        num_cells = num_iterations
+        _, curr_sheet_name = wb.new_sheet('TestSheet')
 
-        create_chain_2(wb, sn_1, sn_2, num_cells)
+        chain_size = 10
+        create_chain(wb, curr_sheet_name, chain_size)
 
-        # for i in range(1, num_cells):
-        #     self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], (sn_2.lower(), f'a{i}'))
-
-        wb.rename_sheet(sn_2, 'SheetBla')
-        for i in range(1, num_cells):
-            self.assertEqual(wb.graph.outgoing_get(sn_1, f'A{i}')[0], ('sheetbla', f'a{i}'))
-
-        wb.set_cell_contents(sn_1, f'A{num_cells}', '0')
-        for i in range(1, num_cells):
-            self.assertEqual(wb.get_cell_value(sn_1, f'A{i}'), 0)
-            self.assertEqual(wb.get_cell_value('sheetbla', f'A{i}'), 0)
+        num_renames = num_iterations
+        for i in range(num_renames):
+            new_sheet_name = f'Sheet{i}'
+            wb.rename_sheet(curr_sheet_name, new_sheet_name)
+            curr_sheet_name = new_sheet_name
+            for j in range(1, chain_size):
+                self.assertEqual(wb.get_cell_contents(curr_sheet_name, f'A{j}'), f'=A{j+1}')
     
-    def test_rename_updates(self):
-        # create a chain andthen rename the sheet
+    def test_rename_2(self):
         wb = sheets.Workbook()
-        num_cells = num_iterations
-        _, sheet_name = wb.new_sheet()
+        _, sn_1 = wb.new_sheet('ConstantSheet')
+        _, sn_2 = wb.new_sheet('VariableSheet')
 
-        create_chain(wb, sheet_name, num_cells)
+        chain_size = 10
+        create_chain_2(wb, sn_1, sn_2, chain_size)
 
-        wb.rename_sheet(sheet_name, 'SheetBla')
-        for i in range(1, num_cells):
-            outgoing_lst = wb.graph.outgoing_get('SheetBla', f'A{i}')
-            self.assertEqual(outgoing_lst[0], ('sheetbla', f'a{i+1}'))
+        num_renames = num_iterations
+        for i in range(num_renames):
+            new_sheet_name = f'Sheet{i}'
+            wb.rename_sheet(sn_2, new_sheet_name)
+            sn_2 = new_sheet_name
+            for j in range(1, chain_size):
+                self.assertEqual(wb.get_cell_contents(sn_1, f'A{j}'), f'={sn_2}!A{j}')
+                self.assertEqual(wb.get_cell_contents(sn_2, f'A{j}'), f'={sn_1}!A{j + 1}')
+
+    def test_copy_sheet(self):
+        wb = sheets.Workbook()
+        _, sn = wb.new_sheet('TestSheet')
+
+        chain_size = 10
+        create_chain(wb, sn, chain_size)
+
+        num_copies = num_iterations
+        for i in range(1, num_copies + 1):
+            wb.copy_sheet(sn)
+            new_sn = f'{sn}_{i}'
+            for j in range(1, chain_size):
+                self.assertEqual(wb.get_cell_contents(new_sn, f'A{j}'), f'=A{j+1}')
     
+    def test_copy_sheet_2(self):
+        wb = sheets.Workbook()
+        _, sn_1 = wb.new_sheet('ConstantSheet')
+        _, sn_2 = wb.new_sheet('TestSheet')
+
+        chain_size = 10
+        create_chain_2(wb, sn_1, sn_2, chain_size)
+
+        num_copies = num_iterations
+        for i in range(1, num_copies):
+            wb.copy_sheet(sn_2)
+            new_sn = f'{sn_2}_{i}'
+            for j in range(1, chain_size):
+                self.assertEqual(wb.get_cell_contents(new_sn, f'A{j}'), f'={sn_1}!A{j + 1}')
+
     # def test_move_cells(self):
     #     # test copying an entire sheet to a new sheet
     #     wb = sheets.Workbook()
