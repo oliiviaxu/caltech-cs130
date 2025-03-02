@@ -205,7 +205,7 @@ class BasicTests(unittest.TestCase):
 
         ev = FormulaEvaluator('sheet1', ref_info)
 
-        self.assertEqual(ev.visit(tree_1), 1)
+        self.assertEqual(ev.visit(tree_1).val, 1)
 
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=-3')

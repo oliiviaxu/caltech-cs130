@@ -237,10 +237,10 @@ class Workbook:
                     # feed references and sheet name into interpreter
                     ev = FormulaEvaluator(cell.sheet_name, ref_info)
                     visit_value = ev.visit(tree)
-                    if (visit_value is None):
+                    if (visit_value is None or visit_value.val is None):
                         cell.value = CellValue(decimal.Decimal('0'))
                     else:
-                        cell.value = CellValue(visit_value)
+                        cell.value = visit_value
         elif contents.startswith("'"):
             cell.value = CellValue(contents[1:])
         else:
