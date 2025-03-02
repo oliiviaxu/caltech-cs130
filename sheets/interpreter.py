@@ -1,5 +1,6 @@
 import decimal
 from .CellError import CellError, CellErrorType
+from .CellValue import CellValue
 import lark
 from .Cell import Cell 
 from lark.visitors import visit_children_decor
@@ -33,12 +34,12 @@ class FormulaEvaluator(lark.visitors.Interpreter):
 
         def convert(val):
             if isinstance(val, str):
-                if Cell.is_number(val):
-                    return decimal.Decimal(Cell.strip_trailing_zeros(val))
+                if CellValue.is_number(val):
+                    return decimal.Decimal(CellValue.strip_trailing_zeros(val))
                 else:
                     return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
             elif isinstance(val, decimal.Decimal):
-                return decimal.Decimal(Cell.strip_trailing_zeros(str(val)))
+                return decimal.Decimal(CellValue.strip_trailing_zeros(str(val)))
             return val
 
         res_1 = convert(val_1)
@@ -52,10 +53,10 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if val_2 is None:
             val_2 = ''
         
-        if Cell.is_number(val_1):
-            val_1 = Cell.strip_trailing_zeros(str(val_1))
-        if Cell.is_number(val_2):
-            val_2 = Cell.strip_trailing_zeros(str(val_2))
+        if CellValue.is_number(val_1):
+            val_1 = CellValue.strip_trailing_zeros(str(val_1))
+        if CellValue.is_number(val_2):
+            val_2 = CellValue.strip_trailing_zeros(str(val_2))
         return val_1, val_2
         
     @visit_children_decor
@@ -69,9 +70,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
                 return res_2
             else:
                 if operator == '+':
-                    return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 + res_2)))
+                    return decimal.Decimal(CellValue.strip_trailing_zeros(str(res_1 + res_2)))
                 elif operator == '-':
-                    return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 - res_2)))
+                    return decimal.Decimal(CellValue.strip_trailing_zeros(str(res_1 - res_2)))
                 else:
                     raise AssertionError(f'Unexpected operation: {operator}')
         
@@ -87,11 +88,11 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             return res_2
         else:
             if operator == '*':
-                return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 * res_2)))
+                return decimal.Decimal(CellValue.strip_trailing_zeros(str(res_1 * res_2)))
             elif operator == '/':
                 if (res_2 == 0):
                     return CellError(CellErrorType.DIVIDE_BY_ZERO, 'Cannot divide by zero')
-                return decimal.Decimal(Cell.strip_trailing_zeros(str(res_1 / res_2)))
+                return decimal.Decimal(CellValue.strip_trailing_zeros(str(res_1 / res_2)))
             else:
                 raise AssertionError(f'Unexpected operation: {operator}')
     
@@ -104,15 +105,15 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if type(val_1) is CellError:
             return val_1
         if type(val_1) is str:
-            if Cell.is_number(val_1):
-                val_1 = decimal.Decimal(Cell.strip_trailing_zeros(str(val_1)))
+            if CellValue.is_number(val_1):
+                val_1 = decimal.Decimal(CellValue.strip_trailing_zeros(str(val_1)))
             else:
                 return CellError(CellErrorType.TYPE_ERROR, 'Invalid type.')
         
         if operator == '+':
-            return decimal.Decimal(Cell.strip_trailing_zeros(str(val_1)))
+            return decimal.Decimal(CellValue.strip_trailing_zeros(str(val_1)))
         elif operator == '-':
-            return -decimal.Decimal(Cell.strip_trailing_zeros(str(val_1)))
+            return -decimal.Decimal(CellValue.strip_trailing_zeros(str(val_1)))
         else:
             raise AssertionError(f'Unexpected operation: {operator}')
 

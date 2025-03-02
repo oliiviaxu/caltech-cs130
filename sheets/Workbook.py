@@ -2,6 +2,7 @@ from __future__ import annotations
 from .Sheet import Sheet
 from .Cell import Cell
 from .CellError import CellError, CellErrorType
+from .CellValue import CellValue
 from .visitor import CellRefFinder
 from collections import OrderedDict, deque
 from typing import List, Optional, Tuple, Any, Callable, Iterable, TextIO
@@ -219,16 +220,16 @@ class Workbook:
     def evaluate_cell(self, cell, first=False):
         contents = cell.contents
         if (contents is None):
-            cell.value = None
+            cell.value = CellValue(None)
             return
         
         if contents.startswith('='):
             tree = cell.tree
             if cell.parse_error:
-                cell.value = CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula')
+                cell.value = CellValue(CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula'))
             else:
                 if first and self.detect_cycle(cell):
-                    cell.value = CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found')
+                    cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 else:
                     # obtain reference info from tree with visitor
                     ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
@@ -237,19 +238,19 @@ class Workbook:
                     ev = FormulaEvaluator(cell.sheet_name, ref_info)
                     visit_value = ev.visit(tree)
                     if (visit_value is None):
-                        cell.value = decimal.Decimal('0')
+                        cell.value = CellValue(decimal.Decimal('0'))
                     else:
-                        cell.value = visit_value
+                        cell.value = CellValue(visit_value)
         elif contents.startswith("'"):
-            cell.value = contents[1:]
+            cell.value = CellValue(contents[1:])
         else:
-            if Cell.is_number(contents):
-                contents = Cell.strip_trailing_zeros(contents)
-                cell.value = decimal.Decimal(contents)
+            if CellValue.is_number(contents):
+                contents = CellValue.strip_trailing_zeros(contents)
+                cell.value = CellValue(decimal.Decimal(contents))
             elif contents.lower() in FormulaEvaluator.error_dict:
-                cell.value = CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation')
+                cell.value = CellValue(CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation'))
             else:
-                cell.value = contents
+                cell.value = CellValue(contents)
 
     def set_cell_contents(self, sheet_name: str, location: str,
                           contents: Optional[str]) -> None:
@@ -446,9 +447,9 @@ class Workbook:
         
         sheet = self.sheets[sheet_name.lower()]
         cell = sheet.get_cell(location)
-        if (cell is None):
+        if (cell is None or cell.value is None):
             return None
-        return cell.value
+        return cell.value.val
     
     def get_cell_ref_info(self, tree, sheet_name):
         """
