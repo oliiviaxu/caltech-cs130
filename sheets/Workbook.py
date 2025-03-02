@@ -809,11 +809,14 @@ class Workbook:
                 orig_loc = Sheet.to_sheet_coords(source_col, source_row)
 
                 cell = self.get_cell(sheet_name, orig_loc)
-                if (cell.contents and cell.contents.startswith('=')):
-                    new_formula = updater.transform(cell.tree)
-                    contents_grid[i][j] = '=' + new_formula
+                if cell:
+                    if (cell.contents and cell.contents.startswith('=')):
+                        new_formula = updater.transform(cell.tree)
+                        contents_grid[i][j] = '=' + new_formula
+                    else:
+                        contents_grid[i][j] = cell.contents
                 else:
-                    contents_grid[i][j] = cell.contents
+                    contents_grid[i][j] = None # I'm not sure, if there wasn't a cell there, we're copying it over, right? 
 
                 if move:
                     self.set_cell_contents(sheet_name, orig_loc, None)
