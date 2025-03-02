@@ -12,11 +12,6 @@
 ?expression : compare_expr | concat_expr | add_expr
 
 //========================================
-// Comparison expressions
-
-?compare_expr : add_expr (COMPARE_OP add_expr)*
-
-//========================================
 // Arithmetic expressions
 
 // This generates right-deep trees:  ?add_expr : mul_expr (ADD_OP add_expr)?
@@ -34,6 +29,18 @@
 ?concat_expr : (concat_expr "&")? base
 
 //========================================
+// Function calls
+
+?function_call : FUNCTION_NAME "(" arglist? ")"
+
+?arglist : expression ("," expression)*
+
+//========================================
+// Comparison expressions
+
+?compare_expr : (compare_expr COMPARE_OP) expression
+
+//========================================
 // Base values
 
 ?base : cell
@@ -41,13 +48,16 @@
       | NUMBER                  -> number
       | STRING                  -> string
       | BOOLEAN                 -> boolean
+      | BOOLEAN                 -> boolean
       | "(" expression ")"      -> parens
+      | function          
       | function          
 
 cell : (_sheetname "!")? CELLREF
 
 _sheetname : SHEET_NAME | QUOTED_SHEET_NAME
 
+function : FUNCTION_NAME "(" [arglist] ")"
 function : FUNCTION_NAME "(" [arglist] ")"
 
 ?arglist : expression ("," expression)*
