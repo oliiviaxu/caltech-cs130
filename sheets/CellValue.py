@@ -60,3 +60,24 @@ class CellValue:
         if isinstance(self.val, CellError):
             return True
         return False
+    
+    def to_bool(self):
+        # empty cell is used in a context that req Boolean val, default is FALSE
+        if self.val is None:
+            self.val = False
+        elif self.is_cell_error():
+            return 
+        elif isinstance(self.val, str):
+            if self.val.lower() == "true":
+                self.val = True
+            elif self.val.lower() == "false":
+                self.val = False
+            else:
+                self.val = CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {self.val}')
+        elif CellValue.is_number(self.val):
+            if self.val == 0:
+                self.val = False
+            else:
+                self.val = True
+        else:
+            self.val = CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {self.val}')

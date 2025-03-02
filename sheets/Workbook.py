@@ -12,6 +12,7 @@ import json
 from .DependencyGraph import DependencyGraph
 from .transformer import SheetNameExtractor, FormulaUpdater
 from .interpreter import FormulaEvaluator
+from .SpreadsheetFunctions import create_function_directory
 import decimal
 import re
 
@@ -31,6 +32,7 @@ class Workbook:
         self.notify_functions = []
         self.is_deleting = False
         self.is_renaming = False
+        self.func_directory = create_function_directory(self)
         self.renaming_info = {}
 
     def num_sheets(self) -> int:

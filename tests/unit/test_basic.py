@@ -9,7 +9,6 @@ from sheets.interpreter import FormulaEvaluator
 from sheets.transformer import SheetNameExtractor
 import decimal
 import json
-# import timeit
 import contextlib
 from io import StringIO
 

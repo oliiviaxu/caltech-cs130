@@ -9,9 +9,10 @@ from typing import Any
 decimal.getcontext().prec = 500
 
 class FormulaEvaluator(lark.visitors.Interpreter):
-    def __init__(self, sheet_name, ref_info):
+    def __init__(self, sheet_name, ref_info, func_directory):
         self.sheet_name = sheet_name
         self.ref_info = ref_info
+        self.func_directory = func_directory
 
     error_dict = {
         "#error!": CellErrorType.PARSE_ERROR,
@@ -21,43 +22,66 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         "#value!": CellErrorType.TYPE_ERROR,
         "#div/0!": CellErrorType.DIVIDE_BY_ZERO
     }
+
+    args_dict = {
+        "AND": -1,  # Variable arguments
+        "OR": -1,   # Variable arguments
+        "NOT": 1,
+        "XOR": -1,  # Variable arguments
+        "EXACT": 2,
+        "IF": 3,
+        "IFERROR": 2,
+        "CHOOSE": -1,  # Variable arguments
+        "ISBLANK": 1,
+        "ISERROR": 1,
+        "VERSION": 0,
+        "INDIRECT": 1,
+    }
+
+    def change_type(val_1, val_2) -> Any:
+        # helper function for implicit type conversion needed in add_expr and mul_expr
+        if val_1 is None:
+            val_1 = decimal.Decimal('0')
+        if val_2 is None:
+            val_2 = decimal.Decimal('0')
+
+        if isinstance(val_1, CellError) or isinstance(val_2, CellError):
+            return val_1, val_2
+
+        def convert(val):
+            if isinstance(val, str):
+                if CellValue.is_number(val):
+                    return decimal.Decimal(CellValue.strip_trailing_zeros(val))
+                else:
+                    return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
+            elif isinstance(val, decimal.Decimal):
+                return decimal.Decimal(CellValue.strip_trailing_zeros(str(val)))
+            return val
+
+        res_1 = convert(val_1)
+        res_2 = convert(val_2)
+
+        return res_1, res_2
     
-    # def change_type(val_1, val_2) -> Any:
-    #     # helper function for implicit type conversion needed in add_expr and mul_expr
-    #     if val_1 is None:
-    #         val_1 = decimal.Decimal('0')
-    #     if val_2 is None:
-    #         val_2 = decimal.Decimal('0')
-
-    #     if isinstance(val_1, CellError) or isinstance(val_2, CellError):
-    #         return val_1, val_2
-
-    #     def convert(val):
-    #         if isinstance(val, str):
-    #             if CellValue.is_number(val):
-    #                 return decimal.Decimal(CellValue.strip_trailing_zeros(val))
-    #             else:
-    #                 return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
-    #         elif isinstance(val, decimal.Decimal):
-    #             return decimal.Decimal(CellValue.strip_trailing_zeros(str(val)))
-    #         return val
-
-    #     res_1 = convert(val_1)
-    #     res_2 = convert(val_2)
-
-    #     return res_1, res_2
-    
-    # def change_type_concat(val_1, val_2):
-    #     if val_1 is None:
-    #         val_1 = ''
-    #     if val_2 is None:
-    #         val_2 = ''
+    def change_type_concat(val_1, val_2):
+        if val_1 is None:
+            val_1 = ''
+        if val_2 is None:
+            val_2 = ''
         
-    #     if CellValue.is_number(val_1):
-    #         val_1 = CellValue.strip_trailing_zeros(str(val_1))
-    #     if CellValue.is_number(val_2):
-    #         val_2 = CellValue.strip_trailing_zeros(str(val_2))
-    #     return val_1, val_2
+        if CellValue.is_number(val_1):
+            val_1 = CellValue.strip_trailing_zeros(str(val_1))
+        if CellValue.is_number(val_2):
+            val_2 = CellValue.strip_trailing_zeros(str(val_2))
+        return val_1, val_2
+    
+    @visit_children_decor
+    def compare_expr(self, values):
+        val_1, operator, val_2 = values[0], values[1], values[2]
+        
+        # TODO: implement comparison operations
+        pass
+
         
     @visit_children_decor
     def add_expr(self, values):
@@ -152,12 +176,29 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         return CellValue(tree.children[0].value[1:-1])
     
     def boolean(self, tree):
-        s = tree.children[0].lower()
+        # called when run into a boolean
+        s = tree. children [0]. lower()
         if s == 'true':
             return CellValue(True)
         else:
             return CellValue(False)
-    
+
+    def function(self, tree):
+        values = self.visit_children(tree)
+        function_name = values[0].upper()
+        
+        if function_name not in self.func_directory:
+            return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
+        
+        arguments = values[1:][0]
+        if isinstance(values[1:][0], list):
+            expected_num_args = FormulaEvaluator.args_dict[function_name]
+            if expected_num_args != -1 and len(arguments) != expected_num_args:
+                return CellValue(CellError(CellErrorType.TYPE_ERROR), f"Incorrect number of arguments for {function_name}")
+        
+        # # TODO: invoke the callable
+        return self.func_directory[function_name](arguments)
+
     def cell(self, tree):
         # first parse the value into sheet (if given) and location
         if (len(tree.children) == 1):

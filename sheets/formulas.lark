@@ -9,7 +9,12 @@
 
 ?formula : "=" expression
 
-?expression : add_expr | concat_expr
+?expression : compare_expr | concat_expr | add_expr
+
+//========================================
+// Comparison expressions
+
+?compare_expr : add_expr (COMPARE_OP add_expr)*
 
 //========================================
 // Arithmetic expressions
@@ -37,10 +42,15 @@
       | STRING                  -> string
       | BOOLEAN                 -> boolean
       | "(" expression ")"      -> parens
+      | function          
 
 cell : (_sheetname "!")? CELLREF
 
 _sheetname : SHEET_NAME | QUOTED_SHEET_NAME
+
+function : FUNCTION_NAME "(" [arglist] ")"
+
+?arglist : expression ("," expression)*
 
 //========================================
 // Lexer terminals
@@ -50,6 +60,7 @@ _sheetname : SHEET_NAME | QUOTED_SHEET_NAME
 
 ADD_OP: ("+" | "-")
 MUL_OP: ("*" | "/")
+COMPARE_OP: "=" | "==" | "<>" | "!=" | ">" | "<" | ">=" | "<="
 
 // Error values are also separately named lexer rules so we know what kind of
 // error is referenced.  All are case-insensitive.
@@ -76,3 +87,5 @@ NUMBER: /([0-9]+(\.[0-9]*)?)|(\.[0-9]+)/
 STRING: /\"[^"]*\"/
 
 BOOLEAN: /(?i:true|false)/
+// Function names
+FUNCTION_NAME: /(?i:[A-Za-z][A-Za-z0-9_]*)/
