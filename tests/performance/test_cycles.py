@@ -73,11 +73,15 @@ class CycleDetectionTests(unittest.TestCase):
 
         create_small_cycles(wb, sheet_name, num_cycles)
         
-        for i in range(1, num_cycles + 1):
-            wb.set_cell_contents(sheet_name, cell_in_multi_cycles, f'=B{i}')
+        contents = '=B1'
+        for i in range(2, num_cycles + 1):
+            contents += f' + B{i}'
+        
+        wb.set_cell_contents(sheet_name, cell_in_multi_cycles, contents)
 
-        cell_c1 = wb.sheets[sheet_name.lower()].get_cell(cell_in_multi_cycles)
-        self.assertEqual(wb.detect_cycle(cell_c1), True)
+        self.assertEqual(wb.detect_cycle(wb.get_cell(sheet_name, cell_in_multi_cycles)), False)
+        self.assertIsInstance(wb.get_cell_value(sheet_name, cell_in_multi_cycles), sheets.CellError)
+        self.assertEquals(wb.get_cell_value(sheet_name, cell_in_multi_cycles).get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     
     def test_make_break_small_cycle(self):
         # create small cycle
