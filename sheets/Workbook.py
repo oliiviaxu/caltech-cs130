@@ -385,45 +385,101 @@ class Workbook:
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
     
-    def has_cycle(self, src) -> bool:
-        """
-        Perform DFS to detect cycles.
-        :param node: The current cell node.
-        :param visited: A set of visited cell locations.
-        :return: True if a cycle is detected, False otherwise.
-        """
-        iters = 0
-        visited = set()
-        curr_path = set()
-        stack = [(src.sheet_name, src.location, False)]
-        while stack:
-            iters += 1
-            sheet_name, location, processed = stack.pop()
-            ref_id = sheet_name + '!' + location
-            if not processed:
-                if ref_id in visited:
-                    continue
-                if ref_id in curr_path:
-                    return True
+    # def has_cycle(self, src) -> bool:
+    #     """
+    #     Perform DFS to detect cycles.
+    #     :param node: The current cell node.
+    #     :param visited: A set of visited cell locations.
+    #     :return: True if a cycle is detected, False otherwise.
+    #     """
+    #     iters = 0
+    #     visited = set()
+    #     curr_path = set()
+    #     stack = [(src.sheet_name, src.location, False)]
+    #     while stack:
+    #         iters += 1
+    #         sheet_name, location, processed = stack.pop()
+    #         ref_id = sheet_name + '!' + location
+    #         if not processed:
+    #             if ref_id in visited:
+    #                 continue
+    #             if ref_id in curr_path:
+    #                 return True
 
-                curr_path.add(ref_id)
-                stack.append((sheet_name, location, True))
+    #             curr_path.add(ref_id)
+    #             stack.append((sheet_name, location, True))
 
-                outgoing = self.graph.outgoing_get(sheet_name, location)
-                for next_sheet, next_loc in outgoing:
-                    stack.append((next_sheet, next_loc, False))
-            else:
-                curr_path.remove(ref_id)
-                visited.add(ref_id)
-        return False
+    #             outgoing = self.graph.outgoing_get(sheet_name, location)
+    #             for next_sheet, next_loc in outgoing:
+    #                 stack.append((next_sheet, next_loc, False))
+    #         else:
+    #             curr_path.remove(ref_id)
+    #             visited.add(ref_id)
+    #     return False
 
+    # def detect_cycle(self, src: Cell) -> bool:
+    #     """
+    #     Detect cycles starting from the source cell.
+    #     :param src: The source cell node.
+    #     :return: True if a cycle is detected, False otherwise.
+    #     """
+    #     return self.has_cycle(src)
+    
     def detect_cycle(self, src: Cell) -> bool:
-        """
-        Detect cycles starting from the source cell.
-        :param src: The source cell node.
-        :return: True if a cycle is detected, False otherwise.
-        """
-        return self.has_cycle(src)
+        nodes = set()
+        self.find_nodes(src.sheet_name, src.location, nodes)
+
+        id = 0
+        ids = {key: -1 for key in nodes}
+        low = {key: 0 for key in nodes}
+        on_stack = {key: False for key in nodes}
+        stack = []
+
+        is_cycle = {key: False for key in nodes}
+
+        def dfs2(sn, loc):
+            nonlocal id, ids, low, on_stack, stack, is_cycle
+            id += 1
+            stack.append((sn, loc))
+            on_stack[(sn, loc)] = True
+            ids[(sn, loc)] = id
+            low[(sn, loc)] = id
+
+            outgoing = self.graph.outgoing_get(sn, loc)
+            for next_sheet, next_loc in outgoing:
+                if ids[(next_sheet, next_loc)] == -1:
+                    dfs2(next_sheet, next_loc)
+                if on_stack[(next_sheet, next_loc)]:
+                    low[(sn, loc)] = min(low[(sn, loc)], low[(next_sheet, next_loc)])
+
+            if ids[(sn, loc)] == low[(sn, loc)]:
+                scc = []
+                while len(stack):
+                    node = stack.pop()
+                    scc.append(node)
+                    on_stack[node] = False
+                    low[node] = ids[(sn, loc)]
+                    if node == (sn, loc):
+                        break
+                
+                if len(scc) > 1 or (len(scc) == 1 and (sn, loc) in self.graph.outgoing_get(sn, loc)):
+                    for node in scc:
+                        is_cycle[node] = True
+
+        for sn, loc in nodes:
+            if ids[(sn, loc)] == -1:
+                dfs2(sn, loc)
+        
+        return is_cycle[(src.sheet_name, src.location)]
+
+    def find_nodes(self, sn, loc, nodes):
+        ref_id = (sn, loc)
+        if ref_id in nodes:
+            return
+        nodes.add(ref_id)
+        outgoing = self.graph.outgoing_get(sn, loc)
+        for next_sheet, next_loc in outgoing:
+            self.find_nodes(next_sheet, next_loc, nodes)
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified
