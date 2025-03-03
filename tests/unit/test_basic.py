@@ -537,40 +537,40 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A2', '="Sheet1!A3"&"Hi"')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), "Sheet1!A3Hi")
 
-    # def test_bool_basic(self):
-    #     wb = sheets.Workbook()
-    #     wb.new_sheet()
+    def test_bool_basic(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
 
-    #     wb.set_cell_contents('Sheet1', 'A1', 'true')
-    #     self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), bool)
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+        wb.set_cell_contents('Sheet1', 'A1', 'true')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), bool)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
 
-    #     wb.set_cell_contents('Sheet1', 'A2', '=FaLsE')
-    #     self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), bool)
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), False)
+        wb.set_cell_contents('Sheet1', 'A2', '=FaLsE')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A2'), bool)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), False)
 
-    # def test_bool_implicit(self):
-    #     wb = sheets.Workbook()
-    #     wb.new_sheet()
+    def test_bool_implicit(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
 
-    #     # boolean to number
-    #     wb.set_cell_contents('Sheet1', 'A1', 'true')
-    #     wb.set_cell_contents('Sheet1', 'A2', '=A1 + 1')
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), decimal.Decimal('2'))
+        # boolean to number
+        wb.set_cell_contents('Sheet1', 'A1', 'true')
+        wb.set_cell_contents('Sheet1', 'A2', '=A1 + 1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), decimal.Decimal('2'))
 
-    #     wb.set_cell_contents('Sheet1', 'A1', 'false')
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), decimal.Decimal('1'))
+        wb.set_cell_contents('Sheet1', 'A1', 'false')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), decimal.Decimal('1'))
 
-    #     # boolean to string
-    #     wb.set_cell_contents('Sheet1', 'A1', 'true')
-    #     wb.set_cell_contents('Sheet1', 'A2', '=A1 & " test"')
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 'TRUE test')
+        # boolean to string
+        wb.set_cell_contents('Sheet1', 'A1', 'true')
+        wb.set_cell_contents('Sheet1', 'A2', '=A1 & " test"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 'TRUE test')
 
-    #     wb.set_cell_contents('Sheet1', 'A1', 'false')
-    #     self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 'FALSE test')
+        wb.set_cell_contents('Sheet1', 'A1', 'false')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 'FALSE test')
 
-    #     # TODO: string to boolean (must implement functions to test this)
-    #     # TODO: number to boolean
+        # TODO: string to boolean (must implement functions to test this)
+        # TODO: number to boolean
 
     # def test_bool_empty(self):
     #     # TODO

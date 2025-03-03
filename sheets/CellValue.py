@@ -32,6 +32,11 @@ class CellValue:
             self.val = ''
         elif self.is_cell_error():
             return
+        elif isinstance(self.val, bool):
+            if self.val == True:
+                self.val = 'TRUE'
+            else:
+                self.val = 'FALSE'
         elif CellValue.is_number(self.val):
             self.val = CellValue.strip_trailing_zeros(str(self.val))
         else:
@@ -43,6 +48,8 @@ class CellValue:
         elif self.is_cell_error():
             return
         else:
+            if isinstance(self.val, bool):
+                self.val = float(self.val)
             self.val = str(self.val)
             if CellValue.is_number(self.val):
                 self.val = decimal.Decimal(CellValue.strip_trailing_zeros(self.val))

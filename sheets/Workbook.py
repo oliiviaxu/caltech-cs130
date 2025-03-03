@@ -249,6 +249,10 @@ class Workbook:
                 cell.value = CellValue(decimal.Decimal(contents))
             elif contents.lower() in FormulaEvaluator.error_dict:
                 cell.value = CellValue(CellError(FormulaEvaluator.error_dict[contents.lower()], 'String representation'))
+            elif contents.lower() == 'true':
+                cell.value = CellValue(True)
+            elif contents.lower() == 'false':
+                cell.value = CellValue(False)
             else:
                 cell.value = CellValue(contents)
 
