@@ -51,13 +51,11 @@
       | BOOLEAN                 -> boolean
       | "(" expression ")"      -> parens
       | function          
-      | function          
 
 cell : (_sheetname "!")? CELLREF
 
 _sheetname : SHEET_NAME | QUOTED_SHEET_NAME
 
-function : FUNCTION_NAME "(" [arglist] ")"
 function : FUNCTION_NAME "(" [arglist] ")"
 
 ?arglist : expression ("," expression)*

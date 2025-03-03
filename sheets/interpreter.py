@@ -81,7 +81,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         
         # TODO: implement comparison operations
         pass
-
         
     @visit_children_decor
     def add_expr(self, values):
