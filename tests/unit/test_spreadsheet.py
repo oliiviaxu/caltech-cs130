@@ -494,7 +494,7 @@ class SpreadsheetTests(unittest.TestCase):
 
         wb_5.move_cells("Sheet1", "C1", "C2", "B1")
         self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B1'), "=#REF! * A1")
-        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")        
     
     def test_copy_cells(self):
         wb_0 = sheets.Workbook()
@@ -686,7 +686,6 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet()
         wb.new_sheet()
         wb.set_cell_contents('Sheet1', 'A1', '4')
-        wb.set_cell_contents('Sheet1', 'A2', '5')
         wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
         wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
         wb.move_cells('Sheet1', 'A2', 'B1', 'D6', 'Sheet3')
@@ -694,7 +693,23 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
 
         self.assertEqual(wb.get_cell_contents('Sheet3', 'D6'), '4')
-        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E6'), '=G9 / H13')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E7'), '=D6 - D7')
+
+        # test None cells
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.move_cells('Sheet1', 'A2', 'B1', 'D6', 'Sheet3')
+
+        self.assertEqual(wb.get_sheet_extent('Sheet1'), (0, 0))
+
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D6'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), None)
         self.assertEqual(wb.get_cell_contents('Sheet3', 'E6'), '=G9 / H13')
         self.assertEqual(wb.get_cell_contents('Sheet3', 'E7'), '=D6 - D7')
 
@@ -847,13 +862,26 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet()
 
         wb.set_cell_contents('Sheet1', 'A1', '4')
-        wb.set_cell_contents('Sheet1', 'A2', '5')
         wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
         wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
         wb.copy_cells('Sheet1', 'A2', 'B1', 'D6', 'Sheet3')
 
         self.assertEqual(wb.get_cell_contents('Sheet3', 'D6'), '4')
-        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), '5')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E6'), '=G9 / H13')
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'E7'), '=D6 - D7')
+
+        # test None cells
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.new_sheet()
+        wb.set_cell_contents('Sheet1', 'B1', '=D4 / E8') # D4: (+2, +3), E8: (+3, +7)
+        wb.set_cell_contents('Sheet1', 'B2', '=A1 - A2') # A1: (-1, -1), A2: (-1, 0)
+        wb.copy_cells('Sheet1', 'A2', 'B1', 'D6', 'Sheet3')
+
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D6'), None)
+        self.assertEqual(wb.get_cell_contents('Sheet3', 'D7'), None)
         self.assertEqual(wb.get_cell_contents('Sheet3', 'E6'), '=G9 / H13')
         self.assertEqual(wb.get_cell_contents('Sheet3', 'E7'), '=D6 - D7')
 
