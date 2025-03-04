@@ -189,7 +189,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     
     def boolean(self, tree):
         # called when run into a boolean
-        s = tree. children [0]. lower()
+        s = tree.children[0].lower()
         if s == 'true':
             return CellValue(True)
         else:
@@ -197,17 +197,23 @@ class FormulaEvaluator(lark.visitors.Interpreter):
 
     def function(self, tree):
         values = self.visit_children(tree)
-        function_name = values[0].upper()
+        function_name, arguments = "", None
+        
+        if isinstance(values[0], list):
+            function_name = values[0][0].upper()
+            if not isinstance(values[0][1], list):
+                arguments = [values[0][1]]
+            else:
+                arguments = values[0][1]
+        else:
+            # NO arguments
+            function_name = values[0].upper()
+            arguments = []
         
         if function_name not in self.func_directory:
             return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
         
-        if not isinstance(values[1:][0], list):
-            arguments = [values[1:][0]]
-            return self.func_directory[function_name](arguments)
-        else:
-            arguments = values[1:][0]
-            return self.func_directory[function_name](arguments)
+        return self.func_directory[function_name](arguments)
 
     def cell(self, tree):
         # first parse the value into sheet (if given) and location

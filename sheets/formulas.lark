@@ -31,9 +31,9 @@
 //========================================
 // Function calls
 
-?function : FUNCTION_NAME "(" arglist? ")"
+?function_call : FUNCTION_NAME "(" args? ")"
 
-?arglist : expression ("," expression)*
+?args : expression ("," expression)*
 
 //========================================
 // Comparison expressions
@@ -48,9 +48,8 @@
       | NUMBER                  -> number
       | STRING                  -> string
       | BOOLEAN                 -> boolean
-      | BOOLEAN                 -> boolean
       | "(" expression ")"      -> parens
-      | function          
+      | function_call           -> function
 
 cell : (_sheetname "!")? CELLREF
 

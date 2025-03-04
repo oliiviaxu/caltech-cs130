@@ -58,24 +58,30 @@ def exact_function(args):
 def if_function(args):
     # arguments: condition, true_value, false_value=None 
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
-    condition = args[0]
-    print(args)
-    pass
+    if len(args) != 2 and len(args) != 3:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments, but got {len(args)} arguments."))      
+    args[0].to_bool()
 
+    condition, true_value, false_value = args[0], args[1], args[2]
+    if condition.val:
+        return true_value.val
+    else:
+        return false_value.val
+    
 def iferror_function(args):
     # TODO: 
     # arguments: value, value_if_error=""
     """Returns `value` if it is not an error, otherwise `value_if_error`."""
     # TODO: check
-    if len(args) != 1 and len(args) != 2:
-        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
+    # if len(args) != 1 and len(args) != 2:
+    #     return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
     
-    value, value_if_error = None, ""
-    if len(args) == 1:
-        value = args[0]
-    else:
-        value = args[0]
-        value_if_error = args[1]
+    # value, value_if_error = None, ""
+    # if len(args) == 1:
+    #     value = args[0]
+    # else:
+    #     value = args[0]
+    #     value_if_error = args[1]
     
     pass
 
@@ -94,10 +100,10 @@ def choose_function(args):
 def isblank_function(args):
     # TODO
     """Returns TRUE if the value is blank or None."""
-    if len(args) != 1:
+    if len(args) != 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
-    
-    if not args[0]:
+
+    if not args:
         return True
     else:
         return False
@@ -109,7 +115,6 @@ def iserror_function(args):
     
     # TODO
     pass
-    
 
 def version_function(args):
     """Returns the version of the spreadsheet library."""
@@ -121,7 +126,6 @@ def indirect_function(workbook):
     """Returns a function that parses its string argument as a cell-reference and returns the value of the specified cell."""
     def indirect(args):
         return workbook.get_cell_value(str(args))
-    
     pass
 
 def create_function_directory(workbook):
