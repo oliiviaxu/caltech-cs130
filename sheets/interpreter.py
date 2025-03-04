@@ -37,43 +37,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         "VERSION": 0,
         "INDIRECT": 1,
     }
-
-    def change_type(val_1, val_2) -> Any:
-        # helper function for implicit type conversion needed in add_expr and mul_expr
-        if val_1 is None:
-            val_1 = decimal.Decimal('0')
-        if val_2 is None:
-            val_2 = decimal.Decimal('0')
-
-        if isinstance(val_1, CellError) or isinstance(val_2, CellError):
-            return val_1, val_2
-
-        def convert(val):
-            if isinstance(val, str):
-                if CellValue.is_number(val):
-                    return decimal.Decimal(CellValue.strip_trailing_zeros(val))
-                else:
-                    return CellError(CellErrorType.TYPE_ERROR, f'Invalid type for {val}')
-            elif isinstance(val, decimal.Decimal):
-                return decimal.Decimal(CellValue.strip_trailing_zeros(str(val)))
-            return val
-
-        res_1 = convert(val_1)
-        res_2 = convert(val_2)
-
-        return res_1, res_2
-    
-    def change_type_concat(val_1, val_2):
-        if val_1 is None:
-            val_1 = ''
-        if val_2 is None:
-            val_2 = ''
-        
-        if CellValue.is_number(val_1):
-            val_1 = CellValue.strip_trailing_zeros(str(val_1))
-        if CellValue.is_number(val_2):
-            val_2 = CellValue.strip_trailing_zeros(str(val_2))
-        return val_1, val_2
     
     @visit_children_decor
     def compare_expr(self, values):

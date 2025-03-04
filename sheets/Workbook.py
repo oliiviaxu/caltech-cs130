@@ -237,7 +237,7 @@ class Workbook:
                     ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
 
                     # feed references and sheet name into interpreter
-                    ev = FormulaEvaluator(cell.sheet_name, ref_info)
+                    ev = FormulaEvaluator(cell.sheet_name, ref_info, self.func_directory)
                     visit_value = ev.visit(tree)
                     if (visit_value is None or visit_value.val is None):
                         cell.value = CellValue(decimal.Decimal('0'))
