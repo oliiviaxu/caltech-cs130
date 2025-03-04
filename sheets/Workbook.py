@@ -30,6 +30,7 @@ class Workbook:
         self.graph = DependencyGraph()
         self.sheets = OrderedDict() # lowercase keys
         self.notify_functions = []
+        self.notify_info = {}
         self.is_deleting = False
         self.is_renaming = False
         self.func_directory = create_function_directory(self)
@@ -175,8 +176,11 @@ class Workbook:
             self.evaluate_cell(curr_cell, first)
             first = False
             new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            if (prev_value != new_value and not self.is_renaming):
+            if (prev_value != new_value):
                 pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+                if self.is_renaming:
+                    if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
+                        self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
 
             visited[curr_cell] = True
             for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
@@ -345,7 +349,7 @@ class Workbook:
 
         ### Update the value field of the cell
         pending_notifications = self.handle_update_tree(curr_cell)
-        if (len(pending_notifications) > 0):
+        if (not self.is_renaming and len(pending_notifications) > 0):
             if (self.is_deleting):
                 pending_notifications = pending_notifications[1:]
             for notify_function in self.notify_functions:
@@ -727,10 +731,21 @@ class Workbook:
                         new_formula = sne.transform(cell.tree)
                         self.set_cell_contents(sn, loc2, '=' + new_formula)
         
-        self.is_renaming = False
         for loc in self.graph.ingoing[new_sheet_name.lower()]:
             self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
+
         self.is_renaming = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if self.get_cell_value(sn, loc) != v:
+                    notifications.append((sn, loc))
+            for notify_function in self.notify_functions:
+                try:
+                    notify_function(self, notifications)
+                except Exception:
+                    pass
+            self.notify_info = {}
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's

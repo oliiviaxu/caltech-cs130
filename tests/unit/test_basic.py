@@ -502,7 +502,7 @@ class BasicTests(unittest.TestCase):
         with contextlib.redirect_stdout(temp_stdout):
             wb.rename_sheet('Sheet1', 'SheetBlah')
         output = temp_stdout.getvalue()
-        # should only have Sheet2, A1
+        self.assertEqual(output, "Cell(s) changed: [('sheet2', 'a1')]\n")
 
     def test_absolute_cellref(self):
         wb = sheets.Workbook()
