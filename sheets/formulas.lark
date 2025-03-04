@@ -38,7 +38,7 @@
 //========================================
 // Comparison expressions
 
-?compare_expr : (compare_expr COMPARE_OP) expression
+?compare_expr : (compare_expr COMPARE_OP)? expression
 
 //========================================
 // Base values

@@ -41,9 +41,74 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     @visit_children_decor
     def compare_expr(self, values):
         val_1, operator, val_2 = values[0], values[1], values[2]
+
+        if val_1.is_cell_error():
+            return val_1
+        elif val_2.is_cell_error():
+            return val_2
         
-        # TODO: implement comparison operations
-        pass
+        if isinstance(val_1.val, decimal.Decimal) and isinstance(val_2.val, decimal.Decimal):
+            # check if both numbers
+            # do nothing
+            pass
+        elif isinstance(val_1.val, str) and isinstance(val_2.val, str):
+            # check if both strings
+            val_1.val = val_1.val.lower()
+            val_2.val = val_2.val.lower()
+        elif isinstance(val_1.val, bool) and isinstance(val_2.val, bool):
+            # check if both booleans
+            # do nothing
+            pass
+        elif val_1.val is None and val_2.val is None:
+            # check for both being empty cell
+            val_1.val = 1
+            val_2.val = 1
+        elif val_1.val is None:
+            # check for val_1 being empty cell
+            if isinstance(val_2.val, decimal.Decimal):
+                val_1.val = 0
+            elif isinstance(val_2.val, str):
+                val_1.val = ''
+            elif isinstance(val_2.val, bool):
+                val_1.val = False
+        elif val_2.val is None:
+            # check for val_2 being empty cell
+            if isinstance(val_1.val, decimal.Decimal):
+                val_2.val = 0
+            elif isinstance(val_1.val, str):
+                val_2.val = ''
+            elif isinstance(val_1.val, bool):
+                val_2.val = False
+        else:
+            # handle different types
+            if isinstance(val_1.val, decimal.Decimal):
+                val_1.val = 0
+            elif isinstance(val_1.val, str):
+                val_1.val = 1
+            elif isinstance(val_1.val, bool):
+                val_1.val = 2
+
+            if isinstance(val_2.val, decimal.Decimal):
+                val_2.val = 0
+            elif isinstance(val_2.val, str):
+                val_2.val = 1
+            elif isinstance(val_2.val, bool):
+                val_2.val = 2
+
+        if operator == '=' or operator == '==':
+            return CellValue(val_1.val == val_2.val)
+        elif operator == '<>' or operator == '!=':
+            return CellValue(val_1.val != val_2.val)
+        elif operator == '<':
+            return CellValue(val_1.val < val_2.val)
+        elif operator == '>':
+            return CellValue(val_1.val > val_2.val)
+        elif operator == '<=':
+            return CellValue(val_1.val <= val_2.val)
+        elif operator == '>=':
+            return CellValue(val_1.val >= val_2.val)
+        else:
+            assert False
         
     @visit_children_decor
     def add_expr(self, values):

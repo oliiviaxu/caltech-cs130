@@ -579,6 +579,206 @@ class BasicTests(unittest.TestCase):
     #     # treated as false
     #     pass
 
+    def test_comparison_operators_basic_numbers(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # two numbers
+        # = and ==
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 = 4.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 = 5.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 == 4.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 == 5.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <> and !=
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 <> 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 <> 4.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 != 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 != 4.0')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # >
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 > 3')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 > 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 < 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 < 3')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # >=
+        wb.set_cell_contents('Sheet1', 'A1', '= 4.0 >= 4')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 >= 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <=
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 <= 5')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 <= 3')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+    def test_comparison_operators_basic_strs(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # two strings
+        # = and ==
+        wb.set_cell_contents('Sheet1', 'A1', '= "CAT" = "cat"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "4" = "4.0"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "CAT" == "cat"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "4" == "4.0"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <> and !=
+        wb.set_cell_contents('Sheet1', 'A1', '= "CAT" <> "cat"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "4" <> "4.0"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "CAT" != "cat"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "4" != "4.0"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # >
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" > "["')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" > "z"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" < "{"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" < "["')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # >=
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" >= "["')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" >= "z"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # <=
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" <= "{"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= "a" <= "["')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+    def test_operator_precedence(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # concat
+        wb.set_cell_contents('Sheet1', 'A1', '=A2 = B2 & " type"')
+        wb.set_cell_contents('Sheet1', 'A2', '\'my type')
+        wb.set_cell_contents('Sheet1', 'B2', '\'my')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # multiplication
+        wb.set_cell_contents('Sheet1', 'A1', '=4 >= 3 * 1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # add
+        wb.set_cell_contents('Sheet1', 'A1', '=4 >= 3 + 1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+    def test_comparison_operators_empty(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # empty cell: convert to string ''
+        wb.set_cell_contents('Sheet1', 'A1', '="" = A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '="test" > A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '="test" = A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # empty cell: convert to number 0
+        wb.set_cell_contents('Sheet1', 'A1', '=0 = A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=4 > A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=-1 > A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # empty cell: convert to boolean False
+        wb.set_cell_contents('Sheet1', 'A1', '=True = A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=True > A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=True < A2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+    def test_comparison_operators_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # case insensitivity (for strings)
+        wb.set_cell_contents('Sheet1', 'A1', '="CAT" = "cat"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # operands are different types
+        # - number and string
+        wb.set_cell_contents('Sheet1', 'A1', '= 90000 < "test"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # - string and boolean
+        wb.set_cell_contents('Sheet1', 'A1', '= TrUe > "test"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # - number and boolean
+        wb.set_cell_contents('Sheet1', 'A1', '= FaLsE > 9000')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # error propagation
+        wb.set_cell_contents('Sheet1', 'A1', '= 4 = #REF!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '= #DIV/0! > 2')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
 if __name__ == "__main__":
     cov = coverage.Coverage()
     cov.start()
