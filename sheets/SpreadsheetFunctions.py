@@ -2,7 +2,7 @@ from collections import defaultdict
 import sheets
 from .CellValue import CellValue
 from .CellError import CellError, CellErrorType
-
+# TODO: Propagate cell errors
 # BOOLEAN FUNCTIONS
 def and_function(args):
     """Returns TRUE if all arguments are TRUE. All arguments are converted to Boolean values."""

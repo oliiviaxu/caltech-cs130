@@ -93,7 +93,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         elif operator == '>=':
             return CellValue(val_1.val >= val_2.val)
         else:
-            assert False
+            raise AssertionError('Compare operator is unidentifiable.')
         
     @visit_children_decor
     def add_expr(self, values):
