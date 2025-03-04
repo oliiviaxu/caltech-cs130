@@ -2,6 +2,8 @@ from collections import defaultdict
 import sheets
 from .CellValue import CellValue
 from .CellError import CellError, CellErrorType
+import decimal
+
 # TODO: Propagate cell errors
 # BOOLEAN FUNCTIONS
 def and_function(args):
@@ -11,17 +13,14 @@ def and_function(args):
     
     converted = []
     for cell_val in args:
-        if not isinstance(cell_val, bool):
+        if not isinstance(cell_val.val, bool):
             cell_val.to_bool()
 
-            # TODO: not sure if this is the case
             if isinstance(cell_val.val, sheets.CellError):
-                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+                return cell_val
             
-            converted.append(cell_val.val)
-        else:
-            converted.append(cell_val)
-    return all(arg for arg in converted)
+        converted.append(cell_val.val)
+    return CellValue(all(arg for arg in converted))
 
 def or_function(args):
     """Returns TRUE if any argument is TRUE. All arguments are converted to Boolean values."""
@@ -29,32 +28,27 @@ def or_function(args):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
     converted = []
     for cell_val in args:
-        if not isinstance(cell_val, bool):
+        if not isinstance(cell_val.val, bool):
             cell_val.to_bool()
 
-            # TODO: not sure if this is the case
             if isinstance(cell_val.val, sheets.CellError):
-                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+                return cell_val
             
-            converted.append(cell_val.val)
-        else:
-            converted.append(cell_val)
-    return any(arg for arg in converted)
+        converted.append(cell_val.val)
+    return CellValue(any(arg for arg in converted))
 
 def not_function(args):
     """Returns the logical negation of the argument. The argument is converted to a Boolean value."""
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 argument, but got {len(args)} arguments."))
     arg = args[0]
-    if not isinstance(arg, bool):
+    if not isinstance(arg.val, bool):
         arg.to_bool()
 
         if isinstance(arg.val, sheets.CellError):
-                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+            return arg
         
-        return not arg.val
-    else:
-        return not arg
+    return CellValue(not arg.val)
 
 def xor_function(args):
     """Returns TRUE if an odd number of arguments are TRUE. All arguments are converted to Boolean values."""
@@ -62,9 +56,14 @@ def xor_function(args):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
     converted = []
     for cell_val in args:
-        cell_val.to_bool()
+        if not isinstance(cell_val.val, bool):
+            cell_val.to_bool()
+
+            if isinstance(cell_val.val, sheets.CellError):
+                return cell_val
+            
         converted.append(cell_val.val)
-    return sum(arg for arg in converted) % 2 == 1
+    return CellValue(sum(arg for arg in converted) % 2 == 1)
 
 # STRING-MATCH FUNCTIONS
 def exact_function(args):
@@ -72,10 +71,15 @@ def exact_function(args):
     if len(args) != 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 arguments, but got {len(args)} arguments."))      
     converted = []
-    for arg in args:
-        arg.to_string()
-        converted.append(arg.val)
-    return converted[0] == converted[1]
+    for cell_val in args:
+        if not isinstance(cell_val.val, str):
+            cell_val.to_string()
+
+            if isinstance(cell_val.val, sheets.CellError):
+                return cell_val
+            
+        converted.append(cell_val.val)
+    return CellValue(converted[0] == converted[1])
 
 # CONDITIONAL FUNCTIONS
 def if_function(args):
@@ -83,13 +87,19 @@ def if_function(args):
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
     if len(args) != 2 and len(args) != 3:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments, but got {len(args)} arguments."))      
-    args[0].to_bool()
+    
+    if not isinstance(args[0].val, bool):    
+        args[0].to_bool()
+
+        if isinstance(args[0].val, sheets.CellError):
+            return args[0]
 
     condition, true_value, false_value = args[0], args[1], args[2]
+
     if condition.val:
-        return true_value.val
+        return CellValue(true_value.val)
     else:
-        return false_value.val
+        return CellValue(false_value.val)
     
 def iferror_function(args):
     # TODO: 
@@ -113,23 +123,30 @@ def choose_function(args):
     if len(args) < 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected atleast 2 arguments, but got {len(args)} arguments."))  
 
-    args[0].to_number()
-    index = int(args[0].val) - 1
-    
+    if not isinstance(args[0].val, decimal.Decimal):    
+        args[0].to_number()
+
+        if isinstance(args[0].val, sheets.CellError):
+            return args[0]
+
     remaining_args = args[1:]
-    return remaining_args[index].val
+    
+    if (args[0].val != int(args[0].val)) or (args[0].val <= 0) or (args[0].val > len(remaining_args)):
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Invalid Index."))  
+    
+    index = int(args[0].val) - 1
+    return CellValue(remaining_args[index].val)
 
 # INFORMATIONAL FUNCTIONS
 def isblank_function(args):
-    # TODO
     """Returns TRUE if the value is blank or None."""
-    if len(args) != 0:
+    if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
 
-    if not args:
-        return True
+    if not args[0]:
+        return CellValue(True)
     else:
-        return False
+        return CellValue(False)
 
 def iserror_function(args):
     """Returns TRUE if the value is an error."""
