@@ -234,6 +234,7 @@ class Workbook:
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 else:
                     # obtain reference info from tree with visitor
+                    # TODO: handle the case where the input is blank
                     ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
 
                     # feed references and sheet name into interpreter

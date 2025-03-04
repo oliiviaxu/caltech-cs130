@@ -22,21 +22,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         "#value!": CellErrorType.TYPE_ERROR,
         "#div/0!": CellErrorType.DIVIDE_BY_ZERO
     }
-
-    args_dict = {
-        "AND": -1,  # Variable arguments
-        "OR": -1,   # Variable arguments
-        "NOT": 1,
-        "XOR": -1,  # Variable arguments
-        "EXACT": 2,
-        "IF": 3,
-        "IFERROR": 2,
-        "CHOOSE": -1,  # Variable arguments
-        "ISBLANK": 1,
-        "ISERROR": 1,
-        "VERSION": 0,
-        "INDIRECT": 1,
-    }
     
     @visit_children_decor
     def compare_expr(self, values):
@@ -217,14 +202,12 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if function_name not in self.func_directory:
             return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
         
-        arguments = values[1:][0]
-        if isinstance(values[1:][0], list):
-            expected_num_args = FormulaEvaluator.args_dict[function_name]
-            if expected_num_args != -1 and len(arguments) != expected_num_args:
-                return CellValue(CellError(CellErrorType.TYPE_ERROR), f"Incorrect number of arguments for {function_name}")
-        
-        # # TODO: invoke the callable
-        return self.func_directory[function_name](arguments)
+        if not isinstance(values[1:][0], list):
+            arguments = [values[1:][0]]
+            return self.func_directory[function_name](arguments)
+        else:
+            arguments = values[1:][0]
+            return self.func_directory[function_name](arguments)
 
     def cell(self, tree):
         # first parse the value into sheet (if given) and location

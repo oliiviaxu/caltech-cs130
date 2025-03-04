@@ -33,6 +33,11 @@ class FunctionsTests(unittest.TestCase):
 
         self.assertEqual(ev.visit(tree_2), True)
 
+        # tree_3 = parser.parse('=AND()')
+        # ref_info = wb.get_cell_ref_info(tree_3, 'sheet1')
+
+        # self.assertIsInstance(ev.visit(tree_3), sheets.CellError)
+
     def test_or_function(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -123,4 +128,62 @@ class FunctionsTests(unittest.TestCase):
         ev = FormulaEvaluator('sheet1', ref_info, func_directory=wb.func_directory)
 
         print(ev.visit(tree_1))
+    
+    def test_iferror_function(self):
+        # TODO
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        parser = lark.Lark.open(lark_path, start='formula')
+        tree_1 = parser.parse('=IFERROR(1/0, 5)')
+        ref_info = wb.get_cell_ref_info(tree_1, 'sheet1')
+
+        ev = FormulaEvaluator('sheet1', ref_info, func_directory=wb.func_directory)
+
+        # print(ev.visit(tree_1))
+        self.assertEqual(ev.visit(tree_1), decimal.Decimal('5'))
+
+        tree_2 = parser.parse('=IFERROR(1+1)')
+        ref_info = wb.get_cell_ref_info(tree_1, 'sheet1')
+
+        # print(ev.visit(tree_1))
+        self.assertEqual(ev.visit(tree_2), decimal.Decimal('2'))
+    
+    def test_choose_function(self):
+        # TODO: not finished yet
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        parser = lark.Lark.open(lark_path, start='formula')
+        tree_1 = parser.parse('=choose(1, 0, 1, 2, 3)')
+        ref_info = wb.get_cell_ref_info(tree_1, 'sheet1')
+
+        ev = FormulaEvaluator('sheet1', ref_info, func_directory=wb.func_directory)
+
+        self.assertEqual(ev.visit(tree_1), decimal.Decimal('0'))
+    
+    def test_isblank_function(self):
+        # TODO
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        parser = lark.Lark.open(lark_path, start='formula')
+        tree_1 = parser.parse('=ISBLANK()')
+        ref_info = wb.get_cell_ref_info(tree_1, 'sheet1')
+
+        ev = FormulaEvaluator('sheet1', ref_info, func_directory=wb.func_directory)
+
+        self.assertEqual(ev.visit(tree_1), True)
+
+
+    def test_iserror_function(self):
+        pass
+    
+    def test_version_function(self):
+        # TODO 
+        pass
+
+    def test_indirect_function(self):
+        # TODO 
+        pass
 
