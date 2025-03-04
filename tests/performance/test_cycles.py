@@ -81,7 +81,7 @@ class CycleDetectionTests(unittest.TestCase):
 
         self.assertEqual(wb.detect_cycle(wb.get_cell(sheet_name, cell_in_multi_cycles)), False)
         self.assertIsInstance(wb.get_cell_value(sheet_name, cell_in_multi_cycles), sheets.CellError)
-        self.assertEquals(wb.get_cell_value(sheet_name, cell_in_multi_cycles).get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value(sheet_name, cell_in_multi_cycles).get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     
     def test_make_break_small_cycle(self):
         # create small cycle
