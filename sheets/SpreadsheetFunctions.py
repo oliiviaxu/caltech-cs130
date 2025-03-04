@@ -11,8 +11,16 @@ def and_function(args):
     
     converted = []
     for cell_val in args:
-        cell_val.to_bool()
-        converted.append(cell_val.val)
+        if not isinstance(cell_val, bool):
+            cell_val.to_bool()
+
+            # TODO: not sure if this is the case
+            if isinstance(cell_val.val, sheets.CellError):
+                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+            
+            converted.append(cell_val.val)
+        else:
+            converted.append(cell_val)
     return all(arg for arg in converted)
 
 def or_function(args):
@@ -21,8 +29,16 @@ def or_function(args):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
     converted = []
     for cell_val in args:
-        cell_val.to_bool()
-        converted.append(cell_val.val)
+        if not isinstance(cell_val, bool):
+            cell_val.to_bool()
+
+            # TODO: not sure if this is the case
+            if isinstance(cell_val.val, sheets.CellError):
+                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+            
+            converted.append(cell_val.val)
+        else:
+            converted.append(cell_val)
     return any(arg for arg in converted)
 
 def not_function(args):
@@ -30,8 +46,15 @@ def not_function(args):
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 argument, but got {len(args)} arguments."))
     arg = args[0]
-    arg.to_bool()
-    return not arg.val
+    if not isinstance(arg, bool):
+        arg.to_bool()
+
+        if isinstance(arg.val, sheets.CellError):
+                return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Could not convert to boolean type."))
+        
+        return not arg.val
+    else:
+        return not arg
 
 def xor_function(args):
     """Returns TRUE if an odd number of arguments are TRUE. All arguments are converted to Boolean values."""
