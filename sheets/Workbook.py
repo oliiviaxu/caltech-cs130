@@ -448,13 +448,16 @@ class Workbook:
         return is_cycle[(src.sheet_name, src.location)]
 
     def find_nodes(self, sn, loc, nodes):
-        ref_id = (sn, loc)
-        if ref_id in nodes:
-            return
-        nodes.add(ref_id)
-        ingoing = self.graph.ingoing_get(sn, loc)
-        for next_sheet, next_loc in ingoing:
-            self.find_nodes(next_sheet, next_loc, nodes)
+        stack = [(sn, loc)]
+        while len(stack):
+            sn, loc = stack.pop()
+            ref_id = (sn, loc)
+            if ref_id in nodes:
+                continue
+            nodes.add(ref_id)
+            ingoing = self.graph.ingoing_get(sn, loc)
+            for next_sheet, next_loc in ingoing:
+                stack.append((next_sheet, next_loc))
 
     def get_cell_value(self, sheet_name: str, location: str) -> Any:
         # Return the evaluated value of the specified cell on the specified
