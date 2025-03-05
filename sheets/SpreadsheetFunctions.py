@@ -109,18 +109,18 @@ def iferror_function(args):
     # TODO: 
     # arguments: value, value_if_error=""
     """Returns `value` if it is not an error, otherwise `value_if_error`."""
-    # TODO: check
-    # if len(args) != 1 and len(args) != 2:
-    #     return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
+
+    if len(args) != 1 and len(args) != 2:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
     
-    # value, value_if_error = None, ""
-    # if len(args) == 1:
-    #     value = args[0]
-    # else:
-    #     value = args[0]
-    #     value_if_error = args[1]
+    value, value_if_error = args[0].val, ""
+    if len(args) == 2:
+        value_if_error = args[1].val
     
-    pass
+    if isinstance(value, sheets.CellError):
+        return CellValue(value_if_error)
+    else:
+        return CellValue(value)
 
 def choose_function(args):
     """Returns the `index`-th argument (1-based indexing). The index is converted to a number."""
