@@ -152,9 +152,11 @@ def isblank_function(args):
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
 
-    # TODO
-    if not args[0].val:
-        print(args[0].val)
+    arg = args[0]
+    if isinstance(arg.val, sheets.CellError):
+        return arg
+        
+    if arg.val is None:
         return CellValue(True)
     else:
         return CellValue(False)

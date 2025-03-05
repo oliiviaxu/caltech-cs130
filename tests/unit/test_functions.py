@@ -763,12 +763,41 @@ class FunctionsTests(unittest.TestCase):
         ev.ref_info = wb.get_cell_ref_info(tree_3, 'sheet1')
         self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)
 
-        # TODO: set cell contents tests
+        # set cell contents tests
         wb.set_cell_contents('sheet1', 'B1', '=ISBLANK(A1)')
         self.assertEqual(wb.get_cell_value('sheet1', 'B1'), True)
 
-        # wb.set_cell_contents('sheet1', 'B2', '=ISBLANK("")')
-        # self.assertEqual(wb.get_cell_value('sheet1', 'B2'), False)
+        wb.set_cell_contents('sheet1', 'B2', '=ISBLANK("")')
+        self.assertEqual(wb.get_cell_value('sheet1', 'B2'), False)
+
+        wb.set_cell_contents('sheet1', 'B3', '=ISBLANK(FALSE)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'B3'), False)
+
+        wb.set_cell_contents('sheet1', 'B4', '=ISBLANK(0)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'B4'), False)
+
+        # error propagation
+        wb.set_cell_contents('sheet1', 'B5', '=ISBLANK(1, 2, 3, 4)')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B5'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B5').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('sheet1', 'B6', '=1/0')
+        wb.set_cell_contents('sheet1', 'B7', '=ISBLANK(B6)')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B7'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B7').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        wb.set_cell_contents("sheet1", "C2", "=C3")
+        wb.set_cell_contents("sheet1", "C3", "=C2")
+        wb.set_cell_contents("sheet1", "A11", "=ISBLANK(C2)")
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A11'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A11').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        
+        # nested
+        wb.set_cell_contents('sheet1', 'D1', '')
+        wb.set_cell_contents('sheet1', 'D2', '=ISBLANK(D1)')
+        wb.set_cell_contents('sheet1', 'D3', '=ISBLANK(D2)')  # ISBLANK(TRUE)
+        self.assertEqual(wb.get_cell_value('sheet1', 'D3'), False)
+
 
     def test_iserror_function(self):
         # TODO
