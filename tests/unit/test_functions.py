@@ -662,8 +662,6 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), "yes")
-        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), "yes")
 
         # spec example 2
         wb.new_sheet()
@@ -674,7 +672,7 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), True)   
+        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'B1 is an error')   
         
         # TODO:this is failing
         # This is failing
@@ -686,8 +684,7 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), True)
-
+        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'B1 is an error')
     
     def test_choose_function(self):
         # TODO: not finished yet
@@ -840,7 +837,7 @@ class FunctionsTests(unittest.TestCase):
 
 
     def test_iserror_function(self):
-        # TODO: from spec
+        # from spec
         wb = sheets.Workbook()
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=B1+')
@@ -849,19 +846,7 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.PARSE_ERROR)
         self.assertEqual(wb.get_cell_value('sheet1', 'B1'), True)
 
-        wb = sheets.Workbook()
-        wb.new_sheet()
-        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(B1)')
-        wb.set_cell_contents('sheet1', 'B1', '=ISERROR(A1)')
-        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
-        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
-        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), True)
-        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), True)
-
         # spec example 2
-        wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=B1')
         wb.set_cell_contents('sheet1', 'B1', '=A1')
         wb.set_cell_contents('sheet1', 'C1', '=ISERROR(B1)')
@@ -876,6 +861,7 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('sheet1', 'A1', '=ISERROR(B1)')
         wb.set_cell_contents('sheet1', 'B1', '=ISERROR(A1)')
         wb.set_cell_contents('sheet1', 'C1', '=ISERROR(B1)')
+
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)

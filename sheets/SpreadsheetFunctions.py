@@ -117,10 +117,10 @@ def iferror_function(args):
     if len(args) == 2:
         value_if_error = args[1]
     
-    if isinstance(value, sheets.CellError):
-        return CellValue(value_if_error.val)
+    if isinstance(value.val, sheets.CellError):
+        return value_if_error
     else:
-        return CellValue(value.val)
+        return value
 
 def choose_function(args):
     """Returns the `index`-th argument (1-based indexing). The index is converted to a number."""

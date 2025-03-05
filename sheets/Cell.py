@@ -12,3 +12,4 @@ class Cell:
         self.value = None
         self.tree = None
         self.parse_error = False
+        self.in_cycle = False

@@ -227,6 +227,8 @@ class Workbook:
             else:
                 if first and self.detect_cycle(cell):
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
+                elif cell.in_cycle:
+                    cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 else:
                     # obtain reference info from tree with visitor
                     # TODO: handle the case where the input is blank
@@ -287,6 +289,13 @@ class Workbook:
         curr_sheet = self.sheets[sheet_name.lower()]
         curr_sheet.resize(location)
         curr_cell = curr_sheet.get_cell(location)
+
+        nodes = set()
+        self.find_nodes(curr_cell.sheet_name, curr_cell.location, nodes)
+        for (sn, loc) in nodes:
+            cell = self.get_cell(sn, loc)
+            if cell is not None:
+                cell.in_cycle = False
 
         if not self.is_deleting:
             orig_outgoing = self.graph.outgoing_get(sheet_name, location)
@@ -448,6 +457,10 @@ class Workbook:
         for node in nodes:
             if ids[node] == -1:
                 iterative_dfs(node)
+
+        for node in nodes:
+            cell = self.get_cell(node[0], node[1])
+            cell.in_cycle = is_cycle[node]
 
         return is_cycle[(src.sheet_name, src.location)]
 
@@ -738,8 +751,10 @@ class Workbook:
         if len(self.notify_info):
             notifications = []
             for (sn, loc), v in self.notify_info.items():
-                if self.get_cell_value(sn, loc) != v:
-                    notifications.append((sn, loc))
+                if sn in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
             for notify_function in self.notify_functions:
                 try:
                     notify_function(self, notifications)
