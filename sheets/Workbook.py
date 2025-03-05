@@ -332,7 +332,7 @@ class Workbook:
             if not parse_error:
                 # Obtain references
                 finder = CellRefFinder()
-                finder.visit(tree) 
+                finder.visit(tree)
                 
                 for ref in finder.refs:
                     if '!' in ref:

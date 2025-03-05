@@ -896,7 +896,7 @@ class FunctionsTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
 
-        wb.set_cell_contents('Sheet1', 'A1', '=OR(AND(Z1 > 5, B1 < 2), AND(C1 < 6, D1 = 14))')
+        wb.set_cell_contents('Sheet1', 'A1', '=or(AnD(Z1 > 5, B1 < 2), ANd(C1 < 6, D1 = 14))')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
 
         wb.set_cell_contents('Sheet1', 'A1', '=OR(AND(Z1 = 0, B1 = 0), AND(C1 < 6, D1 = 14))')
