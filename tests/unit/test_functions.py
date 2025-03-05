@@ -827,3 +827,20 @@ class FunctionsTests(unittest.TestCase):
         # TODO 
         pass
 
+    def test_general(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=OR(AND(Z1 > 5, B1 < 2), AND(C1 < 6, D1 = 14))')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=OR(AND(Z1 = 0, B1 = 0), AND(C1 < 6, D1 = 14))')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+if __name__ == "__main__":
+    cov = coverage.Coverage()
+    cov.start()
+    unittest.main()
+    cov.stop()
+    cov.save()
+    cov.html_report()
