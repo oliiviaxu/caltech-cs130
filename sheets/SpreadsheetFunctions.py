@@ -179,10 +179,42 @@ def version_function(args):
     return sheets.__version__
 
 def indirect_function(workbook):
-    """Returns a function that parses its string argument as a cell-reference and returns the value of the specified cell."""
+    """Returns a function that parses its string argument as a cell-reference and 
+    returns the value of the specified cell. 
+    
+    This function always takes exactly one argument. The argument is converted to a string.
+
+    If the argument string cannot be parsed as a cell reference for any reason, or if the 
+    argument can be parsed as a cell reference, but the cell-reference is invalid for some reason 
+    (other than creating a circular reference in the workbook), this function returns a BAD_REFERENCE error."""
+
     def indirect(args):
-        return workbook.get_cell_value(str(args))
-    pass
+        if len(args) != 1:
+            return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
+        
+        arg = args[0]
+
+        if not isinstance(arg.val, str):
+            arg.to_string()
+
+            if isinstance(arg.val, sheets.CellError):
+                return arg.val
+        
+        # attempt to parse as a cell reference
+        split_ref = arg.val.split('!')
+        # print(split_ref)
+
+        if len(split_ref) == 1:
+            # ref_sheet_name = split_ref[0]
+            ref_location = split_ref[1]
+        
+        if not sheets.Workbook.is_valid_location(ref_location):
+            return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
+        
+        return workbook.get_cell_value(ref_location)
+    
+    return indirect
+
 
 def create_function_directory(workbook):
     BUILTIN_SPREADSHEET_FUNCTIONS = {
