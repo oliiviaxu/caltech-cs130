@@ -166,8 +166,11 @@ def iserror_function(args):
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
     
-    # TODO
-    pass
+    arg = args[0]
+    if isinstance(arg.val, sheets.CellError):
+        return CellValue(True)
+    else:
+        return CellValue(False)
 
 def version_function(args):
     """Returns the version of the spreadsheet library."""
