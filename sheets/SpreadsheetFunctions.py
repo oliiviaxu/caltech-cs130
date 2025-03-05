@@ -113,14 +113,14 @@ def iferror_function(args):
     if len(args) != 1 and len(args) != 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
     
-    value, value_if_error = args[0].val, ""
+    value, value_if_error = args[0], ""
     if len(args) == 2:
-        value_if_error = args[1].val
+        value_if_error = args[1]
     
     if isinstance(value, sheets.CellError):
-        return CellValue(value_if_error)
+        return CellValue(value_if_error.val)
     else:
-        return CellValue(value)
+        return CellValue(value.val)
 
 def choose_function(args):
     """Returns the `index`-th argument (1-based indexing). The index is converted to a number."""
