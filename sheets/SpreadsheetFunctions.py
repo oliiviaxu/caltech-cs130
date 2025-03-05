@@ -93,13 +93,17 @@ def if_function(args):
 
         if isinstance(args[0].val, sheets.CellError):
             return args[0]
-
-    condition, true_value, false_value = args[0], args[1], args[2]
+    
+    condition, true_value, false_value = args[0], args[1].val, None
+    if len(args) == 3:
+        false_value = args[2].val
+    else:
+        false_value = None
 
     if condition.val:
-        return CellValue(true_value.val)
+        return CellValue(true_value)
     else:
-        return CellValue(false_value.val)
+        return CellValue(false_value)
     
 def iferror_function(args):
     # TODO: 
@@ -139,11 +143,18 @@ def choose_function(args):
 
 # INFORMATIONAL FUNCTIONS
 def isblank_function(args):
-    """Returns TRUE if the value is blank or None."""
+    """
+    Returns TRUE if empty cell value.
+    evaluates to TRUE if its input is an empty-cell value, or FALSE otherwise. 
+    This function always takes exactly one argument. Note specifically that ISBLANK("") evaluates to FALSE, 
+    as do ISBLANK(FALSE) and ISBLANK(0).
+    """
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
 
-    if not args[0]:
+    # TODO
+    if not args[0].val:
+        print(args[0].val)
         return CellValue(True)
     else:
         return CellValue(False)

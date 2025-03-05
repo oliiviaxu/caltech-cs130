@@ -565,7 +565,7 @@ class FunctionsTests(unittest.TestCase):
         # wrong number of arguments
         tree_3 = parser.parse('=IF()')
         ev.ref_info = wb.get_cell_ref_info(tree_3, 'sheet1')
-        self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)
+        self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)        
 
         # error propagation
         tree_4 = parser.parse('=IF(1/0, 1, 2)')
@@ -601,6 +601,12 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A9'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A9').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
 
+        wb.set_cell_contents("sheet1", "C2", "=C3")
+        wb.set_cell_contents("sheet1", "C3", "=C2")
+        wb.set_cell_contents("sheet1", "A11", "=IF(1==1, C2)")
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A11'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A11').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
         # nested
         wb.set_cell_contents('sheet1', 'A10', '=IF(1=1, IF(1/0, 1, 2), 3)')
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A10'), sheets.CellError)
@@ -615,6 +621,12 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('sheet1', 'A14', '=IF(""="", "empty", "not empty")')
         self.assertEqual(wb.get_cell_value('sheet1', 'A14'), "empty")
 
+        wb.set_cell_contents('sheet1', 'A15', '=IF(1=2, "yes", "")')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A15'), "")
+
+        # only 2 arguments 
+        wb.set_cell_contents('sheet1', 'A16', '=IF(1=1, "yes")')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A16'), "yes")
     
     def test_iferror_function(self):
         # TODO
@@ -686,6 +698,50 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(ev.visit(tree_8).val, sheets.CellError)
 
         # set cell contents tests
+        wb.set_cell_contents('sheet1', 'A1', '1')
+        wb.set_cell_contents('sheet1', 'A2', '=CHOOSE(A1, "apple", "banana", "cherry")')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), "apple")
+
+        wb.set_cell_contents('sheet1', 'A1', '2')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), "banana")
+
+        wb.set_cell_contents('sheet1', 'B1', '3')
+        wb.set_cell_contents('sheet1', 'B2', '=CHOOSE(B1, 10, 20, 30, 40)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'B2'), decimal.Decimal('30'))
+
+        wb.set_cell_contents('sheet1', 'C1', '0')
+        wb.set_cell_contents('sheet1', 'C2', '=CHOOSE(C1, "a", "b")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'C2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('sheet1', 'D1', '5')
+        wb.set_cell_contents('sheet1', 'D2', '=CHOOSE(D1, "a", "b")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'D2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('sheet1', 'E1', '1.5')
+        wb.set_cell_contents('sheet1', 'E2', '=CHOOSE(E1, "a", "b")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'E2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'E2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('sheet1', 'F1', '"text"')
+        wb.set_cell_contents('sheet1', 'F2', '=CHOOSE(F1, "a", "b")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'F2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'F2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # test error propagation
+        wb.set_cell_contents("sheet1", "C2", "=C3")
+        wb.set_cell_contents("sheet1", "C3", "=C2")
+        wb.set_cell_contents("sheet1", "A11", "=CHOOSE(1, C2, C3)")
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A11'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A11').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        # nested
+        wb.set_cell_contents('sheet1', 'D1', '1')
+        wb.set_cell_contents('sheet1', 'D2', '2')
+        wb.set_cell_contents('sheet1', 'D3', '=CHOOSE(D1, CHOOSE(D2, "a", "b", "c"), "d", "e")') # CHOOSE(D2, "a", "b", "c") = b
+        self.assertEqual(wb.get_cell_value('sheet1', 'D3'), "b")
+
     
     def test_isblank_function(self):
         wb = sheets.Workbook()
@@ -708,6 +764,11 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)
 
         # TODO: set cell contents tests
+        wb.set_cell_contents('sheet1', 'B1', '=ISBLANK(A1)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), True)
+
+        # wb.set_cell_contents('sheet1', 'B2', '=ISBLANK("")')
+        # self.assertEqual(wb.get_cell_value('sheet1', 'B2'), False)
 
     def test_iserror_function(self):
         # TODO
