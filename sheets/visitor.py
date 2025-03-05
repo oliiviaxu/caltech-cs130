@@ -8,7 +8,7 @@ class CellRefFinder(lark.Visitor):
         self.refs = set()
 
     def cell(self, tree):
-        # visitor method processes a parse tree node 
+        # visitor method processes a parse tree node
         if len(tree.children) == 1:
             location = str(tree.children[0]).lower().replace('$', '')
             self.refs.add(location)
