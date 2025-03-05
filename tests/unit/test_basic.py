@@ -779,6 +779,32 @@ class BasicTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
 
+    def test_string_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '="1.0" & "5"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), '1.05') # should be 1.05
+
+        wb.set_cell_contents('Sheet1', 'A1', '=1.0 & "5"')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), '15')
+
+        wb.set_cell_contents('Sheet1', 'A1', '="hello" & #REF!')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+    def test_rename_lowercase(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet('Some')
+        wb.new_sheet('Another sheet')
+        wb.new_sheet('She-et')
+
+        wb.set_cell_contents('Sheet1', 'A1', "='Some'!A1 + 'another sheet'!B2 + 'She-et'!C3")
+        wb.rename_sheet('Another Sheet', 'Other')
+
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), "=Some!A1 + Other!B2 + 'She-et'!C3")
+
 if __name__ == "__main__":
     cov = coverage.Coverage()
     cov.start()

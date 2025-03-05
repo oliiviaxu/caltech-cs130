@@ -49,18 +49,18 @@ class SheetNameExtractor(lark.visitors.Transformer):
             if (len(curr_name) > 2 and curr_name[0] == '\'' and curr_name[-1] == '\''):
                 if (not SheetNameExtractor.sheet_name_needs_quotes(curr_name[1:-1])):
                     curr_name = curr_name[1:-1]
-                    if curr_name == self.sheet_name:
+                    if curr_name.lower() == self.sheet_name.lower():
                         curr_name = self.new_sheet_name
                         if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                             curr_name = "'" + curr_name + "'"
                 else:
                     # it needs quotes
-                    if curr_name[1:-1] == self.sheet_name:
+                    if curr_name[1:-1].lower() == self.sheet_name.lower():
                         curr_name = self.new_sheet_name
                         if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                             curr_name = "'" + curr_name + "'"
             else:
-                if curr_name == self.sheet_name:
+                if curr_name.lower() == self.sheet_name.lower():
                     curr_name = self.new_sheet_name
                     if SheetNameExtractor.sheet_name_needs_quotes(curr_name):
                         curr_name = "'" + curr_name + "'"

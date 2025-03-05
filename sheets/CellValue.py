@@ -32,6 +32,8 @@ class CellValue:
             self.val = ''
         elif self.is_cell_error():
             return
+        elif isinstance(self.val, str):
+            return
         elif isinstance(self.val, bool):
             if self.val:
                 self.val = 'TRUE'

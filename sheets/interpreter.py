@@ -161,7 +161,7 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if val_1.is_cell_error():
             return val_1
         if val_2.is_cell_error():
-            return val_1
+            return val_2
 
         output = CellValue(val_1.val + val_2.val)
         output.to_string()
