@@ -104,7 +104,7 @@ class FormulaUpdater(lark.visitors.Transformer):
             return orig_location
         
         col_idx, row_idx = Sheet.split_cell_ref(orig_location)
-        max_col, max_row = Sheet.str_to_index('ZZZZ'), 999
+        max_col, max_row = Sheet.str_to_index('ZZZZ'), 9999
 
         if Sheet.is_row_mixed_ref(orig_location):
             new_col_idx = col_idx + self.delta_x

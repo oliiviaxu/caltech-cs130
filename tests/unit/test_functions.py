@@ -889,8 +889,15 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)
 
     def test_indirect_function(self):
-        # TODO 
-        pass
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # from the spec
+        wb.set_cell_contents('sheet1', 'A1', '=B1')
+        wb.set_cell_contents('sheet1', 'B1', '=INDIRECT("A1")')
+
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
 
     def test_general(self):
         wb = sheets.Workbook()

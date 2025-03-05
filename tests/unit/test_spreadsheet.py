@@ -494,8 +494,17 @@ class SpreadsheetTests(unittest.TestCase):
 
         wb_5.move_cells("Sheet1", "C1", "C2", "B1")
         self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B1'), "=#REF! * A1")
-        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")        
-    
+        self.assertEqual(wb_5.get_cell_contents('Sheet1', 'B2'), "=#REF! * A2")    
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('sheet1', 'A1', '=B1 + B2 + B3 + B4')    
+
+        wb.move_cells("Sheet1", "A1", "A1", "A9999")
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A9999'), "=B9999 + #REF! + #REF! + #REF!")
+
+
     def test_copy_cells(self):
         wb_0 = sheets.Workbook()
         with self.assertRaises(KeyError):
@@ -651,6 +660,14 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb_6.get_cell_contents('Sheet2', 'B2'), "'123")
         self.assertEqual(wb_6.get_cell_contents('Sheet2', 'C2'), "5.3")
         self.assertEqual(wb_6.get_cell_contents('Sheet2', 'D2'), "=B2 * C2")
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('sheet1', 'A1', '=B1 + B2 + B3 + B4')    
+
+        wb.copy_cells("Sheet1", "A1", "A1", "A9999")
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A9999'), "=B9999 + #REF! + #REF! + #REF!")
 
     def test_move_cells_edge(self):
         wb = sheets.Workbook()
