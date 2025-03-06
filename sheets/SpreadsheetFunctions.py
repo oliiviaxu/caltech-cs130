@@ -4,11 +4,27 @@ from .CellValue import CellValue
 from .CellError import CellError, CellErrorType
 import decimal
 
+def visit_all(arg_tree, ev):
+    if arg_tree is None:
+        return []
+    args = ev.visit(arg_tree)
+    if not isinstance(args, list):
+        args = [args]
+    return args
+
+# def get_first_arg():
+#     argument_one = arguments.children[0]
+#     if isinstance(argument_one, lark.Tree):
+#         argument_one = self.visit(argument_one)
+#     else:
+#         argument_one = CellValue(argument_one)
+
 # TODO: Propagate cell errors
 # BOOLEAN FUNCTIONS
-def and_function(args):
+def and_function(arg_tree, ev):
     """Returns TRUE if all arguments are TRUE. All arguments are converted to Boolean values."""
-    if not args:
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
     
     converted = []
@@ -22,10 +38,12 @@ def and_function(args):
         converted.append(cell_val.val)
     return CellValue(all(arg for arg in converted))
 
-def or_function(args):
+def or_function(arg_tree, ev):
     """Returns TRUE if any argument is TRUE. All arguments are converted to Boolean values."""
-    if not args:
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
+    
     converted = []
     for cell_val in args:
         if not isinstance(cell_val.val, bool):
@@ -37,10 +55,12 @@ def or_function(args):
         converted.append(cell_val.val)
     return CellValue(any(arg for arg in converted))
 
-def not_function(args):
+def not_function(arg_tree, ev):
     """Returns the logical negation of the argument. The argument is converted to a Boolean value."""
+    args = visit_all(arg_tree, ev)
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 argument, but got {len(args)} arguments."))
+    
     arg = args[0]
     if not isinstance(arg.val, bool):
         arg.to_bool()
@@ -50,9 +70,10 @@ def not_function(args):
         
     return CellValue(not arg.val)
 
-def xor_function(args):
+def xor_function(arg_tree, ev):
     """Returns TRUE if an odd number of arguments are TRUE. All arguments are converted to Boolean values."""
-    if not args:
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
     converted = []
     for cell_val in args:
@@ -66,8 +87,9 @@ def xor_function(args):
     return CellValue(sum(arg for arg in converted) % 2 == 1)
 
 # STRING-MATCH FUNCTIONS
-def exact_function(args):
+def exact_function(arg_tree, ev):
     """Returns TRUE if the two strings are identical. Case-sensitive. The arguments are converted to string values."""
+    args = visit_all(arg_tree, ev)
     if len(args) != 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 arguments, but got {len(args)} arguments."))      
     converted = []
@@ -82,9 +104,10 @@ def exact_function(args):
     return CellValue(converted[0] == converted[1])
 
 # CONDITIONAL FUNCTIONS
-def if_function(args):
+def if_function(arg_tree, ev):
     # arguments: condition, true_value, false_value=None 
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
+    args = visit_all(arg_tree, ev)
     if len(args) != 2 and len(args) != 3:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments, but got {len(args)} arguments."))      
     
@@ -105,11 +128,11 @@ def if_function(args):
     else:
         return CellValue(false_value)
     
-def iferror_function(args):
+def iferror_function(arg_tree, ev):
     # TODO: 
     # arguments: value, value_if_error=""
     """Returns `value` if it is not an error, otherwise `value_if_error`."""
-
+    args = visit_all(arg_tree, ev)
     if len(args) != 1 and len(args) != 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
     
@@ -122,8 +145,9 @@ def iferror_function(args):
     else:
         return value
 
-def choose_function(args):
+def choose_function(arg_tree, ev):
     """Returns the `index`-th argument (1-based indexing). The index is converted to a number."""
+    args = visit_all(arg_tree, ev)
     if len(args) < 2:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected atleast 2 arguments, but got {len(args)} arguments."))  
 
@@ -142,13 +166,14 @@ def choose_function(args):
     return CellValue(remaining_args[index].val)
 
 # INFORMATIONAL FUNCTIONS
-def isblank_function(args):
+def isblank_function(arg_tree, ev):
     """
     Returns TRUE if empty cell value.
     evaluates to TRUE if its input is an empty-cell value, or FALSE otherwise. 
     This function always takes exactly one argument. Note specifically that ISBLANK("") evaluates to FALSE, 
     as do ISBLANK(FALSE) and ISBLANK(0).
     """
+    args = visit_all(arg_tree, ev)
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
 
@@ -161,8 +186,9 @@ def isblank_function(args):
     else:
         return CellValue(False)
 
-def iserror_function(args):
+def iserror_function(arg_tree, ev):
     """Returns TRUE if the value is an error."""
+    args = visit_all(arg_tree, ev)
     if len(args) != 1:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
     
@@ -172,8 +198,9 @@ def iserror_function(args):
     else:
         return CellValue(False)
 
-def version_function(args):
+def version_function(arg_tree, ev):
     """Returns the version of the spreadsheet library."""
+    args = visit_all(arg_tree, ev)
     if len(args) != 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected no arguments, but got {len(args)} arguments."))
     return CellValue(sheets.__version__)
@@ -188,7 +215,8 @@ def indirect_function(workbook):
     argument can be parsed as a cell reference, but the cell-reference is invalid for some reason 
     (other than creating a circular reference in the workbook), this function returns a BAD_REFERENCE error."""
 
-    def indirect(args, sheet_name):
+    def indirect(arg_tree, ev):
+        args = visit_all(arg_tree, ev)
         if len(args) != 1:
             return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
         
@@ -206,7 +234,7 @@ def indirect_function(workbook):
 
         ref_sheet_name, ref_location = "", ""
         if len(split_ref) == 1:
-            ref_sheet_name = sheet_name
+            ref_sheet_name = ev.sheet_name
             ref_location = split_ref[0]
         else:
             ref_sheet_name = split_ref[0]

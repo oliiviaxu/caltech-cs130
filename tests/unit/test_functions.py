@@ -1021,8 +1021,8 @@ class FunctionsTests(unittest.TestCase):
         wb.new_sheet()
 
         # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
-        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True)')
-        wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5, 8)')
+        wb.set_cell_contents('Sheet1', 'A1', '=And()')
+        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
