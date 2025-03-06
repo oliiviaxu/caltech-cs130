@@ -231,7 +231,7 @@ def indirect_function(workbook):
             arg.to_string()
 
             if isinstance(arg.val, sheets.CellError):
-                return arg.val
+                return arg
         
         # attempt to parse as a cell reference
         split_ref = arg.val.split('!')
@@ -248,6 +248,7 @@ def indirect_function(workbook):
         if not sheets.Workbook.is_valid_location(ref_location):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
         
+        ev.refs.add((ref_sheet_name, ref_location))
         return CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
     
     return indirect

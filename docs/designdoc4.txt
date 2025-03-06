@@ -19,12 +19,12 @@ L1.  [2pts] Enumerate all teammates here.
 - Olivia Xu, Wilson Duan
 
 L2.  [2pts] What did each teammate focus on during this project?
-TODO 
 Wilson: 
 - implementing Tarjan's algorithm, SCCs
-- introduced CellValue's, refactoring all of our code to support this functionality
+- introduced CellValue's, refactoring all of our code to support booleans
 - refactored our function invocation mechanism code for conditional evaluations
 - wrote performance tests for generating large bulk changes to a workbook
+- implemented comparison operators
 
 Olivia: 
 - function invocation mechanism 
@@ -33,7 +33,7 @@ Olivia:
 - writing tests for each function
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
-- Wilson: 
+- Wilson: 15
 - Olivia: 15 
 
 Spreadsheet Engine Design (31 pts)
@@ -44,6 +44,8 @@ D1.  [3pts] Briefly describe the changes you made to the Lark parser grammar
      - Added Boolean literals to the base values in the grammar.
      - Defined a new lexer terminal (BOOLEAN: /(?i:true|false)/) to 
      recognize Boolean literals (case-insensitive)
+     - Refactored outputs of interpreter methods to return CellValue instead
+     of normal values
      
 D2.  [4pts] Briefly describe the changes you made to the Lark parser grammar
      to support conditional expressions.  How did you ensure that conditional
