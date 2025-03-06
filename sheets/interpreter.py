@@ -243,7 +243,6 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             # strip quotes
             if (len(sheet) > 2 and sheet[0] == '\'' and sheet[-1] == '\''):
                 sheet = sheet[1:-1]
-            reference = sheet + '!' + location
             if is_valid_location(location):
                 self.refs.add((sheet, location))
             try:

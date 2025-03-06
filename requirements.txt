@@ -1,3 +1,3 @@
 coverage==7.6.10
-cs130-sheets-cui @ http://courses.cms.caltech.edu/cs130/projects/sheets_cui/cs130_sheets_cui-0.9.4-py3-none-any.whl
+# cs130-sheets-cui @ http://courses.cms.caltech.edu/cs130/projects/sheets_cui/cs130_sheets_cui-0.9.4-py3-none-any.whl
 lark==1.2.2

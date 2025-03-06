@@ -312,7 +312,6 @@ class Workbook:
             for sn, loc in orig_outgoing:
                 self.graph.ingoing_remove(sn, loc, sheet_name, location)
 
-        outgoing = []
         if contents is not None:
             contents = contents.strip()
         if contents == '':
@@ -324,11 +323,8 @@ class Workbook:
             curr_sheet.check_shrink(location)
         elif contents.startswith('='):
             # parse formula into tree
-            parse_error = False
             if contents == curr_cell.contents:
-                if curr_cell.parse_error:
-                    parse_error = True
-                else:
+                if not curr_cell.parse_error:
                     tree = curr_cell.tree
             else:
                 try:
@@ -336,7 +332,6 @@ class Workbook:
                     curr_cell.tree = tree
                     curr_cell.parse_error = False
                 except lark.exceptions.LarkError:
-                    parse_error = True
                     curr_cell.parse_error = True
         
         curr_cell.contents = contents
