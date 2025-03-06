@@ -201,14 +201,6 @@ class BasicTests(unittest.TestCase):
         wb = sheets.Workbook()
         wb.new_sheet()
 
-        parser = lark.Lark.open(lark_path, start='formula')
-        tree_1 = parser.parse('=1 + D3')
-        ref_info = wb.get_cell_ref_info(tree_1, 'sheet1')
-
-        ev = FormulaEvaluator('sheet1', ref_info, {})
-
-        self.assertEqual(ev.visit(tree_1).val, 1)
-
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=-3')
         wb.set_cell_contents('sheet1', 'A2', '=+A1')

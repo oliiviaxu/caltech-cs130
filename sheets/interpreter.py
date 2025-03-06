@@ -9,10 +9,11 @@ from typing import Any
 decimal.getcontext().prec = 500
 
 class FormulaEvaluator(lark.visitors.Interpreter):
-    def __init__(self, sheet_name, ref_info, func_directory):
+    def __init__(self, sheet_name, workbook, func_directory):
         self.sheet_name = sheet_name
-        self.ref_info = ref_info
+        self.workbook = workbook
         self.func_directory = func_directory
+        self.refs = set()
 
     error_dict = {
         "#error!": CellErrorType.PARSE_ERROR,
@@ -221,16 +222,28 @@ class FormulaEvaluator(lark.visitors.Interpreter):
     def cell(self, tree):
         # first parse the value into sheet (if given) and location
         if (len(tree.children) == 1):
-            reference = tree.children[0].value.lower().replace('$', '')
-            if reference not in self.ref_info:
-                return CellValue(CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}'))
-            return CellValue(self.ref_info[reference])
+            location = tree.children[0].value.lower().replace('$', '')
+            reference = self.sheet_name.lower() + '!' + location
+            self.refs.add(reference)
+            try:
+                output = self.workbook.get_cell_value(self.sheet_name, location)
+                return CellValue(output)
+            except (ValueError, KeyError) as e:
+                output = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
+                return CellValue(output)
         elif (len(tree.children) == 2):
             sheet = tree.children[0].value.lower()
             location = tree.children[1].value.lower().replace('$', '')
+            # strip quotes
+            if (len(sheet) > 2 and sheet[0] == '\'' and sheet[-1] == '\''):
+                sheet = sheet[1:-1]
             reference = sheet + '!' + location
-            if reference not in self.ref_info:
-                return CellValue(CellError(CellErrorType.BAD_REFERENCE, f'Could not find cell information for reference {reference}'))
-            return CellValue(self.ref_info[reference])
+            self.refs.add(reference)
+            try:
+                output = self.workbook.get_cell_value(sheet, location)
+                return CellValue(output)
+            except (ValueError, KeyError) as e:
+                output = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
+                return CellValue(output)
         else:
             raise AssertionError('Length of tree for cell is not one or two')
