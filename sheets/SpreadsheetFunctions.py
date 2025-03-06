@@ -188,7 +188,7 @@ def indirect_function(workbook):
     argument can be parsed as a cell reference, but the cell-reference is invalid for some reason 
     (other than creating a circular reference in the workbook), this function returns a BAD_REFERENCE error."""
 
-    def indirect(args):
+    def indirect(args, sheet_name):
         if len(args) != 1:
             return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
         
@@ -211,7 +211,7 @@ def indirect_function(workbook):
         if not sheets.Workbook.is_valid_location(ref_location):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
         
-        return workbook.get_cell_value(ref_location)
+        return workbook.get_cell_value(sheet_name, ref_location)
     
     return indirect
 

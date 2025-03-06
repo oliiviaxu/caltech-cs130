@@ -213,6 +213,9 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         if function_name not in self.func_directory:
             return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
         
+        if function_name == 'INDIRECT':
+            return self.func_directory[function_name](arguments, self.sheet_name)
+
         return self.func_directory[function_name](arguments)
 
     def cell(self, tree):
