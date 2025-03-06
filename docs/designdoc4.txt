@@ -64,9 +64,22 @@ D3.  [6pts] Briefly describe how function invocation works in your spreadsheet
      engine?  What about a third-party developer?  How well does your code
      follow the Open/Closed Principle?
 
-     TODO
-     - We changed our interpreter to ______________
-     - For all of the functions we pass a lark.Tree ______________
+     - The function method in our interpreter handles any occurrences of functions,
+     and it works as follows:
+        - it first extracts the function name from the tree
+        - it then finds the function corresponding to the function name
+        - it calls the found function, passing in the whole tree and the interpreter
+        (the functions are stored as a field to the interpreter)
+     - As a result, it is easy to add new functions, as you only need to define a function
+     in SpreadsheetFunctions.py, ensure it takes in the correct arguments (tree and interpreter),
+     and add it to the function directory
+     - Because the spreadsheet functions are mostly decoupled from the rest of the functionality,
+     it is also quite easy for a third party developer to add new functions to the engine
+     - Our implementation follows the Open/Closed principle quite well because the function code
+     is somewhat separated from the implementation of the engine
+        - Changes to the functions, or the addition of new functions, does not affect the rest of
+        the spreadsheet engine
+        - the central spreadsheet engine code is stable
 
 
 D4.  [4pts] Is your implementation able to lazily evaluate the arguments to
@@ -75,7 +88,21 @@ D4.  [4pts] Is your implementation able to lazily evaluate the arguments to
      an argument to these functions does not need to be evaluated.)  If so,
      what changes to your design were required to achieve this?  If not, what
      prevented your team from implementing this?
-
+     - Yes, our implementation is able to lazily evaluate arguments to IF, CHOOSE,
+     and IFERROR. We needed lots of changes to achieve this:
+        - Initially, we used a visitor to obtain all the cell refs, which was used
+        to update the dependency graph. This no longer works, as the visitor picks up
+        every cell reference, even ones we do not need.
+            - To fix this, we moved the finding of cell references to the interpreter
+            - We added a set called refs to the field of the interpreter, and it is
+            updated every time we run into a cell
+        - Initially, our function method in the interpreter ran self.visit_children
+        no matter what, which is not desireable because it caused the interpreter to
+        also evaluate unneeded clauses of IF/CHOOSE/IFERROR functions.
+            - We fixed this such that we do not run self.visit_children. Instead, we
+            pass the tree to each function, and each function can choose to visit the
+            tree however it likes. Most functions still visit all the children, but the lazy
+            functions evaluate arguments one at a time depending on necessity.
 
 D5.  [4pts] Is your implementation able to evaluate the ISERROR() function
      correctly, with respect to circular-reference errors?  (Recall from the
@@ -83,13 +110,26 @@ D5.  [4pts] Is your implementation able to evaluate the ISERROR() function
      vs. being outside the cycle and referencing some cell in the cycle.)
      If so, what changes to your design were required to achieve this?  If
      not, what prevented your team from implementing this?
-
+     - Yes, our implementation handles ISERROR correctly w.r.t. CIRCREF errors
+     - We changed our cycle detection code to use Tarjan's algorithm,
+     which was necessary because we could identify which cells were directly
+     involved in a cycle, and they were set to CIRCREF. Other cells which do not
+     directly participate in a cycle are not set immediately to CIRCREF - instead,
+     we run it through the interpreter to evaluate it. This allows the ISERROR function
+     to work, as it ensures we do not set the value to a CIRCREF even though it may
+     reference a cell in a cycle.
 
 D6.  [4pts] Is your implementation able to successfully identify cycles that
      are not evident from static analysis of formulas containing INDIRECT()?
      If so, what changes to your design were required, if any, to achieve this?
      If not, what prevented your team from implementing this?
-
+     - Yes, our implementation can successfully identify cycles that are less obvious.
+     - Some cell references are more difficult to pick up, as they could be hidden inside
+     the argument of INDIRECT. As a result, we added functionality that enables us to add
+     to the list of references during evaluation. Within the function directory, our INDIRECT
+     function allows us to pass in the interpreter, where we add to the .refs field if we
+     identify any new references. The refs within the interpreter are used by the workbook
+     to update the dependency graph.
 
 D7.  [6pts] Project 4 has a number of small but important operations to
      implement.  Comparison operations include a number of comparison and type
@@ -97,9 +137,18 @@ D7.  [6pts] Project 4 has a number of small but important operations to
      types of arguments.  How did your team structure the implementation of
      these operations?  How did your approach affect the reusability and
      testability of these operations?
-     
-     - Each function had its own callable function that validated the 
-     number and types of argument, following hints from the spec
+     - The way we handled type conversions was by using methods in the CellValue class -
+     for example, the to_bool and to_string methods try to convert a CellValue to a bool and
+     string, respectively. These methods are called in the appropriate functions. In these examples,
+     to_bool is called on the arguments to comparison operators, and to_string is called on the
+     arguments to the concat operator
+        - This approach was very easy to extend to new functionality, as all we had to
+        do was identify what type the argument should be, and call its corresponding method
+        in the CellValue class
+     - Each function had its own callable function from the directory that validated the 
+     number of arguments, following hints from the spec
+     - The functions from the function directory were easy to test, as we could use set_cell_contents
+     - The functions were not that reusable - each function tackled a unique scenario
 
 
 
@@ -115,15 +164,35 @@ to identify where your program is spending the bulk of its time.
 
 A1.  [4pts] Briefly enumerate the performance tests you created to exercise
      your implementation.
-
+     - One performance test loads in the first 1000 numbers of fibonacci, n times,
+     where n is the number of iterations (number of times we load). We set n equal to
+     10.
+     - Other performance tests such as the copying/renaming sheet involved the creation
+     of medium sized cycles, then we perform n iterations of renaming the sheet.
+     - To test moving/copying cells, we again created medium sized cycles, and then
+     moved those cycles around n times.
 
 A2.  [2pts] What profiler did you choose to run your performance tests with?
      Why?  Give an example of how to invoke one of your tests with the profiler.
-
+     - We continued to use the same profiler that we used for the other performance tests,
+     which is cProfiler. This is because we already had architecture in place for it.
+     - Invoke new tests with: python -m unittest tests.performance.WorkbookTests
+        - This causes profiler information to be routed to tests/performance/cProfile_output
 
 A3.  [6pts] What are ~3 of the most significant hot-spots you identified in your
      performance testing?  Did you expect these hot-spots, or were they
      surprising to you?
+     - Our test for copying cells reveals that lark's parsing is taking up a large portion
+     of the runtime - this is unsurprising, as we use lark's parsing every time we call
+     set_cell_contents, and we use set_cell_contents for every cell we need to copy.
+     - Our test for renaming sheets reveals that the automatic updating of cells is taking
+     up most of the time - this is surprising, as we thought the updating of cells was relatively
+     efficient.
+     - In our renaming sheet tests, another confusing aspect was the fact that the function
+     split_cell_ref was taking up around 4s out of the 10s total. Split cell ref is a function
+     we defined to turn a cell location such as A1 into indices, and we thought it would be an
+     extremely efficient operation. It is possible that it is taking up lots of time solely due
+     to the number of times it is being called, which is over a million times in some tests.
 
 
 Section F:  CS130 Project 3 Feedback [OPTIONAL]

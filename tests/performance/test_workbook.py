@@ -47,7 +47,7 @@ class WorkbookTests(unittest.TestCase):
 
     def test_load_wb(self):
         file_path = os.path.join(current_dir, 'fibonacci.json')
-        num_loads = 1
+        num_loads = num_iterations
         for _ in range(num_loads):
             with open(file_path, "r") as file:
                 _ = sheets.Workbook.load_workbook(file)
