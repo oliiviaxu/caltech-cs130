@@ -201,22 +201,91 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             return CellValue(True)
         else:
             return CellValue(False)
+    
+    def get_function_name(tree):
+
+        pass
+
+    def get_function_arguments(tree):
+        pass
 
     def function(self, tree):
-        values = self.visit_children(tree)
-        function_name, arguments = "", None
-        
-        if isinstance(values[0], list):
-            function_name = values[0][0].upper()
-            if not isinstance(values[0][1], list):
-                arguments = [values[0][1]]
+        # extract the sheet name and the arguments
+
+        # this checks if there are arguments - if there are arguments, tree.children[0] is a Tree
+        if isinstance(tree.children[0], lark.Tree):
+            # print(tree.data)
+            curr_tree = tree.children[0]
+            function_name = curr_tree.children[0].upper()
+            arguments = curr_tree.children[1]
+            print('asdf', arguments)
+
+            if function_name not in self.func_directory:
+                return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
+            
+            if function_name == 'INDIRECT':
+                # TODO:
+
+                return self.func_directory[function_name](arguments, self.sheet_name)
+            elif function_name == 'IF':
+                argument_one = arguments.children[0]
+                if isinstance(argument_one, lark.Tree):
+                    argument_one = self.visit(argument_one)
+                else:
+                    argument_one = CellValue(argument_one)
+                
+                print('first arg', argument_one.val)
+
+                if not isinstance(argument_one.val, bool):    
+                    argument_one.to_bool()
+
+                    if isinstance(argument_one.val, CellError):
+                        return argument_one
+                # arguments = curr_tree.children[1].children
+                # print(arguments)
+                # pass
+            elif function_name == 'IFERROR':
+                if isinstance(argument_one, lark.Tree):
+                    argument_one = self.visit(argument_one)
+                else:
+                    argument_one = CellValue(argument_one)
+                # arguments = curr_tree.children[1].children
+                # print(arguments)
+                pass
+            elif function_name == 'CHOOSE':
+                if isinstance(argument_one, lark.Tree):
+                    argument_one = self.visit(argument_one)
+                else:
+                    argument_one = CellValue(argument_one)
+                # arguments = curr_tree.children[1].children
+                # print(arguments)
+                pass
+
             else:
-                arguments = values[0][1]
+                # tree = self.visit(curr_tree)
+                # arguments = tree[1] # CellValue's
+                # print(arguments)
+                pass
         else:
-            # NO arguments
-            function_name = values[0].upper()
+            # no arguments
+            function_name = tree.children[0]
             arguments = []
         
+        # print(function_name)
+        # print(arguments)
+        # for arg in arguments:
+        #     print(arg.val)
+
+        # tree = self.visit(tree.children[0])
+        # function_name = tree[0].upper()
+        # arguments = tree[1] # CellValue's
+
+        # if not isinstance(arguments, list):
+        #     arguments = [arguments]
+        
+        # print(arguments)
+        # print(function_name)
+                
         if function_name not in self.func_directory:
             return CellValue(CellError(CellErrorType.BAD_NAME, f"Unknown function: {function_name}"))
         

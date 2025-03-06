@@ -1016,6 +1016,13 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=ISERROR(IFERROR(1/0, FALSE))')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
 
+    def test_alt(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
+        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True)')
+        wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5, 8)')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
