@@ -239,11 +239,13 @@ def indirect_function(workbook):
 
         ref_sheet_name, ref_location = "", ""
         if len(split_ref) == 1:
-            ref_sheet_name = ev.sheet_name
-            ref_location = split_ref[0]
+            ref_sheet_name = ev.sheet_name.lower()
+            ref_location = split_ref[0].lower().replace('$', '')
         else:
-            ref_sheet_name = split_ref[0]
-            ref_location = split_ref[1]
+            ref_sheet_name = split_ref[0].lower()
+            if (len(ref_sheet_name) > 2 and ref_sheet_name[0] == '\'' and ref_sheet_name[-1] == '\''):
+                ref_sheet_name = ref_sheet_name[1:-1]
+            ref_location = split_ref[1].lower().replace('$', '')
         
         if not sheets.Workbook.is_valid_location(ref_location):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))

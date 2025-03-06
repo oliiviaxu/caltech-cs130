@@ -993,12 +993,14 @@ class FunctionsTests(unittest.TestCase):
 
         wb = sheets.Workbook()
         wb.new_sheet()
+        wb.new_sheet('Another Sheet')
         wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("\'another sheet\'!B1")')
         wb.set_cell_contents('another sheet', 'B1', '5')
         self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
         
         wb = sheets.Workbook()
         wb.new_sheet()
+        wb.new_sheet('She-et1')
         wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("\'she-et1\'!B1")')
         wb.set_cell_contents('she-et1', 'B1', '5')
         self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
