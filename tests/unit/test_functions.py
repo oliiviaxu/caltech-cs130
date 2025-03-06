@@ -577,16 +577,9 @@ class FunctionsTests(unittest.TestCase):
         # only 2 arguments 
         wb.set_cell_contents('sheet1', 'A16', '=IF(1=1, "yes")')
         self.assertEqual(wb.get_cell_value('sheet1', 'A16'), "yes")
-
-        wb = sheets.Workbook()
-        wb.new_sheet()
-
-        wb.set_cell_contents('sheet1', 'A1', '=IF(A2, B1, C1)')
-        wb.set_cell_contents('sheet1', 'B1', '=A1')
-        wb.set_cell_contents('sheet1', 'C1', '=5')
-        wb.set_cell_contents('sheet1', 'A2', 'False')
-
-        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
+        
+        wb.set_cell_contents('Sheet1', 'A1', '=IF(False, 5)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
 
     
     def test_iferror_function(self):
@@ -1057,6 +1050,7 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'B1', '=A1')
         wb.set_cell_contents('Sheet1', 'C1', '5')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
         # from spec
         wb.set_cell_contents('Sheet1', 'A1', '=IF(A2, B1, C1)')

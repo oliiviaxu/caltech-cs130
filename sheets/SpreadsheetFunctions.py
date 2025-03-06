@@ -18,14 +18,13 @@ def get_first_arg(arg_tree, ev):
     elif len(arg_tree.children) != 2 and len(arg_tree.children) != 3:
         return None, True
     else:
-        print(arg_tree)
-        print('children', arg_tree.children, len(arg_tree.children))
-        return 1, False
-    #     argument_one = arguments.children[0]
-    #     if isinstance(argument_one, lark.Tree):
-    #         argument_one = self.visit(argument_one)
-    #     else:
-    #         argument_one = CellValue(argument_one)
+        arg_one = ev.visit(arg_tree.children[0])
+        return arg_one, False
+
+def get_ith_arg(arg_tree, ev, i):
+    if i < 0 or i >= len(arg_tree.children):
+        return None
+    return ev.visit(arg_tree.children[i])
 
 # TODO: Propagate cell errors
 # BOOLEAN FUNCTIONS
@@ -116,28 +115,23 @@ def if_function(arg_tree, ev):
     # arguments: condition, true_value, false_value=None 
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
     arg_one, not_enough_args = get_first_arg(arg_tree, ev)
-    print(arg_one, not_enough_args)
-    assert False
-    args = visit_all(arg_tree, ev)
     if not_enough_args:
-        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments, but got {len(args)} arguments."))      
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments."))      
     
-    if not isinstance(args[0].val, bool):    
-        args[0].to_bool()
+    if not isinstance(arg_one.val, bool):    
+        arg_one.to_bool()
 
-        if isinstance(args[0].val, sheets.CellError):
-            return args[0]
+        if isinstance(arg_one.val, sheets.CellError):
+            return arg_one
     
-    condition, true_value, false_value = args[0], args[1].val, None
-    if len(args) == 3:
-        false_value = args[2].val
+    if arg_one.val:
+        value_1 = get_ith_arg(arg_tree, ev, 1)
+        return value_1
     else:
-        false_value = None
-
-    if condition.val:
-        return CellValue(true_value)
-    else:
-        return CellValue(false_value)
+        value_2 = get_ith_arg(arg_tree, ev, 2)
+        if value_2 is None:
+            value_2 = CellValue(False)
+        return value_2
     
 def iferror_function(arg_tree, ev):
     # TODO: 

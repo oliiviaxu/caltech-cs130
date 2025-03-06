@@ -225,6 +225,10 @@ class Workbook:
             if cell.parse_error:
                 cell.value = CellValue(CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula'))
             else:
+                orig_outgoing = self.graph.outgoing_get(cell.sheet_name, cell.location)
+                for sn, loc in orig_outgoing:
+                    self.graph.ingoing_remove(sn, loc, cell.sheet_name, cell.location)
+
                 # feed references and sheet name into interpreter
                 ev = FormulaEvaluator(cell.sheet_name, self, self.func_directory)
                 visit_value = ev.visit(tree)
@@ -234,12 +238,12 @@ class Workbook:
                     cell.value = visit_value
 
                 # update graph
-                if first:
-                    outgoing = list(ev.refs)
-                    for sn, loc in outgoing:
-                        self.graph.ingoing_add(sn, loc, cell.sheet_name, cell.location)
+                # if first:
+                outgoing = list(ev.refs)
+                for sn, loc in outgoing:
+                    self.graph.ingoing_add(sn, loc, cell.sheet_name, cell.location)
 
-                    self.graph.outgoing_set(cell.sheet_name, cell.location, outgoing)
+                self.graph.outgoing_set(cell.sheet_name, cell.location, outgoing)
 
                 # detect cycle
                 if first and self.detect_cycle(cell):
