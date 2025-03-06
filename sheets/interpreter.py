@@ -5,8 +5,14 @@ import lark
 from .Cell import Cell 
 from lark.visitors import visit_children_decor
 from typing import Any
+import re
 
 decimal.getcontext().prec = 500
+
+def is_valid_location(location: str) -> bool:
+    # Checks if a given location string is a valid spreadsheet cell location.
+    pattern = r'^[A-Za-z]{1,4}[1-9][0-9]{0,3}$'
+    return bool(re.match(pattern, location))
 
 class FormulaEvaluator(lark.visitors.Interpreter):
     def __init__(self, sheet_name, workbook, func_directory):
@@ -223,8 +229,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
         # first parse the value into sheet (if given) and location
         if (len(tree.children) == 1):
             location = tree.children[0].value.lower().replace('$', '')
-            reference = self.sheet_name.lower() + '!' + location
-            self.refs.add(reference)
+            if is_valid_location(location):
+                self.refs.add((self.sheet_name.lower(), location))
             try:
                 output = self.workbook.get_cell_value(self.sheet_name, location)
                 return CellValue(output)
@@ -238,7 +244,8 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             if (len(sheet) > 2 and sheet[0] == '\'' and sheet[-1] == '\''):
                 sheet = sheet[1:-1]
             reference = sheet + '!' + location
-            self.refs.add(reference)
+            if is_valid_location(location):
+                self.refs.add((sheet, location))
             try:
                 output = self.workbook.get_cell_value(sheet, location)
                 return CellValue(output)

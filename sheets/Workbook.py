@@ -167,20 +167,19 @@ class Workbook:
         
         visited[cell] = True
         queue = [cell]
-        first = True
         
         while len(queue):
             curr_cell = queue.pop(0)
 
             prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            self.evaluate_cell(curr_cell, first)
-            first = False
+            self.evaluate_cell(curr_cell)
             new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
             if (prev_value != new_value):
-                pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
-                if self.is_renaming:
-                    if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
-                        self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
+                if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
+                    pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+                    if self.is_renaming:
+                        if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
+                            self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
 
             visited[curr_cell] = True
             for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
@@ -235,6 +234,15 @@ class Workbook:
                 else:
                     cell.value = visit_value
 
+                # update graph
+                if first:
+                    outgoing = list(ev.refs)
+                    for sn, loc in outgoing:
+                        self.graph.ingoing_add(sn, loc, cell.sheet_name, cell.location)
+
+                    self.graph.outgoing_set(cell.sheet_name, cell.location, outgoing)
+
+                # detect cycle
                 if first and self.detect_cycle(cell):
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 elif cell.in_cycle:
@@ -350,13 +358,21 @@ class Workbook:
                         outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         curr_cell.contents = contents
-        for sn, loc in outgoing:
-            self.graph.ingoing_add(sn, loc, sheet_name, location)
+        self.graph.outgoing_set(sheet_name, location, [])
 
-        self.graph.outgoing_set(sheet_name, location, outgoing)
-
+        pending_notifications = []
+        prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
+        self.evaluate_cell(curr_cell, True)
+        new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
+        if (prev_value != new_value):
+            if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
+                pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+                if self.is_renaming:
+                    if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
+                        self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
+        
         ### Update the value field of the cell
-        pending_notifications = self.handle_update_tree(curr_cell)
+        pending_notifications = pending_notifications + self.handle_update_tree(curr_cell)
         if (not self.is_renaming and len(pending_notifications) > 0):
             if (self.is_deleting):
                 pending_notifications = pending_notifications[1:]
