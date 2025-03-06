@@ -3,7 +3,6 @@ from .Sheet import Sheet
 from .Cell import Cell
 from .CellError import CellError, CellErrorType
 from .CellValue import CellValue
-from .visitor import CellRefFinder
 from collections import OrderedDict, deque
 from typing import List, Optional, Tuple, Any, Callable, Iterable, TextIO
 import os
@@ -224,8 +223,6 @@ class Workbook:
             if cell.parse_error:
                 cell.value = CellValue(CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula'))
             else:
-                ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
-
                 # feed references and sheet name into interpreter
                 ev = FormulaEvaluator(cell.sheet_name, self, self.func_directory)
                 visit_value = ev.visit(tree)
@@ -335,27 +332,6 @@ class Workbook:
                 except lark.exceptions.LarkError:
                     parse_error = True
                     curr_cell.parse_error = True
-
-            if not parse_error:
-                # Obtain references
-                finder = CellRefFinder()
-                finder.visit(tree)
-                
-                for ref in finder.refs:
-                    if '!' in ref:
-                        # get the referenced cells
-                        split_ref = ref.split('!')
-                        ref_sheet_name = split_ref[0]
-                        ref_location = split_ref[1]
-                    else:
-                        ref_sheet_name = sheet_name
-                        ref_location = ref
-                    
-                    if (len(ref_sheet_name) > 2 and ref_sheet_name[0] == "'" and ref_sheet_name[-1] == "'"):
-                        ref_sheet_name = ref_sheet_name[1:-1]
-                    
-                    if (Workbook.is_valid_location(ref_location)):
-                        outgoing.append((ref_sheet_name.lower(), ref_location.lower()))
         
         curr_cell.contents = contents
         self.graph.outgoing_set(sheet_name, location, [])
@@ -520,33 +496,6 @@ class Workbook:
         if (cell is None or cell.value is None):
             return None
         return cell.value.val
-    
-    def get_cell_ref_info(self, tree, sheet_name):
-        """
-        Given a parsed formula tree and a sheet name, this finds the cell
-        references in the tree, and stores their value into a map. Used by
-        the FormulaEvaluator in get_cell_value.
-        """
-        finder = CellRefFinder()
-        finder.visit(tree)
-
-        ref_info = {}
-        for ref in finder.refs:
-            # parse ref if necessary
-            if ('!' in ref):
-                curr_sheet_name = ref[:ref.index('!')]
-                if (len(curr_sheet_name) > 2 and curr_sheet_name[0] == '\'' and curr_sheet_name[-1] == '\''):
-                    curr_sheet_name = curr_sheet_name[1:-1]
-                curr_location = ref[ref.index('!') + 1:]
-            else:
-                curr_sheet_name = sheet_name
-                curr_location = ref
-
-            try:
-                ref_info[ref.lower()] = self.get_cell_value(curr_sheet_name, curr_location)
-            except (ValueError, KeyError) as e:
-                ref_info[ref.lower()] = CellError(CellErrorType.BAD_REFERENCE, 'Bad reference', e)
-        return ref_info
 
     @staticmethod
     def load_workbook(fp: TextIO) -> Workbook:
