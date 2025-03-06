@@ -225,22 +225,21 @@ class Workbook:
             if cell.parse_error:
                 cell.value = CellValue(CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula'))
             else:
+                ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
+
+                # feed references and sheet name into interpreter
+                ev = FormulaEvaluator(cell.sheet_name, ref_info, self.func_directory)
+                visit_value = ev.visit(tree)
+                if (visit_value is None or visit_value.val is None):
+                    cell.value = CellValue(decimal.Decimal('0'))
+                else:
+                    cell.value = visit_value
+
                 if first and self.detect_cycle(cell):
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 elif cell.in_cycle:
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
-                else:
-                    # obtain reference info from tree with visitor
-                    # TODO: handle the case where the input is blank
-                    ref_info = self.get_cell_ref_info(tree, cell.sheet_name)
-
-                    # feed references and sheet name into interpreter
-                    ev = FormulaEvaluator(cell.sheet_name, ref_info, self.func_directory)
-                    visit_value = ev.visit(tree)
-                    if (visit_value is None or visit_value.val is None):
-                        cell.value = CellValue(decimal.Decimal('0'))
-                    else:
-                        cell.value = visit_value
+                
         elif contents.startswith("'"):
             cell.value = CellValue(contents[1:])
         else:
