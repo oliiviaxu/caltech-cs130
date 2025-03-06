@@ -943,13 +943,24 @@ class FunctionsTests(unittest.TestCase):
     def test_indirect_function(self):
         wb = sheets.Workbook()
         wb.new_sheet()
+        wb.new_sheet('Sheet 4')
 
+        # basic
+        wb.set_cell_contents('sheet1', 'A1', '4')
+        wb.set_cell_contents('sheet1', 'B1', '=INDIRECT(A1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), decimal.Decimal('4'))
+        
         # from the spec
         wb.set_cell_contents('sheet1', 'A1', '=B1')
         wb.set_cell_contents('sheet1', 'B1', '=INDIRECT("A1")')
-
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        # with quotes
+        wb.set_cell_contents('Sheet1', 'A1', "=INDIRECT('Sheet 4'!B1)")
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
 
         wb = sheets.Workbook()
         wb.new_sheet()
