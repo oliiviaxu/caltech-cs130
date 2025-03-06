@@ -176,7 +176,7 @@ def version_function(args):
     """Returns the version of the spreadsheet library."""
     if len(args) != 0:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected no arguments, but got {len(args)} arguments."))
-    return sheets.__version__
+    return CellValue(sheets.__version__)
 
 def indirect_function(workbook):
     """Returns a function that parses its string argument as a cell-reference and 
@@ -202,16 +202,20 @@ def indirect_function(workbook):
         
         # attempt to parse as a cell reference
         split_ref = arg.val.split('!')
-        # print(split_ref)
+        print(split_ref)
 
+        ref_sheet_name, ref_location = "", ""
         if len(split_ref) == 1:
-            # ref_sheet_name = split_ref[0]
+            ref_sheet_name = sheet_name
+            ref_location = split_ref[0]
+        else:
+            ref_sheet_name = split_ref[0]
             ref_location = split_ref[1]
         
         if not sheets.Workbook.is_valid_location(ref_location):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
         
-        return workbook.get_cell_value(sheet_name, ref_location)
+        return CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
     
     return indirect
 

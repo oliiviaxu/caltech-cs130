@@ -577,6 +577,17 @@ class FunctionsTests(unittest.TestCase):
         # only 2 arguments 
         wb.set_cell_contents('sheet1', 'A16', '=IF(1=1, "yes")')
         self.assertEqual(wb.get_cell_value('sheet1', 'A16'), "yes")
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('sheet1', 'A1', '=IF(A2, B1, C1)')
+        wb.set_cell_contents('sheet1', 'B1', '=A1')
+        wb.set_cell_contents('sheet1', 'C1', '=5')
+        wb.set_cell_contents('sheet1', 'A2', 'False')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
+
     
     def test_iferror_function(self):
         wb = sheets.Workbook()
@@ -593,7 +604,6 @@ class FunctionsTests(unittest.TestCase):
         # print(ev.visit(tree_2))
         self.assertEqual(ev.visit(tree_2).val, decimal.Decimal('2'))
 
-        # TODO: from spec
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=B1+')
         wb.set_cell_contents('sheet1', 'B1', '=IFERROR(A1, "yes")')
@@ -601,7 +611,6 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.PARSE_ERROR)
         self.assertEqual(wb.get_cell_value('sheet1', 'B1'), "yes")
 
-        # TODO:this is failing
         wb = sheets.Workbook()
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=IFERROR(B1, "B1 is an error")')
@@ -622,8 +631,6 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'B1 is an error')   
         
-        # TODO:this is failing
-        # This is failing
         wb.new_sheet()
         wb.set_cell_contents('sheet1', 'A1', '=IFERROR(B1, "B1 is an error")')
         wb.set_cell_contents('sheet1', 'B1', '=IFERROR(A1, "A1 is an error")')
@@ -633,7 +640,53 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'B1 is an error')
-    
+
+        # TODO: check
+        # wb = sheets.Workbook()
+        # wb.new_sheet()
+
+        # wb.set_cell_contents('sheet1', 'A1', '=IFERROR(A2, B1)')
+        # wb.set_cell_contents('sheet1', 'B1', '=A1')
+        # wb.set_cell_contents('sheet1', 'C1', '=5')
+        # wb.set_cell_contents('sheet1', 'A2', 'False')
+
+        # self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
+
+        # TODO: check
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=IFERROR(B1, "B1 is an error")')
+        wb.set_cell_contents('sheet1', 'B1', '=IFERROR(C1, "C1 is an error")')
+        wb.set_cell_contents('sheet1', 'C1', '=IFERROR(A1, "A1 is an error")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        
+        # wrong number of arguments
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=IFERROR()')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # nested
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=IFERROR(IFERROR(A1, "A1 is an error"), B1)')
+        wb.set_cell_contents('sheet1', 'B1', '=1')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=IFERROR(1/0, B1)')
+        wb.set_cell_contents('sheet1', 'B1', 'yay')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), "yay")
+
+        
     def test_choose_function(self):
         # TODO: not finished yet
         wb = sheets.Workbook()
@@ -804,9 +857,70 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         self.assertEqual(wb.get_cell_value('sheet1', 'C1'), True)
 
-    
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(B1)')
+        wb.set_cell_contents('sheet1', 'B1', '=IFERROR(C1)')
+        wb.set_cell_contents('sheet1', 'C1', '=IFERROR(A1)')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+        
+        # wrong number of arguments
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR()')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # nested
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(IFERROR(A1), B1)')
+        wb.set_cell_contents('sheet1', 'B1', '=1')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(1/0)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), True)
+
+        # not errors
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(10)')
+        wb.set_cell_contents('sheet1', 'A2', '=ISERROR(3.14)')
+        wb.set_cell_contents('sheet1', 'A3', '=ISERROR("Hello")')
+        wb.set_cell_contents('sheet1', 'A4', '=ISERROR(TRUE)')
+        wb.set_cell_contents('sheet1', 'A5', '=ISERROR(A1)')
+
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), False)
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), False)
+        self.assertEqual(wb.get_cell_value('sheet1', 'A3'), False)
+        self.assertEqual(wb.get_cell_value('sheet1', 'A4'), False)
+        self.assertEqual(wb.get_cell_value('sheet1', 'A5'), False)
+
+        # more basic tests
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'B1', '=1/0')
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(B1)')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), True)
+
+        wb.set_cell_contents('sheet1', 'B1', '=1')
+        wb.set_cell_contents('sheet1', 'A1', '=ISERROR(B1)')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), False)
+
+
     def test_version_function(self):
-        # TODO
         wb = sheets.Workbook()
         wb.new_sheet()
 
@@ -816,11 +930,15 @@ class FunctionsTests(unittest.TestCase):
         
         ev = FormulaEvaluator('sheet1', wb, func_directory=wb.func_directory)
         
-        self.assertEqual(ev.visit(tree_1), "2.0")
+        self.assertEqual(ev.visit(tree_1).val, sheets.__version__)
 
         tree_3 = parser.parse('=VERSION(1, 2)')
 
         self.assertIsInstance(ev.visit(tree_3).val, sheets.CellError)
+
+        # set cell contents tests
+        wb.set_cell_contents('sheet1', 'A1', '=version()')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), sheets.__version__)
 
     def test_indirect_function(self):
         wb = sheets.Workbook()
@@ -833,6 +951,43 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
 
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # from the spec
+        wb.set_cell_contents('sheet1', 'A1', '=B1')
+        wb.set_cell_contents('sheet1', 'B1', '=INDIRECT("Sheet1!A1")')
+
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
+
+        # more complicated arguments 
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # from the spec
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("Sheet" & 1 & "!B1")')
+        wb.set_cell_contents('sheet1', 'B1', '1')
+
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('1'))
+        # self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
+
+
+        # =INDIRECT("Sheet" & 1 & "!A1")
+        # =INDIRECT("$A$1")
+        # =INDIRECT("another sheet!A1")
+        # =INDIRECT("she-et1!A1")
+        # =INDIRECT("A" & "A2")
+    
+        # # invalid ones
+        # =INDIRECT("ZZZZ99999")
+    
+        # # ones that throw errors 
+        # A1 = 1/0 
+        # =INDIRECT("A1")
+    
+        # check that references to other sheets actually works
+
     def test_general(self):
         wb = sheets.Workbook()
         wb.new_sheet()
@@ -842,6 +997,14 @@ class FunctionsTests(unittest.TestCase):
 
         wb.set_cell_contents('Sheet1', 'A1', '=OR(AND(Z1 = 0, B1 = 0), AND(C1 < 6, D1 = 14))')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        # TODO: 
+        wb.set_cell_contents('Sheet1', 'A1', '=IFERROR(ISERROR(1/0), FALSE)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=ISERROR(IFERROR(1/0, FALSE))')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
