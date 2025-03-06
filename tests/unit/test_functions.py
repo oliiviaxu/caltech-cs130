@@ -946,7 +946,8 @@ class FunctionsTests(unittest.TestCase):
         wb.new_sheet('Sheet 4')
 
         # basic
-        wb.set_cell_contents('sheet1', 'A1', '4')
+        wb.set_cell_contents('sheet1', 'A1', '\'C1')
+        wb.set_cell_contents('Sheet1', 'C1', '4')
         wb.set_cell_contents('sheet1', 'B1', '=INDIRECT(A1)')
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), decimal.Decimal('4'))
         
@@ -959,11 +960,18 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
         # with quotes
-        wb.set_cell_contents('Sheet1', 'A1', "=INDIRECT('Sheet 4'!B1)")
+        wb.set_cell_contents('Sheet1', 'A1', "=INDIRECT(\"'Sheet 4'!B1\")")
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 0)
 
         wb = sheets.Workbook()
         wb.new_sheet()
+
+        # from spec
+        wb.set_cell_contents('sheet1', 'A1', '=B1')
+        wb.set_cell_contents('sheet1', 'B1', '=INDIRECT(A1)')
+
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
 
         # from the spec
         wb.set_cell_contents('sheet1', 'A1', '=B1')
@@ -992,13 +1000,13 @@ class FunctionsTests(unittest.TestCase):
 
         wb = sheets.Workbook()
         wb.new_sheet()
-        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("another sheet!B1")')
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("\'another sheet\'!B1")')
         wb.set_cell_contents('another sheet', 'B1', '5')
         self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
         
         wb = sheets.Workbook()
         wb.new_sheet()
-        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("she-et1!B1")')
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("\'she-et1\'!B1")')
         wb.set_cell_contents('she-et1', 'B1', '5')
         self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('5'))
        
@@ -1040,12 +1048,32 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=ISERROR(IFERROR(1/0, FALSE))')
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
 
+    def test_conditionals(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=IF(A2, B1, C1)')
+        wb.set_cell_contents('Sheet1', 'A2', 'True')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        wb.set_cell_contents('Sheet1', 'C1', '5')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+
+        # from spec
+        wb.set_cell_contents('Sheet1', 'A1', '=IF(A2, B1, C1)')
+        wb.set_cell_contents('Sheet1', 'A2', 'False')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+        wb.set_cell_contents('Sheet1', 'C1', '5')
+
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 5)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+
     def test_alt(self):
         wb = sheets.Workbook()
         wb.new_sheet()
 
         # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
-        wb.set_cell_contents('Sheet1', 'A1', '=And()')
+        wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
         # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
 
 if __name__ == "__main__":

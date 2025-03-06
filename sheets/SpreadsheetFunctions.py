@@ -12,12 +12,20 @@ def visit_all(arg_tree, ev):
         args = [args]
     return args
 
-# def get_first_arg():
-#     argument_one = arguments.children[0]
-#     if isinstance(argument_one, lark.Tree):
-#         argument_one = self.visit(argument_one)
-#     else:
-#         argument_one = CellValue(argument_one)
+def get_first_arg(arg_tree, ev):
+    if arg_tree is None:
+        return None, True
+    elif len(arg_tree.children) != 2 and len(arg_tree.children) != 3:
+        return None, True
+    else:
+        print(arg_tree)
+        print('children', arg_tree.children, len(arg_tree.children))
+        return 1, False
+    #     argument_one = arguments.children[0]
+    #     if isinstance(argument_one, lark.Tree):
+    #         argument_one = self.visit(argument_one)
+    #     else:
+    #         argument_one = CellValue(argument_one)
 
 # TODO: Propagate cell errors
 # BOOLEAN FUNCTIONS
@@ -107,8 +115,11 @@ def exact_function(arg_tree, ev):
 def if_function(arg_tree, ev):
     # arguments: condition, true_value, false_value=None 
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
+    arg_one, not_enough_args = get_first_arg(arg_tree, ev)
+    print(arg_one, not_enough_args)
+    assert False
     args = visit_all(arg_tree, ev)
-    if len(args) != 2 and len(args) != 3:
+    if not_enough_args:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments, but got {len(args)} arguments."))      
     
     if not isinstance(args[0].val, bool):    

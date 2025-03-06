@@ -166,12 +166,14 @@ class Workbook:
         
         visited[cell] = True
         queue = [cell]
+        first = True
         
         while len(queue):
             curr_cell = queue.pop(0)
 
             prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            self.evaluate_cell(curr_cell)
+            self.evaluate_cell(curr_cell, first)
+            first = False
             new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
             if (prev_value != new_value):
                 if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
