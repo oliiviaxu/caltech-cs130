@@ -5,6 +5,7 @@ import coverage
 import sheets
 import os
 import lark
+import sheets.Cell
 from sheets.interpreter import FormulaEvaluator
 import decimal
 import json
@@ -1063,6 +1064,24 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 5)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 5)
         self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 5)
+
+        # iferror
+        wb.set_cell_contents('Sheet1', 'A1', '=IFERROR(1 + 1/0, B1)')
+        wb.set_cell_contents('Sheet1', 'B1', '=A1')
+
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=IFERROR(1, B1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 1)
+
+        # choose
+        wb.set_cell_contents('Sheet1', 'A1', '=CHOOSE(2, B1, 3)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 3)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=CHOOSE(1, B1, 3)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
     def test_alt(self):
         wb = sheets.Workbook()

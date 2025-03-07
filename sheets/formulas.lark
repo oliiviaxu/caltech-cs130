@@ -31,9 +31,9 @@
 //========================================
 // Function calls
 
-?function_call : FUNCTION_NAME "(" args? ")"
+?function_call : FUNCTION_NAME "(" args ")"
 
-?args : expression ("," expression)*
+args : (expression ("," expression)*)?
 
 //========================================
 // Comparison expressions

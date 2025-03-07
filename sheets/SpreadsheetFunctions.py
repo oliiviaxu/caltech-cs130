@@ -12,10 +12,10 @@ def visit_all(arg_tree, ev):
         args = [args]
     return args
 
-def get_first_arg(arg_tree, ev):
+def get_first_arg(arg_tree, ev, valid_arg_len):
     if arg_tree is None:
         return None, True
-    elif len(arg_tree.children) != 2 and len(arg_tree.children) != 3:
+    elif len(arg_tree.children) not in valid_arg_len:
         return None, True
     else:
         arg_one = ev.visit(arg_tree.children[0])
@@ -114,7 +114,7 @@ def exact_function(arg_tree, ev):
 def if_function(arg_tree, ev):
     # arguments: condition, true_value, false_value=None 
     """Returns `true_value` if `condition` is TRUE, otherwise `false_value`. The condition is converted to a Boolean value."""
-    arg_one, not_enough_args = get_first_arg(arg_tree, ev)
+    arg_one, not_enough_args = get_first_arg(arg_tree, ev, [2, 3])
     if not_enough_args:
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 2 or 3 arguments."))      
     
@@ -134,41 +134,36 @@ def if_function(arg_tree, ev):
         return value_2
     
 def iferror_function(arg_tree, ev):
-    # TODO: 
-    # arguments: value, value_if_error=""
     """Returns `value` if it is not an error, otherwise `value_if_error`."""
-    args = visit_all(arg_tree, ev)
-    if len(args) != 1 and len(args) != 2:
-        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments, but got {len(args)} arguments."))      
+    arg_one, not_enough_args = get_first_arg(arg_tree, ev, [1, 2])
+    if not_enough_args:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected 1 or 2 arguments."))     
     
-    value, value_if_error = args[0], ""
-    if len(args) == 2:
-        value_if_error = args[1]
-    
-    if isinstance(value.val, sheets.CellError):
-        return value_if_error
+    if not isinstance(arg_one.val, CellError):
+        return arg_one
     else:
-        return value
+        value_2 = get_ith_arg(arg_tree, ev, 1)
+        if value_2 is None:
+            value_2 = CellValue("")
+        return value_2
 
 def choose_function(arg_tree, ev):
     """Returns the `index`-th argument (1-based indexing). The index is converted to a number."""
-    args = visit_all(arg_tree, ev)
-    if len(args) < 2:
-        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected atleast 2 arguments, but got {len(args)} arguments."))  
-
-    if not isinstance(args[0].val, decimal.Decimal):    
-        args[0].to_number()
-
-        if isinstance(args[0].val, sheets.CellError):
-            return args[0]
-
-    remaining_args = args[1:]
+    if arg_tree is None or len(arg_tree.children) < 2:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected atleast 2 arguments."))
     
-    if (args[0].val != int(args[0].val)) or (args[0].val <= 0) or (args[0].val > len(remaining_args)):
+    arg_one = ev.visit(arg_tree.children[0])
+    if not isinstance(arg_one.val, decimal.Decimal):    
+        arg_one.to_number()
+
+        if isinstance(arg_one.val, sheets.CellError):
+            return arg_one
+    
+    if (arg_one.val != int(arg_one.val)) or (arg_one.val <= 0) or (arg_one.val > len(arg_tree.children)-1):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Invalid Index."))  
     
-    index = int(args[0].val) - 1
-    return CellValue(remaining_args[index].val)
+    index = int(arg_one.val)
+    return ev.visit(arg_tree.children[index])
 
 # INFORMATIONAL FUNCTIONS
 def isblank_function(arg_tree, ev):
