@@ -956,3 +956,51 @@ class Workbook:
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
         self.transfer_cells(sheet_name, start_location, end_location, to_location, False, to_sheet)
+
+
+    def sort_region(self, sheet_name: str, start_location: str, end_location: str, sort_cols: List[int]):
+        # Sort the specified region of a spreadsheet with a stable sort, using
+        # the specified columns for the comparison.
+        #
+        # The sheet name match is case-insensitive; the text must match but the
+        # case does not have to.
+        #
+        # The start_location and end_location specify the corners of an area of
+        # cells in the sheet to be sorted.  Both corners are included in the
+        # area being sorted; for example, sorting the region including cells B3
+        # to J12 would be done by specifying start_location="B3" and
+        # end_location="J12".
+        #
+        # The start_location value does not necessarily have to be the top left
+        # corner of the area to sort, nor does the end_location value have to be
+        # the bottom right corner of the area; they are simply two corners of
+        # the area to sort.
+        #
+        # The sort_cols argument specifies one or more columns to sort on.  Each
+        # element in the list is the one-based index of a column in the region,
+        # with 1 being the leftmost column in the region.  A column's index in
+        # this list may be positive to sort in ascending order, or negative to
+        # sort in descending order.  For example, to sort the region B3..J12 on
+        # the first two columns, but with the second column in descending order,
+        # one would specify sort_cols=[1, -2].
+        #
+        # The sorting implementation is a stable sort:  if two rows compare as
+        # "equal" based on the sorting columns, then they will appear in the
+        # final result in the same order as they are at the start.
+        #
+        # If multiple columns are specified, the behavior is as one would
+        # expect:  the rows are ordered on the first column indicated in
+        # sort_cols; when multiple rows have the same value for the first
+        # column, they are then ordered on the second column indicated in
+        # sort_cols; and so forth.
+        #
+        # No column may be specified twice in sort_cols; e.g. [1, 2, 1] or
+        # [2, -2] are both invalid specifications.
+        #
+        # The sort_cols list may not be empty.  No index may be 0, or refer
+        # beyond the right side of the region to be sorted.
+        #
+        # If the specified sheet name is not found, a KeyError is raised.
+        # If any cell location is invalid, a ValueError is raised.
+        # If the sort_cols list is invalid in any way, a ValueError is raised.
+        pass
