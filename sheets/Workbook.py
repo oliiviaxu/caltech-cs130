@@ -12,6 +12,7 @@ from .DependencyGraph import DependencyGraph
 from .transformer import SheetNameExtractor, FormulaUpdater
 from .interpreter import FormulaEvaluator
 from .SpreadsheetFunctions import create_function_directory
+from .RowAdapter import RowAdapter
 import decimal
 import re
 
@@ -1003,4 +1004,99 @@ class Workbook:
         # If the specified sheet name is not found, a KeyError is raised.
         # If any cell location is invalid, a ValueError is raised.
         # If the sort_cols list is invalid in any way, a ValueError is raised.
-        pass
+        if sheet_name.lower() not in self.sheets.keys():
+            raise KeyError('Sheet not found.')
+        
+        if (not Workbook.is_valid_location(start_location)) \
+        or (not Workbook.is_valid_location(end_location)):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+        
+        if len(sort_cols) == 0:
+            raise ValueError('Column list cannot be empty.')
+        
+        start_col, start_row = Sheet.split_cell_ref(start_location)
+        end_col, end_row = Sheet.split_cell_ref(end_location)
+
+        top_left_col = min(start_col, end_col)
+        top_left_row = min(start_row, end_row)
+        bottom_right_col = max(start_col, end_col)
+        bottom_right_row = max(start_row, end_row)
+
+        seen = set()
+        for index in sort_cols:
+            if index == 0:
+                raise ValueError('Column index cannot be 0.')
+            if abs(index) in seen:
+                raise ValueError('Column specified more than once in column list.')
+            elif top_left_col + abs(index) - 1 > bottom_right_col:
+                raise ValueError('Column specified is beyond the right side of the region to be sorted.')
+            elif not isinstance(index, int):
+                raise ValueError('Column index must be an integer.') # TODO: is this necessary?
+            else:
+                seen.add(index)
+        
+        # get row data
+        m = bottom_right_col - top_left_col + 1
+        n = bottom_right_row - top_left_row + 1
+
+        adapters = []
+        orig_cells = [[0 for _ in range(m)] for _ in range(n)]
+        for i in range(n):
+            row_data = []
+            source_row = top_left_row + i
+
+            for j in range(m):
+                source_col = top_left_col + j
+
+                orig_loc = Sheet.to_sheet_coords(source_col, source_row)
+
+                cell = self.get_cell(sheet_name, orig_loc)
+                orig_cells[i][j] = cell
+                
+                if cell:
+                    # row_data.append(self.get_cell_value(sheet_name, orig_loc))
+                    row_data.append(cell)
+                else:
+                    row_data.append(None)
+            row_adapter = RowAdapter(source_row, row_data, sort_cols)
+            adapters.append(row_adapter)
+                
+        sorted_adapters = sorted(adapters)
+
+        contents_grid = [[0 for _ in range(m)] for _ in range(n)]
+        for i in range(n):
+            source_row = top_left_row + i
+            target_row = sorted_adapters[i].row_idx
+
+            delta_y = source_row - target_row
+            updater = FormulaUpdater(0, delta_y)
+
+            for j in range(m):
+                source_col = top_left_col + j 
+
+                target_cell = orig_cells[target_row - top_left_row][j]
+
+                if target_cell:
+                    if target_cell.contents and target_cell.contents.startswith('='):
+                        # Update the formula
+                        new_formula = updater.transform(target_cell.tree)
+                        contents_grid[i][j] = '=' + new_formula
+                    else:
+                        # Update the cell with non-formula contents
+                        contents_grid[i][j] = target_cell.contents
+                else:
+                #     # Clear the cell if it's empty
+                    contents_grid[i][j] = None
+        
+        # print(contents_grid)
+
+        for i in range(n):
+            source_row = top_left_row + i
+            for j in range(m):
+
+                updated_contents = contents_grid[i][j]
+                source_col = top_left_col + j 
+
+                target_loc = Sheet.to_sheet_coords(source_col, source_row)
+
+                self.set_cell_contents(sheet_name, target_loc, updated_contents)

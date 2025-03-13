@@ -1032,6 +1032,72 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E1'), None)
         self.assertEqual(wb.get_cell_contents('Sheet1', 'D2'), None)
         self.assertEqual(wb.get_cell_contents('Sheet1', 'E2'), None)
+    
+    def test_sort(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # basic test
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+        # wb.set_cell_contents('Sheet1', 'D1', '=25')
+
+        wb.set_cell_contents('Sheet1', 'B1', '=25')
+        wb.set_cell_contents('Sheet1', 'B2', '=30')
+        wb.set_cell_contents('Sheet1', 'B3', '=25')
+
+        wb.set_cell_contents('Sheet1', 'C1', 'Engineer')
+        wb.set_cell_contents('Sheet1', 'C2', 'Designer')
+        wb.set_cell_contents('Sheet1', 'C3', 'Manager')
+
+        wb.sort_region('Sheet1', 'A1', 'C3', [2, -1])
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), 'Charlie')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), 'Alice')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A3'), 'Bob')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), decimal.Decimal('25'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B2'), decimal.Decimal('25'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B3'), decimal.Decimal('30'))
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'Manager')
+        self.assertEqual(wb.get_cell_value('sheet1', 'C2'), 'Engineer')
+        self.assertEqual(wb.get_cell_value('sheet1', 'C3'), 'Designer')
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # basic test
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+        wb.set_cell_contents('Sheet1', 'D1', '=25')
+        wb.set_cell_contents('Sheet1', 'D2', '=30')
+        wb.set_cell_contents('Sheet1', 'D3', '=25')
+
+
+        wb.set_cell_contents('Sheet1', 'B1', '=$D$1')
+        wb.set_cell_contents('Sheet1', 'B2', '=$D$2')
+        wb.set_cell_contents('Sheet1', 'B3', '=$D$3')
+
+        wb.set_cell_contents('Sheet1', 'C1', 'Engineer')
+        wb.set_cell_contents('Sheet1', 'C2', 'Designer')
+        wb.set_cell_contents('Sheet1', 'C3', 'Manager')
+
+        wb.sort_region('Sheet1', 'A1', 'C3', [2, -1])
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), 'Charlie')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), 'Alice')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A3'), 'Bob')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), decimal.Decimal('25'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B2'), decimal.Decimal('25'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B3'), decimal.Decimal('30'))
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'Manager')
+        self.assertEqual(wb.get_cell_value('sheet1', 'C2'), 'Engineer')
+        self.assertEqual(wb.get_cell_value('sheet1', 'C3'), 'Designer')
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

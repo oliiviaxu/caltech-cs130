@@ -138,4 +138,4 @@ class FormulaUpdater(lark.visitors.Transformer):
             formula = self.update_contents(str(tree[1]))
             return curr_name + '!' + formula
         else:
-            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')
+            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')               

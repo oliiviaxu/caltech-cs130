@@ -1,0 +1,41 @@
+import decimal
+from functools import total_ordering
+from .Cell import Cell
+from .CellError import CellError, CellErrorType
+from .CellValue import CellValue
+
+@total_ordering
+class RowAdapter:
+
+    def __init__(self, row_idx, row_data, sort_cols):
+        self.row_idx = row_idx
+        self.row_data = row_data
+        self.sort_cols = sort_cols
+    
+    def get_sort_key(self):
+        key = []
+        for col in self.sort_cols:
+            index = abs(col) - 1
+
+            value = self.row_data[index].value.val
+            
+            reverse_flag = col < 0
+            key.append((value, reverse_flag))
+
+        return tuple(key)
+    
+    def __eq__(self, other):
+        return self.get_sort_key() == other.get_sort_key()
+
+    def __lt__(self, other):
+        self_key = self.get_sort_key()
+        other_key = other.get_sort_key()
+
+        for (self_value, self_reverse), (other_value, other_reverse) in zip(self_key, other_key):
+            if self_value == other_value:
+                continue
+            if self_reverse or other_reverse:
+                return self_value > other_value
+            else:
+                return self_value < other_value
+        return False
