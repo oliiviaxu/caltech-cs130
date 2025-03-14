@@ -70,9 +70,10 @@ class SheetNameExtractor(lark.visitors.Transformer):
 
 class FormulaUpdater(lark.visitors.Transformer):
 
-    def __init__(self, delta_x, delta_y):
+    def __init__(self, delta_x, delta_y, sort_region=None):
         self.delta_x = delta_x
         self.delta_y = delta_y
+        self.sort_region = sort_region
     
     def mul_expr(self, tree):
         return str(tree[0]) + ' ' + str(tree[1]) + ' ' + str(tree[2]) 
@@ -97,38 +98,51 @@ class FormulaUpdater(lark.visitors.Transformer):
 
     def string(self, tree):
         return str(tree[0])
+    
+    def is_within_region(self, col_idx, row_idx):
+        top_left_col, top_left_row, bottom_right_col, bottom_right_row = self.sort_region
+        return (top_left_col <= col_idx <= bottom_right_col) and (top_left_row <= row_idx <= bottom_right_row)
+
 
     def update_contents(self, orig_location):
-
         if Sheet.is_col_mixed_ref(orig_location) and Sheet.is_row_mixed_ref(orig_location):
             return orig_location
+        
+        # if delta_y is outside the region, then dont transform
         
         col_idx, row_idx = Sheet.split_cell_ref(orig_location)
         max_col, max_row = Sheet.str_to_index('ZZZZ'), 9999
 
-        if Sheet.is_row_mixed_ref(orig_location):
-            new_col_idx = col_idx + self.delta_x
-            if new_col_idx < 0 or new_col_idx >= max_col:
-                return '#REF!'
+        within_region = True
+        if self.sort_region:
+            within_region = self.is_within_region(col_idx, row_idx)
 
-            new_col = Sheet.index_to_col(new_col_idx)
-            return new_col + '$' + str(row_idx + 1)
-        elif Sheet.is_col_mixed_ref(orig_location):
-            new_row_idx = row_idx + self.delta_y
-            if new_row_idx < 0 or new_row_idx >= max_row:
-                return '#REF!'
-            
-            new_row = new_row_idx + 1
-            return '$' + Sheet.index_to_col(col_idx) + str(new_row)
+        if within_region:
+            if Sheet.is_row_mixed_ref(orig_location):
+                new_col_idx = col_idx + self.delta_x
+                if new_col_idx < 0 or new_col_idx >= max_col:
+                    return '#REF!'
+
+                new_col = Sheet.index_to_col(new_col_idx)
+                return new_col + '$' + str(row_idx + 1)
+            elif Sheet.is_col_mixed_ref(orig_location):
+                new_row_idx = row_idx + self.delta_y
+                if new_row_idx < 0 or new_row_idx >= max_row:
+                    return '#REF!'
+                
+                new_row = new_row_idx + 1
+                return '$' + Sheet.index_to_col(col_idx) + str(new_row)
+            else:
+                new_col_idx = col_idx + self.delta_x
+                new_row_idx = row_idx + self.delta_y
+
+                if new_col_idx < 0 or new_col_idx >= max_col or new_row_idx < 0 or new_row_idx >= max_row:
+                    return '#REF!'
+
+                return Sheet.to_sheet_coords(new_col_idx, new_row_idx)
         else:
-            new_col_idx = col_idx + self.delta_x
-            new_row_idx = row_idx + self.delta_y
+            return ""
 
-            if new_col_idx < 0 or new_col_idx >= max_col or new_row_idx < 0 or new_row_idx >= max_row:
-                return '#REF!'
-
-            return Sheet.to_sheet_coords(new_col_idx, new_row_idx)
-        
     def cell(self, tree):
         # processes a parse tree node 
         if len(tree) == 1: # cell ref with no sheetname, just location
@@ -138,4 +152,4 @@ class FormulaUpdater(lark.visitors.Transformer):
             formula = self.update_contents(str(tree[1]))
             return curr_name + '!' + formula
         else:
-            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')               
+            raise AssertionError('Invalid formula. Format must be in ZZZZ9999.')
