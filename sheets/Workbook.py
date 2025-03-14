@@ -1060,16 +1060,24 @@ class Workbook:
                     row_data.append(None)
             row_adapter = RowAdapter(source_row, row_data, sort_cols)
             adapters.append(row_adapter)
-                
+
         sorted_adapters = sorted(adapters)
 
+        # for adapter in sorted_adapters:
+        #     row_data = adapter.row_data
+        #     for cell in row_data:
+        #         if cell:
+        #             print(cell.value.val)
+
         contents_grid = [[0 for _ in range(m)] for _ in range(n)]
+
         for i in range(n):
             source_row = top_left_row + i
             target_row = sorted_adapters[i].row_idx
 
             delta_y = source_row - target_row
-            updater = FormulaUpdater(0, delta_y)
+            sort_region = (top_left_col, top_left_row, bottom_right_col, bottom_right_row)
+            updater = FormulaUpdater(0, delta_y, sort_region)
 
             for j in range(m):
                 source_col = top_left_col + j 
@@ -1077,23 +1085,23 @@ class Workbook:
                 target_cell = orig_cells[target_row - top_left_row][j]
 
                 if target_cell:
+
                     if target_cell.contents and target_cell.contents.startswith('='):
-                        # Update the formula
                         new_formula = updater.transform(target_cell.tree)
-                        contents_grid[i][j] = '=' + new_formula
+                        if new_formula: # is within region
+                            contents_grid[i][j] = '=' + new_formula
+                        else:
+                            contents_grid[i][j] = target_cell.contents
                     else:
                         # Update the cell with non-formula contents
                         contents_grid[i][j] = target_cell.contents
                 else:
                 #     # Clear the cell if it's empty
                     contents_grid[i][j] = None
-        
-        # print(contents_grid)
-
+                
         for i in range(n):
             source_row = top_left_row + i
             for j in range(m):
-
                 updated_contents = contents_grid[i][j]
                 source_col = top_left_col + j 
 
