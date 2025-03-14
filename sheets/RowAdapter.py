@@ -25,16 +25,26 @@ class RowAdapter:
         return tuple(key)
 
     def _get_cell_sort_value(self, cell):
+        # establish heirarchy
         
         if cell is None or cell.value is None:
-            return (2, None) 
-        
-        value = cell.value.val
+            return (5, None)
 
+        value = cell.value.val
+        
+        if isinstance(value, bool):
+            return (1, value)
+        
+        if isinstance(value, str):
+            return (2, value.lower())
+        
+        if isinstance(value, (int, float, decimal.Decimal)):
+            return (3, decimal.Decimal(value))
+        
         if isinstance(value, CellError):
-            return (1, value.get_type().value)
-        else:
-            return (0, value)
+            return (4, value.get_type().value)
+
+        return (6, str(value))
 
     def __eq__(self, other):
         return self.get_sort_key() == other.get_sort_key()

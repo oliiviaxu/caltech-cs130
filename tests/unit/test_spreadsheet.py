@@ -1157,8 +1157,6 @@ class SpreadsheetTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             wb.sort_region('Sheet1', 'ZZZZZ9999', 'ZZZZZ10000', [1.5])
 
-        # test for sorting region that isn't a corner
-        # TODO: this is failing
         wb = sheets.Workbook()
         wb.new_sheet()
 
@@ -1220,8 +1218,122 @@ class SpreadsheetTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('sheet1', 'C1'), 'Manager')
         self.assertEqual(wb.get_cell_value('sheet1', 'C2'), 'Designer')
         self.assertEqual(wb.get_cell_value('sheet1', 'C3'), 'Engineer')
+    
+    def test_sort_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+        wb.set_cell_contents('Sheet1', 'A4', 'David')
+
+        wb.set_cell_contents('Sheet1', 'B1', '100')
+        wb.set_cell_contents('Sheet1', 'B2', 'Banana')
+        wb.set_cell_contents('Sheet1', 'B3', '=1/0')
+        wb.set_cell_contents('Sheet1', 'B4', '')
+
+        wb.set_cell_contents('Sheet1', 'C1', 'Engineer')
+        wb.set_cell_contents('Sheet1', 'C2', 'Designer')
+        wb.set_cell_contents('Sheet1', 'C3', 'Manager')
+        wb.set_cell_contents('Sheet1', 'C4', 'Artist')
+
+        wb.sort_region('Sheet1', 'A1', 'C4', [2])
+
+        # Expected Sort Order: (Blank < Errors < Numbers < Strings)
+        # TODO: verify 
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), 'Bob')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), 'Alice')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B3'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B3').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)     
+        self.assertEqual(wb.get_cell_value('sheet1', 'A4'), 'David')
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', 'Row1')
+        wb.set_cell_contents('Sheet1', 'A2', 'Row2')
+        wb.set_cell_contents('Sheet1', 'A3', 'Row3')
+
+        wb.set_cell_contents('Sheet1', 'B1', '50')
+        wb.set_cell_contents('Sheet1', 'B2', '50')
+        wb.set_cell_contents('Sheet1', 'B3', '50')
+
+        wb.sort_region('Sheet1', 'A1', 'B3', [2])
+
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 'Row1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A2'), 'Row2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A3'), 'Row3')
+
+        # test circular reference
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+
+        wb.set_cell_contents('Sheet1', 'B1', '=B2')
+        wb.set_cell_contents('Sheet1', 'B2', '=B3')
+        wb.set_cell_contents('Sheet1', 'B3', '=B1')
+
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'B3'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B3').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)    
+
+        # sorting with formulas
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+
+        wb.set_cell_contents('Sheet1', 'B1', '=10 + 15')  # 25
+        wb.set_cell_contents('Sheet1', 'B2', '=20 / 2')  # 10
+        wb.set_cell_contents('Sheet1', 'B3', '=5 * 3')  # 15
+
+        wb.sort_region('Sheet1', 'A1', 'B3', [2])
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), 'Bob')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), 'Charlie')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A3'), 'Alice') 
+
+        # sorting with formulas, references
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', 'Alice')
+        wb.set_cell_contents('Sheet1', 'A2', 'Bob')
+        wb.set_cell_contents('Sheet1', 'A3', 'Charlie')
+
+        wb.set_cell_contents('Sheet1', 'B1', '=D1')
+        wb.set_cell_contents('Sheet1', 'B2', '=D2')
+        wb.set_cell_contents('Sheet1', 'B3', '=D3')
+
+        wb.set_cell_contents('Sheet1', 'C1', '=B1+5')
+        wb.set_cell_contents('Sheet1', 'C2', '=B2+5')
+        wb.set_cell_contents('Sheet1', 'C3', '=B3+5')
+
+        wb.set_cell_contents('Sheet1', 'D1', '=10 + 15')  # 25
+        wb.set_cell_contents('Sheet1', 'D2', '=20 / 2')  # 10
+        wb.set_cell_contents('Sheet1', 'D3', '=5 * 3')  # 15
+
+        wb.sort_region('Sheet1', 'A1', 'D5', [2])
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), 'Bob')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A2'), 'Charlie')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A3'), 'Alice') 
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'B1'), decimal.Decimal('10'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B2'), decimal.Decimal('15'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'B3'), decimal.Decimal('25'))
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'C1'), decimal.Decimal('15'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'C2'), decimal.Decimal('20'))
+        self.assertEqual(wb.get_cell_value('sheet1', 'C3'), decimal.Decimal('30'))
 
 
+    
 if __name__ == "__main__":
     cov = coverage.Coverage()
     cov.start()

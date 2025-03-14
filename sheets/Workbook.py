@@ -1063,12 +1063,6 @@ class Workbook:
 
         sorted_adapters = sorted(adapters)
 
-        # for adapter in sorted_adapters:
-        #     row_data = adapter.row_data
-        #     for cell in row_data:
-        #         if cell:
-        #             print(cell.value.val)
-
         contents_grid = [[0 for _ in range(m)] for _ in range(n)]
 
         for i in range(n):
@@ -1098,6 +1092,8 @@ class Workbook:
                 else:
                 #     # Clear the cell if it's empty
                     contents_grid[i][j] = None
+        
+        # print(contents_grid)
                 
         for i in range(n):
             source_row = top_left_row + i
