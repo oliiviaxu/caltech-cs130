@@ -246,7 +246,10 @@ def indirect_function(workbook):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
         
         ev.refs.add((ref_sheet_name, ref_location))
-        return CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
+        try:
+            return CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
+        except (KeyError, ValueError) as e:
+            return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Invalid reference: {str(e)}"))
     
     return indirect
 

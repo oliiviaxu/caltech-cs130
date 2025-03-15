@@ -1025,7 +1025,54 @@ class FunctionsTests(unittest.TestCase):
 
         self.assertIsInstance(wb.get_cell_value('sheet1', 'B1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'B1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
-        
+
+        # various kinds of bad inputs
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("123")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("A!1")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT(TRUE)')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("A" & "XYZ")')
+        self.assertIsInstance(wb.get_cell_value('sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents('sheet1', 'A1', '=INDIRECT("A" & "1")')
+        wb.set_cell_contents('sheet1', 'A1', '10')
+        self.assertEqual(wb.get_cell_value('sheet1', 'A1'), decimal.Decimal('10'))
+
+        # TODO: referencing a non existent sheet 
+        # invalid_sheet_names = ['', ' Sheet', '~', 'Lorem ipsum', 'Sheet\' name', 'Sheet \" name']
+
+        # wb = sheets.Workbook()
+        # wb.new_sheet('Sheet1')
+        # for sheet_name in invalid_sheet_names:
+        #     wb.set_cell_contents('Sheet1', 'A1', f'=INDIRECT("{sheet_name}!B1")')
+        #     self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        #     self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+
 
     def test_general(self):
         wb = sheets.Workbook()
@@ -1082,6 +1129,8 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=CHOOSE(1, B1, 3)')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+
 
     def test_alt(self):
         wb = sheets.Workbook()
