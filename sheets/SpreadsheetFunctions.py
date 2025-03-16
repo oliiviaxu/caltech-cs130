@@ -3,6 +3,11 @@ import sheets
 from .CellValue import CellValue
 from .CellError import CellError, CellErrorType
 import decimal
+import re
+
+def sheet_name_needs_quotes(sheet_name):
+    pattern = r"^[A-Za-z_][A-Za-z0-9_]*$"
+    return not bool(re.fullmatch(pattern, sheet_name))
 
 def visit_all(arg_tree, ev):
     if arg_tree is None:
@@ -240,14 +245,17 @@ def indirect_function(workbook):
             ref_sheet_name = split_ref[0].lower()
             if (len(ref_sheet_name) > 2 and ref_sheet_name[0] == '\'' and ref_sheet_name[-1] == '\''):
                 ref_sheet_name = ref_sheet_name[1:-1]
+            elif sheet_name_needs_quotes(ref_sheet_name):
+                return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Invalid reference: {str(ref_sheet_name)}"))
             ref_location = split_ref[1].lower().replace('$', '')
         
         if not sheets.Workbook.is_valid_location(ref_location):
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Failed to parse {arg.val} as a cell reference."))
         
-        ev.refs.add((ref_sheet_name, ref_location))
         try:
-            return CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
+            output = CellValue(workbook.get_cell_value(ref_sheet_name, ref_location))
+            ev.refs.add((ref_sheet_name, ref_location))
+            return output
         except (KeyError, ValueError) as e:
             return CellValue(CellError(CellErrorType.BAD_REFERENCE, f"Invalid reference: {str(e)}"))
     

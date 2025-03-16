@@ -99,6 +99,15 @@ class FormulaUpdater(lark.visitors.Transformer):
     def string(self, tree):
         return str(tree[0])
     
+    def boolean(self, tree):
+        return str(tree[0])
+    
+    def args(self, tree):
+        return tree
+    
+    def function(self, tree):
+        return str(tree[0].children[0]) + '(' + ', '.join(tree[0].children[1]) + ')'
+    
     def is_within_region(self, col_idx, row_idx):
         top_left_col, top_left_row, bottom_right_col, bottom_right_row = self.sort_region
         return (top_left_col <= col_idx <= bottom_right_col) and (top_left_row <= row_idx <= bottom_right_row)
