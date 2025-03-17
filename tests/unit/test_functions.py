@@ -1150,6 +1150,9 @@ class FunctionsTests(unittest.TestCase):
         wb.rename_sheet('Sheet2', 'Sheet3')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=IF(Sheet3!A1, Sheet3!B1, Sheet3!C1)')
 
+        wb.rename_sheet('Sheet3', 'Sheet 4')
+        self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=IF(\'Sheet 4\'!A1, \'Sheet 4\'!B1, \'Sheet 4\'!C1)')
+
     def test_general(self):
         wb = sheets.Workbook()
         wb.new_sheet()

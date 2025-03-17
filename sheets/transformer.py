@@ -37,6 +37,12 @@ class SheetNameExtractor(lark.visitors.Transformer):
     def string(self, tree):
         return str(tree[0])
     
+    def args(self, tree):
+        return tree
+    
+    def function(self, tree):
+        return str(tree[0].children[0]) + '(' + ', '.join(tree[0].children[1]) + ')'
+    
     def cell(self, tree):
         # processes a parse tree node 
         if len(tree) == 1:
