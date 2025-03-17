@@ -209,6 +209,31 @@ class SpreadsheetTests(unittest.TestCase):
 
         wb.copy_sheet('Sheet1')
         self.assertEqual(wb.get_cell_value('Sheet2', 'A1'), decimal.Decimal('7'))
+
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=Sheet2!A1 + 1')
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=1')
+        wb.set_cell_contents('Sheet1', 'D1', '=D1')
+        wb.copy_sheet('Sheet1')
+
+        wb.set_cell_contents('Sheet2', 'A1', '1')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1_1', 'A1'), 2)
+
+        self.assertEqual(wb.get_cell_value('Sheet1', 'B1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet1_1', 'B1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 1)
+        self.assertEqual(wb.get_cell_value('Sheet1_1', 'C1'), 1)
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertIsInstance(wb.get_cell_value('Sheet1_1', 'D1'), sheets.CellError)
+
+        wb.set_cell_contents('Sheet1', 'C1', '2')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), 2)
+        self.assertEqual(wb.get_cell_value('Sheet1_1', 'C1'), 1)
     
     def test_sheet_with_quotes(self):
         wb = sheets.Workbook()
