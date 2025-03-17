@@ -1087,14 +1087,14 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_value('sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
         # TODO: referencing a non existent sheet 
-        # invalid_sheet_names = ['', ' Sheet', '~', 'Lorem ipsum', 'Sheet\' name', 'Sheet \" name']
+        invalid_sheet_names = ['', ' Sheet', '~', 'Lorem ipsum', 'Sheet\' name']#, 'Sheet \" name']
 
-        # wb = sheets.Workbook()
-        # wb.new_sheet('Sheet1')
-        # for sheet_name in invalid_sheet_names:
-        #     wb.set_cell_contents('Sheet1', 'A1', f'=INDIRECT("{sheet_name}!B1")')
-        #     self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
-        #     self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet1')
+        for sheet_name in invalid_sheet_names:
+            wb.set_cell_contents('Sheet1', 'A1', f'=INDIRECT("{sheet_name}!B1")')
+            self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+            self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
 
     def test_move_function(self):
         wb = sheets.Workbook()
@@ -1108,6 +1108,37 @@ class FunctionsTests(unittest.TestCase):
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A2'), '=VERSION()')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'B2'), '=INDIRECT(A2)')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'C2'), '=IF(True, 1, 1)')
+
+    def test_isblank_edge(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK("")')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(FALSE)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(0)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # give isblank various error inputs (should report "is not blank")
+        wb.set_cell_contents('Sheet1', 'B1', '=B1+')
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(B1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(1/0)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
+
+        # behavior inside and outside of cycle
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(C1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), True)
+        wb.set_cell_contents('Sheet1', 'C1', '=A1')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        wb.set_cell_contents('Sheet1', 'B1', '=C1')
+        wb.set_cell_contents('Sheet1', 'C1', '=B1')
+        wb.set_cell_contents('Sheet1', 'A1', '=ISBLANK(B1)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), False)
 
     def test_general(self):
         wb = sheets.Workbook()

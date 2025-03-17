@@ -183,8 +183,8 @@ def isblank_function(arg_tree, ev):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Expected exactly 1 arguments, but got {len(args)} arguments."))
 
     arg = args[0]
-    if isinstance(arg.val, sheets.CellError):
-        return arg
+    # if isinstance(arg.val, sheets.CellError) and arg.val.get_type() == sheets.CellErrorType.CIRCULAR_REFERENCE:
+    #     return arg
         
     if arg.val is None:
         return CellValue(True)
