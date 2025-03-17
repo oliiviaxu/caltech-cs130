@@ -12,6 +12,13 @@ dir = os.path.join(current_dir, 'cProfile_output/')
 
 num_iterations = 100
 
+def index_to_col(col_index):
+    col = ""
+    while col_index >= 0:
+        col = chr(65 + col_index % 26) + col
+        col_index = col_index // 26 - 1
+    return col
+
 class WorkbookTests(unittest.TestCase):
     @staticmethod
     def index_to_col(col_index):
@@ -85,6 +92,21 @@ class WorkbookTests(unittest.TestCase):
                 self.assertEqual(wb.get_cell_contents(sn_1, f'A{j}'), f'={sn_2}!A{j}')
                 self.assertEqual(wb.get_cell_contents(sn_2, f'A{j}'), f'={sn_1}!A{j + 1}')
 
+    def test_rename_nocellref(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        def create(wb):
+            for i in range(100):
+                for j in range(100):
+                    location = f'{index_to_col(i)}{j + 1}'
+                    wb.set_cell_contents('Sheet1', location, '4')
+        create(wb)
+
+        num_renames = 1000
+        for _ in range(int(num_renames / 2)):
+            wb.rename_sheet('Sheet1', 'Sheet2')
+            wb.rename_sheet('Sheet2', 'Sheet1')
+
     def test_copy_sheet(self):
         wb = sheets.Workbook()
         _, sn = wb.new_sheet('TestSheet')
@@ -113,6 +135,20 @@ class WorkbookTests(unittest.TestCase):
             new_sn = f'{sn_2}_{i}'
             for j in range(1, chain_size):
                 self.assertEqual(wb.get_cell_contents(new_sn, f'A{j}'), f'={sn_1}!A{j + 1}')
+    
+    def test_copy_nocellref(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        def create(wb):
+            for i in range(10):
+                for j in range(10):
+                    location = f'{index_to_col(i)}{j + 1}'
+                    wb.set_cell_contents('Sheet1', location, '4')
+        create(wb)
+
+        num_copies = 1000
+        for _ in range(int(num_copies / 2)):
+            wb.copy_sheet('Sheet1')
 
     def test_move_cells(self):
         wb = sheets.Workbook()
