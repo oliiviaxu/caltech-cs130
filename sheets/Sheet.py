@@ -74,7 +74,7 @@ class Sheet:
             row = []
             for col_idx in range(self.num_cols):
                 location = Sheet.to_sheet_coords(col_idx, row_idx)
-                cell = Cell(self.sheet_name, location, None)
+                cell = Cell(location, None)
                 row.append(cell)
             self.cells.append(row)
 
@@ -82,7 +82,7 @@ class Sheet:
         for row_idx, row in enumerate(self.cells):
             for col_idx in range(self.num_cols, new_num_cols):
                 location = Sheet.to_sheet_coords(col_idx, row_idx)
-                cell = Cell(self.sheet_name, location, None)
+                cell = Cell(location, None)
                 row.append(cell)
 
         self.num_rows = new_num_rows

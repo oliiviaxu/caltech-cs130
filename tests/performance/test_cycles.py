@@ -79,7 +79,7 @@ class CycleDetectionTests(unittest.TestCase):
         
         wb.set_cell_contents(sheet_name, cell_in_multi_cycles, contents)
 
-        self.assertEqual(wb.detect_cycle(wb.get_cell(sheet_name, cell_in_multi_cycles)), False)
+        self.assertEqual(wb.detect_cycle((sheet_name, cell_in_multi_cycles)), False)
         self.assertIsInstance(wb.get_cell_value(sheet_name, cell_in_multi_cycles), sheets.CellError)
         self.assertEqual(wb.get_cell_value(sheet_name, cell_in_multi_cycles).get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
     

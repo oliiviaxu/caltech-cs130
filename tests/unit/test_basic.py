@@ -189,13 +189,13 @@ class BasicTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'B1', '=A1')
 
         cell = wb.get_cell('Sheet1', 'A1')
-        self.assertEqual(wb.detect_cycle(cell), True)
+        self.assertEqual(wb.detect_cycle(('Sheet1', 'A1')), True)
 
         wb.set_cell_contents('Sheet1', 'B1', '=C1')
-        self.assertEqual(wb.detect_cycle(cell), False)
+        self.assertEqual(wb.detect_cycle(('Sheet1', 'A1')), False)
 
         wb.set_cell_contents('Sheet1', 'D1', '=D1')
-        self.assertEqual(wb.detect_cycle(wb.get_cell('Sheet1', 'D1')), True)
+        self.assertEqual(wb.detect_cycle(('Sheet1', 'D1')), True)
 
     def test_interpreter(self):
         wb = sheets.Workbook()

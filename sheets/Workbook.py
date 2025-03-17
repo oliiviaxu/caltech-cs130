@@ -161,6 +161,8 @@ class Workbook:
     def handle_update_tree(self, cell_tuple):
         pending_notifications = []
         sheet_name, location = cell_tuple
+        sheet_name = sheet_name.lower()
+        location = location.lower()
         out_degree = self.calculate_out_degree((sheet_name, location))
 
         visited = {key: False for key in out_degree} # cells "connected" to src
@@ -171,6 +173,8 @@ class Workbook:
         
         while len(queue):
             sheet_name, location = queue.pop(0)
+            sheet_name = sheet_name.lower()
+            location = location.lower()
 
             prev_value = self.get_cell_value(sheet_name, location)
             self.evaluate_cell((sheet_name, location), first)
@@ -226,6 +230,8 @@ class Workbook:
     
     def evaluate_cell(self, cell_tup, first=False):
         sheet_name, location = cell_tup
+        sheet_name = sheet_name.lower()
+        location = location.lower()
         cell = self.get_cell(sheet_name, location)
         if cell is None:
             return
@@ -260,7 +266,7 @@ class Workbook:
                 self.graph.outgoing_set(sheet_name, location, outgoing)
 
                 # detect cycle
-                if first and self.detect_cycle(cell):
+                if first and self.detect_cycle((sheet_name, location)):
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
                 elif cell.in_cycle:
                     cell.value = CellValue(CellError(CellErrorType.CIRCULAR_REFERENCE, 'Circular reference found'))
@@ -398,9 +404,12 @@ class Workbook:
         
         return self.sheets[sheet_name.lower()].get_cell_contents(location)
 
-    def detect_cycle(self, src: Cell) -> bool:
+    def detect_cycle(self, cell_tup) -> bool:
+        sheet_name, location = cell_tup
+        sheet_name = sheet_name.lower()
+        location = location.lower()
         nodes = set()
-        self.find_nodes(src.sheet_name, src.location, nodes)
+        self.find_nodes(sheet_name, location, nodes)
 
         current_id = 0
         ids = {node: -1 for node in nodes}
@@ -411,8 +420,8 @@ class Workbook:
 
         # pre-fetch adjacency to simplify lookups
         adjacency = {}
-        for (sheet_name, loc) in nodes:
-            adjacency[(sheet_name, loc)] = self.graph.ingoing_get(sheet_name, loc)
+        for (sn, loc) in nodes:
+            adjacency[(sn, loc)] = self.graph.ingoing_get(sn, loc)
 
         def iterative_dfs(start_node):
             nonlocal current_id, ids, low, on_stack, stack_scc, is_cycle, adjacency
@@ -467,8 +476,7 @@ class Workbook:
         for node in nodes:
             cell = self.get_cell(node[0], node[1])
             cell.in_cycle = is_cycle[node]
-
-        return is_cycle[(src.sheet_name, src.location)]
+        return is_cycle[(sheet_name, location)]
 
     def find_nodes(self, sn, loc, nodes):
         stack = [(sn, loc)]
@@ -612,13 +620,6 @@ class Workbook:
         # this requirement, the behavior is undefined.
         self.notify_functions.append(notify_function)
 
-    def update_cell_sn(self, sheet_name):
-        sheet = self.sheets[sheet_name.lower()]
-        for row_idx in range(sheet.num_rows):
-            for col_idx in range(sheet.num_cols):
-                curr_cell = sheet.cells[row_idx][col_idx]
-                curr_cell.sheet_name = sheet_name
-
     def rename_sheet(self, sheet_name: str, new_sheet_name: str) -> None:
         # Rename the specified sheet to the new sheet name.  Additionally, all
         # cell formulas that referenced the original sheet name are updated to
@@ -708,8 +709,6 @@ class Workbook:
         self.sheets[new_sheet_name.lower()] = self.sheets.pop(sheet_name.lower()) # sheet object
         self.sheets[new_sheet_name.lower()].sheet_name = new_sheet_name
         self.move_sheet(new_sheet_name.lower(), old_index)
-
-        self.update_cell_sn(new_sheet_name)
 
         self.graph.ingoing.pop(sheet_name)
         self.graph.outgoing.pop(sheet_name)
