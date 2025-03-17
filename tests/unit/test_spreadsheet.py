@@ -258,7 +258,7 @@ class SpreadsheetTests(unittest.TestCase):
         wb.set_cell_contents('Sheet2', 'A1', '=4 + Sheet1!A1')
         wb.set_cell_contents('Sheet1', 'B1', '=1 + Sheet2!B1')
         wb.rename_sheet('Sheet1', 'SheetBla')
-        self.assertEqual(wb.graph.outgoing, {'sheet2': {'a1': [('sheetbla', 'a1')]}, 'sheetbla': {'b1': [('sheet2', 'b1')], 'a1': []}})
+        self.assertEqual(wb.graph.outgoing, {'sheet2': {'a1': [('sheetbla', 'a1')]}, 'sheetbla': {'b1': [('sheet2', 'b1')]}})
         self.assertEqual(wb.graph.ingoing, {'sheet2': {'b1': [('sheetbla', 'b1')]}, 'sheetbla': {'a1': [('sheet2', 'a1')]}})
 
         self.assertEqual(wb.get_cell_contents('Sheet2', 'A1'), '=4 + SheetBla!A1')
@@ -269,7 +269,7 @@ class SpreadsheetTests(unittest.TestCase):
         wb.new_sheet()
         wb.set_cell_contents('Sheet1', 'A1', '=A2')
         wb.rename_sheet('Sheet1', 'blah')
-        self.assertEqual(wb.graph.outgoing, {'blah': {'a1': [('blah', 'a2')], 'a2': []}})
+        self.assertEqual(wb.graph.outgoing, {'blah': {'a1': [('blah', 'a2')]}})
         self.assertEqual(wb.graph.ingoing, {'blah': {'a2': [('blah', 'a1')]}})
     
     def test_rename_sheet_3(self):

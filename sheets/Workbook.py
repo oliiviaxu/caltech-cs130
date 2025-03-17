@@ -15,6 +15,7 @@ from .SpreadsheetFunctions import create_function_directory
 from .RowAdapter import RowAdapter
 import decimal
 import re
+import copy
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 lark_path = os.path.join(current_dir, "formulas.lark")
@@ -263,7 +264,8 @@ class Workbook:
                 for sn, loc in outgoing:
                     self.graph.ingoing_add(sn, loc, sheet_name, location)
 
-                self.graph.outgoing_set(sheet_name, location, outgoing)
+                if len(outgoing):
+                    self.graph.outgoing_set(sheet_name, location, outgoing)
 
                 # detect cycle
                 if first and self.detect_cycle((sheet_name, location)):
@@ -355,7 +357,7 @@ class Workbook:
                     curr_cell.parse_error = True
         
         curr_cell.contents = contents
-        self.graph.outgoing_set(sheet_name, location, [])
+        self.graph.outgoing_reset(sheet_name, location)
 
         pending_notifications = []
         prev_value = self.get_cell_value(sheet_name, location)
@@ -801,14 +803,16 @@ class Workbook:
         self.new_sheet(new_name)
 
         sheet_to_copy = self.sheets[sheet_name.lower()]
-        copy = self.sheets[new_name.lower()]
-        copy.resize_sheet(sheet_to_copy.num_rows, sheet_to_copy.num_cols)
+        self.sheets[new_name.lower()] = copy.deepcopy(sheet_to_copy)
+        self.sheets[new_name.lower()].sheet_name = new_name
+        
+        outgoings = self.graph.outgoing[sheet_name.lower()]
+        for loc in outgoings:
+            self.set_cell_contents(new_name, loc, self.get_cell_contents(sheet_name, loc))
 
-        for row_idx in range(sheet_to_copy.num_rows):
-            for col_idx in range(sheet_to_copy.num_cols):
-                curr_contents = sheet_to_copy.cells[row_idx][col_idx].contents
-                loc = Sheet.to_sheet_coords(col_idx, row_idx)
-                self.set_cell_contents(new_name, loc, curr_contents)
+        new_ingoings = self.graph.ingoing[new_name.lower()]
+        for loc in new_ingoings:
+            self.set_cell_contents(new_name, loc, self.get_cell_contents(sheet_name, loc))
 
         return (len(self.sheets.keys()) - 1, new_name)
     

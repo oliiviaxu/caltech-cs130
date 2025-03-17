@@ -27,6 +27,12 @@ class DependencyGraph:
         if (sheet_name not in self.ingoing or location not in self.ingoing[sheet_name]):
             return []
         return self.ingoing[sheet_name][location]
+    
+    def outgoing_reset(self, sheet_name, location):
+        sheet_name = sheet_name.lower()
+        location = location.lower()
+        if sheet_name in self.outgoing:
+            self.outgoing[sheet_name].pop(location, None)
 
     def outgoing_set(self, sheet_name, location, outgoing_arr):
         sheet_name = sheet_name.lower()

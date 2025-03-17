@@ -49,7 +49,19 @@ Rationale - see the profiler for a copy sheet test case:
    400800    0.241    0.000    3.037    0.000 Sheet.py:11(get_cell)
 
 For each of the calls to copy_sheet, we make 100 calls to set_cell_contents, which is slow.
-Outcome - 
+Outcome - see profiler with the fix in place:
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    0.000    0.000    2.950    2.950 case.py:632(_callTestMethod)
+        1    0.004    0.004    2.950    2.950 test_workbook.py:139(test_copy_nocellref)
+      500    0.407    0.001    2.930    0.006 Workbook.py:773(copy_sheet)
+960500/500    0.987    0.000    2.360    0.005 copy.py:128(deepcopy)
+100500/500    0.263    0.000    2.357    0.005 copy.py:257(_reconstruct)
+100500/500    0.274    0.000    2.352    0.005 copy.py:225(_deepcopy_dict)
+ 5500/500    0.027    0.000    2.345    0.005 copy.py:199(_deepcopy_list)
+  2021500    0.204    0.000    0.204    0.000 {method 'get' of 'dict' objects}
+
+Now, the time is dominated by the time it takes to deepcopy, which is inevitable. Thus,
+our theory was correct.
 
 
 
