@@ -225,8 +225,8 @@ class Workbook:
         return out_degree
     
     def evaluate_cell(self, cell_tup, first=False):
-        sn, loc = cell_tup
-        cell = self.get_cell(sn, loc)
+        sheet_name, location = cell_tup
+        cell = self.get_cell(sheet_name, location)
         if cell is None:
             return
         contents = cell.contents
@@ -239,12 +239,12 @@ class Workbook:
             if cell.parse_error:
                 cell.value = CellValue(CellError(CellErrorType.PARSE_ERROR, 'Failed to parse formula'))
             else:
-                orig_outgoing = self.graph.outgoing_get(cell.sheet_name, cell.location)
+                orig_outgoing = self.graph.outgoing_get(sheet_name, location)
                 for sn, loc in orig_outgoing:
-                    self.graph.ingoing_remove(sn, loc, cell.sheet_name, cell.location)
+                    self.graph.ingoing_remove(sn, loc, sheet_name, location)
 
                 # feed references and sheet name into interpreter
-                ev = FormulaEvaluator(cell.sheet_name, self, self.func_directory)
+                ev = FormulaEvaluator(sheet_name, self, self.func_directory)
                 visit_value = ev.visit(tree)
                 if (visit_value is None or visit_value.val is None):
                     cell.value = CellValue(decimal.Decimal('0'))
@@ -255,9 +255,9 @@ class Workbook:
                 # if first:
                 outgoing = list(ev.refs)
                 for sn, loc in outgoing:
-                    self.graph.ingoing_add(sn, loc, cell.sheet_name, cell.location)
+                    self.graph.ingoing_add(sn, loc, sheet_name, location)
 
-                self.graph.outgoing_set(cell.sheet_name, cell.location, outgoing)
+                self.graph.outgoing_set(sheet_name, location, outgoing)
 
                 # detect cycle
                 if first and self.detect_cycle(cell):
@@ -315,7 +315,7 @@ class Workbook:
         curr_cell = curr_sheet.get_cell(location)
 
         nodes = set()
-        self.find_nodes(curr_cell.sheet_name, curr_cell.location, nodes)
+        self.find_nodes(sheet_name, location, nodes)
         for (sn, loc) in nodes:
             cell = self.get_cell(sn, loc)
             if cell is not None:
