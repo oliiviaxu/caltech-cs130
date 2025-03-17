@@ -1,1 +1,13 @@
 Performance Log
+
+Theory -
+Rationale -
+Outcome -
+
+fix to rename sheet:
+
+look for all cells with cell references outgoing - set_cell_contents those to empty, and
+set_cell_contents them in the new sheet to the right content
+
+what about ingoing edges?
+simply look through all ingoings and use sheetnameextractor right?

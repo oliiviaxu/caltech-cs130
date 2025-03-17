@@ -158,64 +158,77 @@ class Workbook:
             return None
         return sheet.get_cell(location)
     
-    def handle_update_tree(self, cell):
+    def handle_update_tree(self, cell_tuple):
         pending_notifications = []
-
-        out_degree = self.calculate_out_degree(cell)
+        sheet_name, location = cell_tuple
+        out_degree = self.calculate_out_degree((sheet_name, location))
 
         visited = {key: False for key in out_degree} # cells "connected" to src
         
-        visited[cell] = True
-        queue = [cell]
+        visited[(sheet_name, location)] = True
+        queue = [(sheet_name, location)]
         first = True
         
         while len(queue):
-            curr_cell = queue.pop(0)
+            sheet_name, location = queue.pop(0)
 
-            prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-            self.evaluate_cell(curr_cell, first)
+            prev_value = self.get_cell_value(sheet_name, location)
+            self.evaluate_cell((sheet_name, location), first)
             first = False
-            new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
+            new_value = self.get_cell_value(sheet_name, location)
             if (prev_value != new_value):
                 if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
-                    pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+                    pending_notifications.append((sheet_name, location))
                     if self.is_renaming:
-                        if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
-                            self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
+                        if (sheet_name, location) not in self.notify_info:
+                            self.notify_info[(sheet_name, location)] = prev_value
 
-            visited[curr_cell] = True
-            for sn, loc in self.graph.ingoing_get(curr_cell.sheet_name, curr_cell.location):
-                ingoing_cell = self.get_cell(sn, loc)
-                if visited[ingoing_cell]:
+            visited[(sheet_name, location)] = True
+            for sn, loc in self.graph.ingoing_get(sheet_name, location):
+                # ingoing_cell = self.get_cell(sn, loc)
+                if visited[(sn, loc)]:
                     continue
-                out_degree[ingoing_cell] -= 1
-                if (out_degree[ingoing_cell] == 0):
-                    queue.append(ingoing_cell)
+                out_degree[(sn, loc)] -= 1
+                if (out_degree[(sn, loc)] == 0):
+                    queue.append((sn, loc))
         
-        for c in visited:
-            if not visited[c]:
-                self.evaluate_cell(c)
+        for sn, loc in visited:
+            if not visited[(sn, loc)]:
+                prev_value = self.get_cell_value(sn, loc)
+                self.evaluate_cell((sn, loc))
+                new_value = self.get_cell_value(sn, loc)
+                if (prev_value != new_value):
+                    if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
+                        pending_notifications.append((sn, loc))
+                        if self.is_renaming:
+                            if (sn, loc) not in self.notify_info:
+                                self.notify_info[(sn, loc)] = prev_value
         
         return pending_notifications
     
-    def calculate_out_degree(self, cell):
-        stack = [cell]
+    def calculate_out_degree(self, cell_tup):
+        sheet_name, location = cell_tup
+        stack = [(sheet_name, location)]
         visited = set()
         out_degree = {}
 
         while stack:
-            cell = stack.pop()
-            if cell in visited:
+            sheet_name, location = stack.pop()
+            if (sheet_name, location) in visited:
                 continue
-            visited.add(cell)
-            for sn, loc in self.graph.ingoing_get(cell.sheet_name, cell.location):
-                ingoing_cell = self.get_cell(sn, loc)
-                out_degree[ingoing_cell] = out_degree.get(ingoing_cell, 0) + 1
-                stack.append(ingoing_cell)
+            visited.add((sheet_name, location))
+            for sn, loc in self.graph.ingoing_get(sheet_name, location):
+                # ingoing_cell = self.get_cell(sn, loc)
+                out_degree[(sn, loc)] = out_degree.get((sn, loc), 0) + 1
+                stack.append((sn, loc))
 
         return out_degree
     
-    def evaluate_cell(self, cell, first=False):
+    def evaluate_cell(self, cell_tup, first=False):
+        sn, loc = cell_tup
+        cell = self.get_cell(sn, loc)
+        if cell is None:
+            return
         contents = cell.contents
         if (contents is None):
             cell.value = CellValue(None)
@@ -339,18 +352,18 @@ class Workbook:
         self.graph.outgoing_set(sheet_name, location, [])
 
         pending_notifications = []
-        prev_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
-        self.evaluate_cell(curr_cell, True)
-        new_value = self.get_cell_value(curr_cell.sheet_name, curr_cell.location)
+        prev_value = self.get_cell_value(sheet_name, location)
+        self.evaluate_cell((sheet_name, location), True)
+        new_value = self.get_cell_value(sheet_name, location)
         if (prev_value != new_value):
             if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
-                pending_notifications.append((curr_cell.sheet_name, curr_cell.location))
+                pending_notifications.append((sheet_name, location))
                 if self.is_renaming:
-                    if (curr_cell.sheet_name, curr_cell.location) not in self.notify_info:
-                        self.notify_info[(curr_cell.sheet_name, curr_cell.location)] = prev_value
+                    if (sheet_name, location) not in self.notify_info:
+                        self.notify_info[(sheet_name, location)] = prev_value
         
         ### Update the value field of the cell
-        pending_notifications = pending_notifications + self.handle_update_tree(curr_cell)
+        pending_notifications = pending_notifications + self.handle_update_tree((sheet_name, location))
         if (not self.is_renaming and len(pending_notifications) > 0):
             if (self.is_deleting):
                 pending_notifications = pending_notifications[1:]

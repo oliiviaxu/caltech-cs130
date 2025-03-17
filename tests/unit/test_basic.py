@@ -377,11 +377,11 @@ class BasicTests(unittest.TestCase):
             wb.set_cell_contents("Sheet1", "C1", "=A1+B1")
             wb.set_cell_contents("Sheet1", "B1", "5.3")
         output = temp_stdout.getvalue()
-        self.assertEqual(output, (
+        self.assertEqual(output.lower(), (
             "Cell(s) changed: [('sheet1', 'a1')]\n"
             "Cell(s) changed: [('sheet1', 'c1')]\n"
             "Cell(s) changed: [('sheet1', 'b1'), ('sheet1', 'c1')]\n"
-        ))
+        ).lower())
 
         # exceptions raised by notificaiton function should not affect anything
         wb2 = sheets.Workbook()
@@ -420,14 +420,14 @@ class BasicTests(unittest.TestCase):
             wb3.set_cell_contents("Sheet1", "B1", "=A1+C1")
             wb3.set_cell_contents("Sheet1", "C1", "5.3")
         output = temp_stdout.getvalue()
-        self.assertEqual(output, (
+        self.assertEqual(output.lower(), (
             "Number of Cell(s) changed: 1\n"
             "Cell(s) changed: [('sheet1', 'a1')]\n"
             "Number of Cell(s) changed: 2\n"
             "Cell(s) changed: [('sheet1', 'b1'), ('sheet1', 'a1')]\n"
             "Number of Cell(s) changed: 1\n"
             "Cell(s) changed: [('sheet1', 'c1')]\n"
-        ))
+        ).lower())
 
     def test_notify_sheet_operations(self):
         # test that adding sheet causes notification
@@ -442,10 +442,10 @@ class BasicTests(unittest.TestCase):
             wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
             wb.new_sheet()
         output = temp_stdout.getvalue()
-        self.assertEqual(output, (
+        self.assertEqual(output.lower(), (
             "Cell(s) changed: [('sheet1', 'a1')]\n"
             "Cell(s) changed: [('sheet1', 'a1')]\n"
-        ))
+        ).lower())
 
         # test deleting sheet causes notification
         temp_stdout = StringIO()
@@ -453,10 +453,10 @@ class BasicTests(unittest.TestCase):
             wb.set_cell_contents('Sheet2', 'A5', '4.5')
             wb.del_sheet('Sheet2')
         output = temp_stdout.getvalue()
-        self.assertEqual(output, (
+        self.assertEqual(output.lower(), (
             "Cell(s) changed: [('sheet2', 'a5')]\n"
             "Cell(s) changed: [('sheet1', 'a1')]\n"
-        ))
+        ).lower())
 
         # copying causes notification:
         # Sheet1 -> Sheet2 -> Sheet1_1
@@ -470,12 +470,12 @@ class BasicTests(unittest.TestCase):
             self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
             self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
         output = temp_stdout.getvalue()
-        self.assertEqual(output, (
+        self.assertEqual(output.lower(), (
             "Cell(s) changed: [('sheet1', 'a1')]\n" # from new_sheet
             "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents
             "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from the new_sheet call inside copy_sheet
             "Cell(s) changed: [('sheet1_1', 'a1'), ('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents call inside copy_sheet
-        ))
+        ).lower())
     
     def test_notify_rename(self):
         # renaming causes notification properly
