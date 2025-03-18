@@ -342,7 +342,6 @@ class Workbook:
         # Only need to change cell.outgoing if a formula is used in the cell
         if contents is None:
             curr_cell.contents = contents
-            curr_sheet.check_shrink(location)
         elif contents.startswith('='):
             # parse formula into tree
             if contents == curr_cell.contents:
@@ -372,6 +371,11 @@ class Workbook:
         
         ### Update the value field of the cell
         pending_notifications = pending_notifications + self.handle_update_tree((sheet_name, location))
+
+        # check shrink
+        if contents is None:
+            curr_sheet.check_shrink(location)
+
         if (not self.is_renaming and len(pending_notifications) > 0):
             if (self.is_deleting):
                 pending_notifications = pending_notifications[1:]
