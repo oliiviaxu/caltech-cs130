@@ -471,8 +471,7 @@ class BasicTests(unittest.TestCase):
             wb.copy_sheet('Sheet1')
         output = temp_stdout.getvalue()
         self.assertEqual(output.lower(), (
-            "Cell(s) changed: [('sheet1', 'a1'), ('sheet1', 'b1'), "
-            "('sheet1_1', 'a1'), ('sheet1_1', 'b1'), ('sheet1_1', 'c1'), ('sheet1_1', 'd1')]\n"
+            "Cell(s) changed: [('Sheet1_1', 'a1'), ('Sheet1_1', 'b1'), ('sheet1', 'a1'), ('sheet1', 'b1')]\n"
         ).lower())
 
     def test_notify_delete_sheet(self):

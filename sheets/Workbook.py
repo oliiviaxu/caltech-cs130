@@ -33,7 +33,7 @@ class Workbook:
         self.notify_functions = []
         self.notify_info = {}
         self.is_deleting = False
-        self.is_renaming = False
+        self.in_api_call = False
         self.func_directory = create_function_directory(self)
         self.renaming_info = {}
 
@@ -95,11 +95,27 @@ class Workbook:
             if (sheet_name.lower() in sheet_names_lower):
                 raise ValueError('Spreadsheet names must be unique.')
 
+        self.in_api_call = True
         self.sheets[sheet_name.lower()] = Sheet(sheet_name)
         if sheet_name.lower() in self.graph.ingoing:
             for loc in self.graph.ingoing[sheet_name.lower()]:
                 self.set_cell_contents(sheet_name, loc, None)
         self.graph.add_sheet(sheet_name.lower())
+        self.in_api_call = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
         return len(self.sheets.keys()) - 1, sheet_name
 
     def del_sheet(self, sheet_name: str) -> None:
@@ -109,7 +125,7 @@ class Workbook:
         # case does not have to.
         #
         # If the specified sheet name is not found, a KeyError is raised.
-
+        self.in_api_call = True
         sheet_name = sheet_name.lower()
         if (sheet_name not in self.sheets):
             raise KeyError(f'{sheet_name} not found, cannot delete.')
@@ -126,6 +142,21 @@ class Workbook:
         del self.graph.outgoing[sheet_name]
         del self.sheets[sheet_name]
         self.is_deleting = False
+        self.in_api_call = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -184,7 +215,7 @@ class Workbook:
             if (prev_value != new_value):
                 if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
                     pending_notifications.append((sheet_name, location))
-                    if self.is_renaming:
+                    if self.in_api_call:
                         if (sheet_name, location) not in self.notify_info:
                             self.notify_info[(sheet_name, location)] = prev_value
 
@@ -205,7 +236,7 @@ class Workbook:
                 if (prev_value != new_value):
                     if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
                         pending_notifications.append((sn, loc))
-                        if self.is_renaming:
+                        if self.in_api_call:
                             if (sn, loc) not in self.notify_info:
                                 self.notify_info[(sn, loc)] = prev_value
         
@@ -321,6 +352,7 @@ class Workbook:
         curr_sheet = self.sheets[sheet_name.lower()]
         curr_sheet.resize(location)
         curr_cell = curr_sheet.get_cell(location)
+        prev_value = self.get_cell_value(sheet_name, location)
 
         nodes = set()
         self.find_nodes(sheet_name, location, nodes)
@@ -359,13 +391,12 @@ class Workbook:
         self.graph.outgoing_reset(sheet_name, location)
 
         pending_notifications = []
-        prev_value = self.get_cell_value(sheet_name, location)
         self.evaluate_cell((sheet_name, location), True)
         new_value = self.get_cell_value(sheet_name, location)
         if (prev_value != new_value):
             if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
                 pending_notifications.append((sheet_name, location))
-                if self.is_renaming:
+                if self.in_api_call:
                     if (sheet_name, location) not in self.notify_info:
                         self.notify_info[(sheet_name, location)] = prev_value
         
@@ -376,7 +407,7 @@ class Workbook:
         if contents is None:
             curr_sheet.check_shrink(location)
 
-        if (not self.is_renaming and len(pending_notifications) > 0):
+        if (not self.in_api_call and len(pending_notifications) > 0):
             if (self.is_deleting):
                 pending_notifications = pending_notifications[1:]
             for notify_function in self.notify_functions:
@@ -654,7 +685,7 @@ class Workbook:
         if (new_sheet_name.lower() in self.sheets):
             raise ValueError('Spreadsheet names must be unique.')
         
-        self.is_renaming = True
+        self.in_api_call = True
 
         sne = SheetNameExtractor(sheet_name, new_sheet_name)
         
@@ -731,19 +762,20 @@ class Workbook:
         for loc in self.graph.ingoing[new_sheet_name.lower()]:
             self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
 
-        self.is_renaming = False
+        self.in_api_call = False
         if len(self.notify_info):
             notifications = []
             for (sn, loc), v in self.notify_info.items():
-                if sn in self.sheets:
+                if sn.lower() in self.sheets:
                     cell = self.get_cell(sn, loc)
                     if cell is not None and cell.value.val != v:
                         notifications.append((sn, loc))
-            for notify_function in self.notify_functions:
-                try:
-                    notify_function(self, notifications)
-                except Exception:
-                    pass
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
             self.notify_info = {}
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
@@ -795,6 +827,8 @@ class Workbook:
         if sheet_name.lower() not in self.sheets.keys():
             raise KeyError('Sheet not found.')
         
+        self.in_api_call = True
+        
         sheet_names_lower = [sheet_name.lower() for sheet_name in self.list_sheets()]
         num = 1
         new_name = ""
@@ -804,7 +838,8 @@ class Workbook:
                 break
             num += 1
         
-        self.new_sheet(new_name)
+        # self.new_sheet(new_name)
+        self.sheets[new_name.lower()] = Sheet(new_name)
 
         sheet_to_copy = self.sheets[sheet_name.lower()]
         self.sheets[new_name.lower()] = copy.deepcopy(sheet_to_copy)
@@ -818,6 +853,21 @@ class Workbook:
         for loc in new_ingoings:
             self.set_cell_contents(new_name, loc, self.get_cell_contents(sheet_name, loc))
 
+        self.in_api_call = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
         return (len(self.sheets.keys()) - 1, new_name)
     
     def transfer_cells(self, sheet_name: str, start_location: str,
@@ -882,7 +932,6 @@ class Workbook:
                 updated_contents = contents_grid[grid_i][grid_j]
 
                 loc = Sheet.to_sheet_coords(j, i)
-                
                 if to_sheet:
                     self.set_cell_contents(to_sheet, loc, updated_contents)
                 else:
@@ -931,8 +980,24 @@ class Workbook:
         # If a formula being moved contains a relative or mixed cell-reference
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
+        self.in_api_call = True
         self.transfer_cells(sheet_name, start_location, end_location, to_location, True, to_sheet)
-        
+
+        self.in_api_call = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
@@ -976,8 +1041,23 @@ class Workbook:
         # If a formula being copied contains a relative or mixed cell-reference
         # that will become invalid after updating the cell-reference, then the
         # cell-reference is replaced with a #REF! error-literal in the formula.
+        self.in_api_call = True
         self.transfer_cells(sheet_name, start_location, end_location, to_location, False, to_sheet)
-
+        self.in_api_call = False
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
 
     def sort_region(self, sheet_name: str, start_location: str, end_location: str, sort_cols: List[int]):
         # Sort the specified region of a spreadsheet with a stable sort, using
