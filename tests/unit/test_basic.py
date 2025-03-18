@@ -382,7 +382,8 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet1', 'c1')]\n"
             "Cell(s) changed: [('sheet1', 'b1'), ('sheet1', 'c1')]\n"
         ).lower())
-
+    
+    def test_notify_exceptions(self):
         # exceptions raised by notificaiton function should not affect anything
         wb2 = sheets.Workbook()
 
@@ -402,13 +403,19 @@ class BasicTests(unittest.TestCase):
         self.assertEqual(wb2.get_cell_contents('Sheet1', 'C1'), "=A1+B1")
         self.assertEqual(wb2.get_cell_contents('Sheet1', 'B1'), "5.3")
 
+    def test_notify_edge(self):
         # test all of these features:
         # multiple notification functions (including some that fail)
         # cells that don't change don't get notified
         wb3 = sheets.Workbook()
 
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+        def on_cells_changed_error(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells[len(changed_cells)]}')
         def count_cells_changed(workbook, changed_cells):
             print(f'Number of Cell(s) changed: {len(changed_cells)}')
+
         wb3.notify_cells_changed(count_cells_changed)
         wb3.notify_cells_changed(on_cells_changed_error)
         wb3.notify_cells_changed(on_cells_changed)
@@ -429,7 +436,7 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet1', 'c1')]\n"
         ).lower())
 
-    def test_notify_sheet_operations(self):
+    def test_notify_add_sheet(self):
         # test that adding sheet causes notification
         wb = sheets.Workbook()
         def on_cells_changed(workbook, changed_cells):
@@ -447,6 +454,16 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet1', 'a1')]\n"
         ).lower())
 
+    def test_notify_delete_sheet(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+
+        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
+        wb.notify_cells_changed(on_cells_changed)
+
         # test deleting sheet causes notification
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
@@ -458,6 +475,15 @@ class BasicTests(unittest.TestCase):
             "Cell(s) changed: [('sheet1', 'a1')]\n"
         ).lower())
 
+    def test_notify_copy_sheet(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+
+        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
+        wb.notify_cells_changed(on_cells_changed)
+        
         # copying causes notification:
         # Sheet1 -> Sheet2 -> Sheet1_1
         temp_stdout = StringIO()
