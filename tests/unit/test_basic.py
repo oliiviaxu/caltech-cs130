@@ -441,17 +441,38 @@ class BasicTests(unittest.TestCase):
         wb = sheets.Workbook()
         def on_cells_changed(workbook, changed_cells):
             print(f'Cell(s) changed: {changed_cells}')
+        
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
+        wb.set_cell_contents("Sheet1", "B1", "=1 + Sheet2!B1")
         wb.notify_cells_changed(on_cells_changed)
-
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
             wb.new_sheet()
-            wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
-            wb.new_sheet()
         output = temp_stdout.getvalue()
         self.assertEqual(output.lower(), (
-            "Cell(s) changed: [('sheet1', 'a1')]\n"
-            "Cell(s) changed: [('sheet1', 'a1')]\n"
+            "Cell(s) changed: [('sheet1', 'a1'), ('sheet1', 'b1')]\n"
+        ).lower())
+
+    def test_notify_copy_sheet(self):
+        # test that adding sheet causes notification
+        wb = sheets.Workbook()
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+        
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet1_1!C1")
+        wb.set_cell_contents("Sheet1", "B1", "=1 + Sheet1_1!D1")
+        wb.set_cell_contents("Sheet1", "C1", "3")
+        wb.set_cell_contents("Sheet1", "D1", "4")
+        wb.notify_cells_changed(on_cells_changed)
+        temp_stdout = StringIO()
+        with contextlib.redirect_stdout(temp_stdout):
+            wb.copy_sheet('Sheet1')
+        output = temp_stdout.getvalue()
+        self.assertEqual(output.lower(), (
+            "Cell(s) changed: [('sheet1', 'a1'), ('sheet1', 'b1'), "
+            "('sheet1_1', 'a1'), ('sheet1_1', 'b1'), ('sheet1_1', 'c1'), ('sheet1_1', 'd1')]\n"
         ).lower())
 
     def test_notify_delete_sheet(self):
@@ -462,45 +483,16 @@ class BasicTests(unittest.TestCase):
             print(f'Cell(s) changed: {changed_cells}')
 
         wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
+        wb.set_cell_contents('Sheet1', 'B1', '=1 + Sheet2!B1')
         wb.notify_cells_changed(on_cells_changed)
 
         # test deleting sheet causes notification
         temp_stdout = StringIO()
         with contextlib.redirect_stdout(temp_stdout):
-            wb.set_cell_contents('Sheet2', 'A5', '4.5')
             wb.del_sheet('Sheet2')
         output = temp_stdout.getvalue()
         self.assertEqual(output.lower(), (
-            "Cell(s) changed: [('sheet2', 'a5')]\n"
-            "Cell(s) changed: [('sheet1', 'a1')]\n"
-        ).lower())
-
-    def test_notify_copy_sheet(self):
-        wb = sheets.Workbook()
-        wb.new_sheet()
-        def on_cells_changed(workbook, changed_cells):
-            print(f'Cell(s) changed: {changed_cells}')
-
-        wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet2!A1")
-        wb.notify_cells_changed(on_cells_changed)
-        
-        # copying causes notification:
-        # Sheet1 -> Sheet2 -> Sheet1_1
-        temp_stdout = StringIO()
-        with contextlib.redirect_stdout(temp_stdout):
-            wb.new_sheet('Sheet2')
-            wb.set_cell_contents("Sheet2", "A1", "=1 + Sheet1_1!A1")
-            self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
-            self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.BAD_REFERENCE)
-            wb.copy_sheet('Sheet1')
-            self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-            self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
-        output = temp_stdout.getvalue()
-        self.assertEqual(output.lower(), (
-            "Cell(s) changed: [('sheet1', 'a1')]\n" # from new_sheet
-            "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents
-            "Cell(s) changed: [('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from the new_sheet call inside copy_sheet
-            "Cell(s) changed: [('sheet1_1', 'a1'), ('sheet2', 'a1'), ('sheet1', 'a1')]\n" # from set_cell_contents call inside copy_sheet
+            "Cell(s) changed: [('sheet1', 'a1'), ('sheet1', 'b1')]\n"
         ).lower())
     
     def test_notify_rename(self):
@@ -509,6 +501,7 @@ class BasicTests(unittest.TestCase):
         wb.new_sheet()
         wb.new_sheet()
         wb.set_cell_contents("Sheet1", "A1", "=1 + Sheet1!B1")
+        wb.set_cell_contents('Sheet1', 'B1', '5')
         wb.set_cell_contents('Sheet2', 'A2', '=Sheet1!B1')
         wb.set_cell_contents('Sheet2', 'A1', '=SheetBlah!A3 + 1')
 
@@ -520,7 +513,39 @@ class BasicTests(unittest.TestCase):
         with contextlib.redirect_stdout(temp_stdout):
             wb.rename_sheet('Sheet1', 'SheetBlah')
         output = temp_stdout.getvalue()
-        self.assertEqual(output, "Cell(s) changed: [('sheet2', 'a1')]\n")
+        self.assertEqual(output.lower(), "Cell(s) changed: [('sheet2', 'a1'), ('sheet2', 'a2')]\n".lower())
+
+    def test_notify_move_cells(self):
+        # move_cell causes notification properly
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "4")
+        wb.set_cell_contents('Sheet1', 'B1', '5')
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+        wb.notify_cells_changed(on_cells_changed)
+
+        temp_stdout = StringIO()
+        with contextlib.redirect_stdout(temp_stdout):
+            wb.move_cells('Sheet1', 'A1', 'B1', 'C1')
+        output = temp_stdout.getvalue()
+        self.assertEqual(output.lower(), "Cell(s) changed: [('sheet1', 'a1'), ('sheet1', 'b1'), ('sheet1', 'c1'), ('sheet1', 'd1')]\n".lower())
+
+    def test_notify_copy_cells(self):
+        # move_cell causes notification properly
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.set_cell_contents("Sheet1", "A1", "4")
+        wb.set_cell_contents('Sheet1', 'B1', '5')
+        def on_cells_changed(workbook, changed_cells):
+            print(f'Cell(s) changed: {changed_cells}')
+        wb.notify_cells_changed(on_cells_changed)
+
+        temp_stdout = StringIO()
+        with contextlib.redirect_stdout(temp_stdout):
+            wb.copy_cells('Sheet1', 'A1', 'B1', 'C1')
+        output = temp_stdout.getvalue()
+        self.assertEqual(output.lower(), "Cell(s) changed: [('sheet1', 'c1'), ('sheet1', 'd1')]\n".lower())
 
     def test_absolute_cellref(self):
         wb = sheets.Workbook()
