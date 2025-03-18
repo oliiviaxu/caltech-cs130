@@ -16,13 +16,24 @@ Logistics (7 points)
 --------------------
 
 L1.  [2pts] Enumerate all teammates here.
-
+Wilson Duan
+Olivia Xu
 
 L2.  [2pts] What did each teammate focus on during this project?
+Olivia:
+- sort_region code
+- reviewing other team's code
+- fixing project 4 errors
 
+Wilson:
+- fixing project 4 errors
+- improving performance of copy_sheet, rename_sheet
+- tightening up behavior of cell notifications
+- reviewing other team's code
 
 L3.  [3pts] Approximately how many hours did each teammate spend on the project?
-
+- Olivia: 15
+- Wilson: 15
 
 Spreadsheet Engine Design (10 points)
 -------------------------------------
@@ -40,7 +51,18 @@ D2.  [3pts] How does your implementation solve the problem of supporting the
 D3.  [3pts] Briefly describe the changes you made to your spreadsheet engine to
      satisfy the stricter cell-change notification behaviors.  Did you find this
      to be largely straightforward to change?  Why or why not?
-
+- To ensure that a single API call causes a single call to each notification function,
+  we added a workbook-level flag called in_api_call. When this flag is set to true,
+  we will not call the notification functions during any calls to set_cell_contents - 
+  rather, we wait until the API call is done, then we finally call the notification
+  functions on all the changed cells.
+- In order to ensure that a cell is changed only if its original and final value are
+  different, we kept track of any original values in a workbook field. When we are
+  about to call the notification functions on the changed cells, we first check that
+  the cell did indeed change by comparing it to the workbook field information.
+- These changes were not exactly straightforward to implement, as it was confusing
+  how the notifications should be handled when using set_cell_contents independently
+  versus any nested set_cell_contents calls within other API calls.
 
 Performance Improvement (13 pts)
 --------------------------------
@@ -55,18 +77,46 @@ this setup, and address performance issues in your code.
 P1.  [7pts] Give a brief overview of 2-3 of the worst hot-spots you identified
      in your performance testing and analysis.  For each one, describe how your
      team was able to resolve it.
-
+- One of the worst hotspots in our performance was the excessive size of the
+  dependency graph; we were initializing the dependency graph with lists of edges
+  for almost every location within a sheet's extent, even when the location had
+  no cell references. As a result, when looping through the dependency graph's ingoing
+  and outgoing edges (which occurred often in copy_sheet, rename_sheet), we incurred
+  lots of overhead. We resolved this issue by adding edges to the dependency graph
+  only if the cell location had cell references ingoing or outgoing to it.
+- Another hotspot was in our rename_sheet code - we were looping through every cell
+  in the original sheet to update a Cell-wide field that was sheet_name. This was extremely 
+  slow and unnecessary. We resolved this by removing the sheet_name field inside the
+  Cell class, and refactoring our code such that we did not need the field anymore.
+- A similar hotspot was found in our copy_sheet code - we were looping through every
+  cell in the original sheet, and calling set_cell_contents on the new sheet with the
+  appropriate contents. This is slow because set_cell_contents makes many calls to
+  handle_update_tree, detect_cycle, etc, which we did not have to do. As a result, we
+  performed a deep copy of the original sheet, which was significantly faster.
 
 P2.  [3pts] Did your team try anything to address performance issues and find
      that it didn't improve things at all?  If so, were you able to identify why
      the intended fix didn't produce the desired benefit?
-
+- We were lucky enough that all of our changes successfully addressed the performance
+  issue, even if minimally.
+- It was easy to identify how effective the intended fix was - by looking at the profiler
+  before and after the fix, we could identify exactly how many seconds we shaved off.
+  Furthermore, by looking at the number of times certain functions are called, we could
+  identify if we were calling functions unnecessarily and incurring overhead.
 
 P3.  [3pts] Did your performance updates cause any regressions in functionality?
      If so, briefly describe any issues that emerged.  How were these issues
      identified (e.g. automated test failures, manual testing, etc.)?  How
      quickly were issues identified?
-
+- Yes, the performance updates caused significant regressions. As mentioned above, in order
+  to make rename_sheet more efficient, we had to get rid of a Cell class field called sheet_name.
+  Many of our functions such as our cycle detection code and our automatic updating code used 
+  this field, so we had to refactor the code to work without it. This issue was identified by
+  our unit tests.
+- Another regression was when trying to fix the copy_sheet code - when we changed it to use
+  a deepcopy, we failed to account for the edges outgoing and ingoing from the original sheet,
+  causing the new sheet to have poorly behaved cell references. We identified this issue via
+  our unit tests, and these unit tests allowed us to fix some of that poor behavior.
 
 Section F:  CS130 Project 4 Feedback [OPTIONAL]
 -----------------------------------------------
