@@ -63,6 +63,13 @@ Outcome - see profiler with the fix in place:
 Now, the time is dominated by the time it takes to deepcopy, which is inevitable. Thus,
 our theory was correct.
 
+Theory - our code in rename sheet was slow because we initialize the dependency graph to
+contain a key for every location, even if that location has no cell references.
+Rationale - our tests for rename_sheet where cells have no cell references took 7 seconds initially.
+Outcome - after changing the dependency graph such that it only contains locations as keys
+if that cell location has outgoing or ingoing edges, we noticed that the same test took 2 seconds
+instead, which is a drastic improvement. This improved the runtime because it lowered the number
+of keys our rename_sheet code had to loop through.
 
 
 fix to rename sheet:

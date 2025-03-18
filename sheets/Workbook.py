@@ -56,6 +56,22 @@ class Workbook:
         for _, sheet in self.sheets.items():
             lst.append(sheet.sheet_name)
         return lst # preserves case
+    
+    def handle_notifications(self):
+        if len(self.notify_info):
+            notifications = []
+            for (sn, loc), v in self.notify_info.items():
+                if sn.lower() in self.sheets:
+                    cell = self.get_cell(sn, loc)
+                    if cell is not None and cell.value.val != v:
+                        notifications.append((sn, loc))
+            if len(notifications):
+                for notify_function in self.notify_functions:
+                    try:
+                        notify_function(self, notifications)
+                    except Exception:
+                        pass
+            self.notify_info = {}
 
     def new_sheet(self, sheet_name: Optional[str] = None) -> Tuple[int, str]:
         # Add a new sheet to the workbook.  If the sheet name is specified, it
@@ -102,20 +118,7 @@ class Workbook:
                 self.set_cell_contents(sheet_name, loc, None)
         self.graph.add_sheet(sheet_name.lower())
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
         return len(self.sheets.keys()) - 1, sheet_name
 
     def del_sheet(self, sheet_name: str) -> None:
@@ -143,20 +146,7 @@ class Workbook:
         del self.sheets[sheet_name]
         self.is_deleting = False
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
 
     def get_sheet_extent(self, sheet_name: str) -> Tuple[int, int]:
         # Return a tuple (num-cols, num-rows) indicating the current extent of
@@ -763,20 +753,7 @@ class Workbook:
             self.set_cell_contents(new_sheet_name, loc, self.get_cell_contents(new_sheet_name, loc))
 
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
 
     def move_sheet(self, sheet_name: str, index: int) -> None:
         # Move the specified sheet to the specified index in the workbook's
@@ -854,20 +831,7 @@ class Workbook:
             self.set_cell_contents(new_name, loc, self.get_cell_contents(sheet_name, loc))
 
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
         return (len(self.sheets.keys()) - 1, new_name)
     
     def transfer_cells(self, sheet_name: str, start_location: str,
@@ -984,20 +948,7 @@ class Workbook:
         self.transfer_cells(sheet_name, start_location, end_location, to_location, True, to_sheet)
 
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
 
     def copy_cells(self, sheet_name: str, start_location: str,
             end_location: str, to_location: str, to_sheet: Optional[str] = None) -> None:
@@ -1044,20 +995,7 @@ class Workbook:
         self.in_api_call = True
         self.transfer_cells(sheet_name, start_location, end_location, to_location, False, to_sheet)
         self.in_api_call = False
-        if len(self.notify_info):
-            notifications = []
-            for (sn, loc), v in self.notify_info.items():
-                if sn.lower() in self.sheets:
-                    cell = self.get_cell(sn, loc)
-                    if cell is not None and cell.value.val != v:
-                        notifications.append((sn, loc))
-            if len(notifications):
-                for notify_function in self.notify_functions:
-                    try:
-                        notify_function(self, notifications)
-                    except Exception:
-                        pass
-            self.notify_info = {}
+        self.handle_notifications()
 
     def sort_region(self, sheet_name: str, start_location: str, end_location: str, sort_cols: List[int]):
         # Sort the specified region of a spreadsheet with a stable sort, using
