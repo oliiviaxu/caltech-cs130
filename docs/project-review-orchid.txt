@@ -1,0 +1,187 @@
+CS130 Project Review
+====================
+
+Team performing review:  protea
+Work being reviewed:  orchid
+
+The first two sections are for reviewing the `sheets` library code itself,
+excluding the test code and other aspects of the project.  The remaining
+sections are for those other supporting parts of the project.
+
+Feedback comments on design aspects of the `sheets` library
+-----------------------------------------------------------
+
+Consider the overall design and structure of the `sheets` library from
+the perspective of the GRASP principles (Lecture 5) - in particular the
+principles of high cohesion and low coupling.  What areas of the project
+codebase are structured in a highly effective way?  What areas of the
+codebase could be restructured to have higher cohesion and/or lower
+coupling?  Give specific suggestions for how to achieve this in the code.
+
+Overall, the code is well-structured, with classes like Workbook, Sheets, 
+Cell, RowAdapter, and FunctionRegistry each following a single, well-defined 
+responsibility. The design effectively demonstrates separation of concerns, 
+ensuring that parsing, dependency graph updates, and formula evaluation are 
+handled independently. Additionally, the dependency graph is well-integrated, 
+though it exhibits (higher) coupling, with logic split between the 
+Sheets and Workbook classes.
+
+With regards to areas of the codebase that could be restructured, we noticed 
+that the spreadsheet class has a workfield field. Since the Sheets class 
+maintains a reference to Workbook, this creates an unnecessary bidirectional 
+dependency. We recommend removing this reference, ensuring a one-way connection 
+where Workbook contains Sheets, but not vice versa. This would reduce coupling
+and eliminate code duplication, particularly for helper functions like:
+get_dependencies, get_all_dependents, add_dependency, remove_dependency, 
+and clear_dependencies. These functions currently exist in both Workbook 
+and Sheets, leading to excessive referencing of the parent class. Instead, 
+we believe they should be consolidated within the Workbook class.
+
+We also think that cycle detection and handling circ refs is highly coupled.
+Since _remove_circular_references is called within set_cell_contents, 
+we think that there should be a better way of handling circular references
+to improve maintainability.
+
+For formula parsing and updates, the project currently relies solely on an 
+interpreter-based approach for formula evaluation. While we think this
+approach can definitely work, we think that extracting and replacing references 
+via string operations (contents.replace) can be error-prone. Specifically, when 
+formulas need updating (e.g., renaming a sheet), this method may inadvertently 
+modify unintended matches, such as references appearing inside string literals.
+We believe that using a transformer for formula updates could provide better 
+accuracy and robustness, ensuring that only actual references are modified 
+while preserving surrounding text. Based on our experience, a transformer-based 
+approach would likely reduce unexpected modifications and improve maintainability 
+when handling formula updates.
+
+Overall, the project is highly readable, maintainable, and well-structured, 
+benefiting from thoughtful class design and good decisions made early on. 
+The dependency graph is implemented effectively, storing only "ingoing" cells, 
+which simplifies the logic in a meaningful way. These design choices significantly 
+enhance the clarity and efficiency of the implementation.
+
+Feedback comments on implementation aspects of the `sheets` library
+-------------------------------------------------------------------
+
+Consider the actual implementation of the project from the perspectives
+of coding style (naming, commenting, code formatting, decomposition into
+functions, etc.), and idiomatic use of the Python language and language
+features.  What practices are used effectively in the codebase to make
+for concise, readable and maintainable code?  What practices could or
+should be incorporated to improve the quality, expressiveness, readability
+and maintainability of the code?
+
+The project demonstrates excellent coding practices, making the code concise, 
+readable, and maintainable. The organization of helper functions is well 
+thought out, with a dedicated utils folder ensuring that reusable functions 
+are neatly structured and shared across multiple modules. The clear distinction 
+between public and private methods is also highly effective. The use of 
+underscored function names for private methods enhances clarity and makes 
+it easier to distinguish between internal and external functionality.
+
+One of the most impressive aspects of the project is its comprehensive 
+documentation. Every function has a clear and concise docstring, which made 
+reviewing the code significantly easier. Comments are also well-placed and 
+meaningful, particularly in complex functions like rename_sheet, where different 
+sections are clearly annotated to improve readability.
+
+The high modularity of the codebase is another strength. Each class is well-defined 
+and focuses on a specific responsibility, improving maintainability and reducing 
+unnecessary dependencies. Function names are also intuitive and accurately reflect 
+their purpose, making the code easy to follow. Additionally, the project makes 
+use of logging instead of print statements, resulting in a cleaner and more 
+structured debugging process.
+
+While the project is already well-structured, we have two very small suggestions
+for clean-up. In set_cell_contents, there are approximately 100 lines of commented-out 
+code that could be removed to improve clarity and maintainability. Additionally, the
+tests folder lacks an __init__.py, making it unclear how to run the tests. Adding 
+this file would improve usability and ensure smooth execution.
+
+Overall, the project is highly readable, well-documented, and thoughtfully designed,
+making it easy to maintain and extend.
+
+Feedback comments on testing aspects of the project
+---------------------------------------------------
+
+Consider the testing aspects of the project, from the perspective of "testing
+best practices" (Lectures 6-8):  completeness/thoroughness of testing,
+automation of testing, focus on testing the "most valuable" functionality vs.
+"trivial code," following the Arrange-Act-Assert pattern in individual tests,
+etc.  What testing practices are employed effectively in the project?  What
+testing practices should be incorporated to improve the quality-assurance
+aspects of the project?
+
+The project does not appear to have automated testing in place. Implementing 
+continuous integration (CI) using a tool like GitHub Actions could introduce
+test automation. 
+
+The tests cover small, well-defined functionalities, which is a good practice.
+The project currently tests core functionality first and then moves into edge cases, 
+which is a strong approach. Most of the unit tests do follow the Arrange-Act-Assert 
+pattern, such as test_simple_arithmetic_formula in test_spreadsheet_formula. Evidently
+some tests do not follow the pattern, fetching values immediately after setting 
+up, without a clear transition, but in general the quality of the test 
+suite is good. 
+
+Consider the implementation quality of the testing code itself, in the same
+areas described in the previous section.  What practices are used effectively
+in the testing code to make it concise, readable and maintainable?  What
+practices could or should be incorporated to improve the quality of the
+testing code?
+
+The testing code is well-structured, with tests organized into multiple modules. 
+The use of setUp(self) in unit tests is particularly effective in reducing 
+code duplication and improving maintainability.
+
+A few areas could be improved to further enhance the structure and usability 
+of the testing framework:
+
+Test Organization: While the tests are modular, they could be further separated 
+into distinct folders for unit tests and performance tests to improve clarity.
+Missing __init__.py: The tests folder lacks an __init__.py, making it unclear 
+how to run the tests as a package. Adding this file would ensure smooth execution.
+Use of context.py: The project effectively uses context.py to manage dependencies 
+and reduce code duplication across test modules. 
+
+Overall, the testing framework is well-structured and thoughtfully implemented, 
+with some minor refinements that could further enhance its organization. 
+
+Feedback comments on other aspects of the project
+-------------------------------------------------
+
+If you have any other comments - compliments or suggestions for improvement -
+that aren't covered by previous sections, please include them here.
+
+Overall, we found the code to be very clean and well-structured, and we 
+learned a lot from reviewing it. The project’s thoughtful design decisions and 
+effective implementation made it easy to follow and understand.
+
+When comparing it to our own implementation, we noticed several key differences, 
+
+Workbook-Sheets Relationship: Unlike this project, our implementation does not 
+have Sheets referencing Workbook, which we believe reduces coupling.
+
+Cell Representation: We use a CellValue class, whereas this project handles cell 
+values differently.
+
+Formula Updates: Our implementation uses transformers for formula updates, 
+while this project relies on an interpreter-based approach.
+
+Conditional Evaluation: There are notable differences in how conditional 
+expressions are processed between our implementations.
+
+Documentation: The documentation in this project is significantly better than ours. 
+While every function here is well-documented with clear docstrings, our code lacks 
+proper documentation, making it harder to maintain.
+
+Debugging Approach: This project uses logging, which provides a cleaner debugging process, 
+whereas our code is cluttered with print statements.
+
+Testing Structure: Our test functions tend to be too large and could benefit from 
+being split into smaller, more focused test cases, as seen and implemented 
+effectively in this project.
+
+Overall, we were impressed by the cleanliness, maintainability, and design 
+choices in this project and identified several areas where we could improve
+our own implementation. 
