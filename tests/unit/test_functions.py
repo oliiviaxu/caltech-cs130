@@ -1256,7 +1256,414 @@ class FunctionsTests(unittest.TestCase):
 
         wb.rename_sheet('Sheet2', 'Sheetbla')
         # print(wb.get_cell_contents('Sheet1', 'A1'))
+    
+    def test_min(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
 
+        wb.set_cell_contents('Sheet2', 'A1', '=1')
+        wb.set_cell_contents('Sheet1', 'A1', '=2')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(1, 2)')
+
+        self.assertEqual(wb.get_cell_value('sheet1', 'a1'), decimal.Decimal('1'))
+
+        wb.set_cell_contents('Sheet1', 'A2', '=2')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A2:A5)')
+        self.assertEqual(wb.get_cell_value('sheet1', 'a1'), decimal.Decimal('2'))
+
+        # Test with empty cells
+        wb.set_cell_contents('Sheet1', 'A3', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A4', '4')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A2:A5)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('2'))
+
+        # Test with mixed types (numbers and strings)
+        wb.set_cell_contents('Sheet1', 'A5', '"Hello"')  # String
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A2:A5)')
+        # print(wb.get_cell_value('Sheet1', 'A1'))
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), CellErrorType.TYPE_ERROR)
+
+        # Test with boolean values
+        wb.set_cell_contents('Sheet1', 'A6', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'A7', 'FALSE')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A6:A7)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('0'))  # FALSE is treated as 0
+
+        # Test with error values
+        wb.set_cell_contents('Sheet2', 'A8', '#DIV/0!')
+        wb.set_cell_contents('Sheet2', 'A1', '=MIN(Sheet2!A2:A8)')
+        self.assertIsInstance(wb.get_cell_value('Sheet2', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        # Test with a single cell
+        wb.set_cell_contents('Sheet1', 'A9', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A9)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5'))
+
+        # Test with no arguments
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN()')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+
+        # Test with negative numbers
+        wb.set_cell_contents('Sheet1', 'B1', '-10')
+        wb.set_cell_contents('Sheet1', 'B2', '-5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!B1:B2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('-10'))
+
+        # Test with a range spanning multiple sheets
+        wb.set_cell_contents('Sheet2', 'A1', '3')
+        wb.set_cell_contents('Sheet2', 'A2', '1')
+        wb.set_cell_contents('Sheet1', 'A3', '=MIN(Sheet2!A1:A2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A3'), decimal.Decimal('1'))
+
+        # Test with a range that includes empty cells and non-empty cells
+        wb.set_cell_contents('Sheet1', 'C1', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'C2', '10')
+        wb.set_cell_contents('Sheet1', 'C3', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'C4', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!C1:C4)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5'))
+
+        # Test with a range that includes only empty cells
+        wb.set_cell_contents('Sheet1', 'D1', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'D2', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!D1:D2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('0'))
+
+        # Test with a range that includes a mix of numbers and errors
+        wb.set_cell_contents('Sheet1', 'E1', '10')
+        wb.set_cell_contents('Sheet1', 'E2', '#VALUE!')
+        wb.set_cell_contents('Sheet1', 'E3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!E1:E3)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+
+        # Test with a range that includes a mix of numbers and booleans
+        wb.set_cell_contents('Sheet1', 'F1', '10')
+        wb.set_cell_contents('Sheet1', 'F2', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'F3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!F1:F3)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('1'))  # TRUE is treated as 1
+
+        # Test with a range that includes a mix of numbers and strings
+        wb.set_cell_contents('Sheet1', 'G1', '10')
+        wb.set_cell_contents('Sheet1', 'G2', '"Hello"')
+        wb.set_cell_contents('Sheet1', 'G3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!G1:G3)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+
+    def test_min_2(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet1', 'A5', '"Hello"')  # String
+        wb.set_cell_contents('Sheet1', 'A4', '=4')
+        wb.set_cell_contents('Sheet1', 'A1', '=MIN(Sheet1!A2:A5)')
+        # print(wb.get_cell_value('Sheet1', 'A1'))
+
+    def test_max(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        # Test basic functionality
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(1, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('2'))
+
+        # Test with cell references
+        wb.set_cell_contents('Sheet1', 'A2', '2')
+        wb.set_cell_contents('Sheet1', 'A3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A2:A3)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5'))
+
+        # Test with empty cells
+        wb.set_cell_contents('Sheet1', 'A4', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A5', '10')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A2:A5)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('10'))
+
+        # Test with mixed types (numbers and strings)
+        wb.set_cell_contents('Sheet1', 'A6', '"Hello"')  # String
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A2:A6)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with boolean values
+        wb.set_cell_contents('Sheet1', 'A7', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'A8', 'FALSE')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A7:A8)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('1'))  # TRUE is treated as 1
+
+        # Test with error values
+        wb.set_cell_contents('Sheet1', 'A9', '#DIV/0!')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A2:A9)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with a single cell
+        wb.set_cell_contents('Sheet1', 'A10', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A10)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5'))
+
+        # Test with no arguments
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX()')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+
+        # Test with a large range
+        # for i in range(1, 101):
+        #     wb.set_cell_contents('Sheet1', f'A{i}', str(i))
+        # wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!A1:A100)')
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('100'))
+
+        # Test with negative numbers
+        wb.set_cell_contents('Sheet1', 'B1', '-10')
+        wb.set_cell_contents('Sheet1', 'B2', '-5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!B1:B2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('-5'))
+
+        # Test with a range spanning multiple sheets
+        wb.set_cell_contents('Sheet2', 'A1', '3')
+        wb.set_cell_contents('Sheet2', 'A2', '1')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet2!A1:A2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
+
+        # Test with a range that includes empty cells and non-empty cells
+        wb.set_cell_contents('Sheet1', 'C1', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'C2', '10')
+        wb.set_cell_contents('Sheet1', 'C3', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'C4', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!C1:C4)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('10'))
+
+        # Test with a range that includes only empty cells
+        wb.set_cell_contents('Sheet1', 'D1', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'D2', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!D1:D2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('0'))  # Empty cells are ignored, default to 0
+
+        # Test with a range that includes a mix of numbers and errors
+        wb.set_cell_contents('Sheet1', 'E1', '10')
+        wb.set_cell_contents('Sheet1', 'E2', '#VALUE!')
+        wb.set_cell_contents('Sheet1', 'E3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!E1:E3)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with a range that includes a mix of numbers and booleans
+        wb.set_cell_contents('Sheet1', 'F1', '10')
+        wb.set_cell_contents('Sheet1', 'F2', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'F3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!F1:F3)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('10'))  # TRUE is treated as 1
+
+        # Test with a range that includes a mix of numbers and strings
+        wb.set_cell_contents('Sheet1', 'G1', '10')
+        wb.set_cell_contents('Sheet1', 'G2', '"Hello"')
+        wb.set_cell_contents('Sheet1', 'G3', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=MAX(Sheet1!G1:G3)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+    
+    def test_sum(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        # Test basic functionality
+        wb.set_cell_contents('Sheet1', 'A1', '=SUM(1, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('3'))
+    
+    def test_average(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        # Test basic functionality
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(1, 2, 3)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('2'))
+
+        # Test with cell references
+        wb.set_cell_contents('Sheet1', 'A2', '2')
+        wb.set_cell_contents('Sheet1', 'A3', '4')
+        wb.set_cell_contents('Sheet1', 'A4', '6')
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A2:A4)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('4'))
+
+        # Test with empty cells
+        wb.set_cell_contents('Sheet1', 'A5', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A6', '10')
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A2:A6)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5.5'))
+
+        # Test with mixed types (numbers and strings)
+        wb.set_cell_contents('Sheet1', 'A7', '"Hello"')  # String
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A2:A7)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with boolean values
+        wb.set_cell_contents('Sheet1', 'A8', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'A9', 'FALSE')
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A8:A9)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('0.5'))  # TRUE is treated as 1, FALSE as 0
+
+        # Test with error values
+        wb.set_cell_contents('Sheet2', 'A10', '#DIV/0!')
+        wb.set_cell_contents('Sheet2', 'A11', '=AVERAGE(Sheet2!A2:A10)')
+        self.assertIsInstance(wb.get_cell_value('Sheet2', 'A11'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet2', 'A11').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        # Test with a single cell
+        wb.set_cell_contents('Sheet1', 'A11', '5')
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A11)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('5'))
+
+        # Test with no arguments
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(A100:A101)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+
+        # Test with a range that includes only empty cells
+        wb.set_cell_contents('Sheet1', 'A12', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A13', '')  # Empty cell
+        wb.set_cell_contents('Sheet1', 'A1', '=AVERAGE(Sheet1!A12:A13)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.DIVIDE_BY_ZERO)
+    
+    def test_hlookup(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'B1', 'Banana')
+        wb.set_cell_contents('Sheet1', 'C1', 'Cherry')
+        wb.set_cell_contents('Sheet1', 'A2', '10')
+        wb.set_cell_contents('Sheet1', 'B2', '20')
+        wb.set_cell_contents('Sheet1', 'C2', '30')
+        wb.set_cell_contents('Sheet1', 'A3', 'Red')
+        wb.set_cell_contents('Sheet1', 'B3', 'Yellow')
+        wb.set_cell_contents('Sheet1', 'C3', 'Red')
+
+        # Test basic functionality
+        wb.set_cell_contents('Sheet1', 'D1', '=HLOOKUP("Banana", Sheet1!A1:C3, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1'), decimal.Decimal('20'))
+
+        wb.set_cell_contents('Sheet1', 'D1', '=HLOOKUP("Red", Sheet1!A1:C3, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with index out of range
+        wb.set_cell_contents('Sheet1', 'D2', '=HLOOKUP("Banana", Sheet1!A1:C3, 4)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with key not found
+        wb.set_cell_contents('Sheet1', 'D3', '=HLOOKUP("Grape", Sheet1!A1:C3, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D3'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D3').get_type(), sheets.CellErrorType.TYPE_ERROR)
+    
+    def test_vlookup(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'A2', '10')
+        wb.set_cell_contents('Sheet1', 'A3', 'Red')
+        wb.set_cell_contents('Sheet1', 'B1', 'Banana')
+        wb.set_cell_contents('Sheet1', 'B2', '20')
+        wb.set_cell_contents('Sheet1', 'B3', 'Yellow')
+        wb.set_cell_contents('Sheet1', 'C1', 'Cherry')
+        wb.set_cell_contents('Sheet1', 'C2', '30')
+        wb.set_cell_contents('Sheet1', 'C3', 'Red')
+
+        # Test basic functionality
+        wb.set_cell_contents('Sheet1', 'D1', '=VLOOKUP("Banana", Sheet1!A1:C3, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        wb.set_cell_contents('Sheet1', 'D2', '=VLOOKUP("Apple", Sheet1!A1:C3, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D2'), "Banana")
+
+        # Test with index out of range
+        wb.set_cell_contents('Sheet1', 'D2', '=VLOOKUP("Banana", Sheet1!A1:C3, 4)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D2'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D2').get_type(), sheets.CellErrorType.TYPE_ERROR)
+
+        # Test with key not found
+        wb.set_cell_contents('Sheet1', 'D3', '=VLOOKUP("Grape", Sheet1!A1:C3, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D3'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D3').get_type(), sheets.CellErrorType.TYPE_ERROR)
+    
+    def test_hlookup_mixed_types(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'B1', '10')
+        wb.set_cell_contents('Sheet1', 'C1', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'A2', 'Red')
+        wb.set_cell_contents('Sheet1', 'B2', '20')
+        wb.set_cell_contents('Sheet1', 'C2', 'FALSE')
+
+        # Test with mixed types
+        wb.set_cell_contents('Sheet1', 'D1', '=HLOOKUP("10", Sheet1!A1:C2, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+    
+    def test_hlookup_multiple_matches(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'B1', 'Banana')
+        wb.set_cell_contents('Sheet1', 'C1', 'Banana')
+        wb.set_cell_contents('Sheet1', 'A2', '10')
+        wb.set_cell_contents('Sheet1', 'B2', '20')
+        wb.set_cell_contents('Sheet1', 'C2', '30')
+
+        wb.set_cell_contents('Sheet1', 'D1', '=HLOOKUP("Banana", Sheet1!A1:C2, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1'), decimal.Decimal('20'))
+    
+    def test_vlookup_multiple_matches(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'A2', '10')
+        wb.set_cell_contents('Sheet1', 'A3', 'Red')
+        wb.set_cell_contents('Sheet1', 'B1', 'Banana')
+        wb.set_cell_contents('Sheet1', 'B2', '10')
+        wb.set_cell_contents('Sheet1', 'B3', 'Yellow')
+        wb.set_cell_contents('Sheet1', 'C1', 'Banana') 
+        wb.set_cell_contents('Sheet1', 'C2', '30')
+        wb.set_cell_contents('Sheet1', 'C3', 'Yellow')
+
+        # Test with multiple matches (topmost match should be used)
+        wb.set_cell_contents('Sheet1', 'D1', '=VLOOKUP(10, Sheet1!A1:C3, 2)')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1'), decimal.Decimal('10'))
+    
+    def test_vlookup_case_sensitivity(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set up a table for testing
+        wb.set_cell_contents('Sheet1', 'A1', 'Apple')
+        wb.set_cell_contents('Sheet1', 'A2', '10')
+        wb.set_cell_contents('Sheet1', 'B1', 'banana')
+        wb.set_cell_contents('Sheet1', 'B2', '20')
+
+        # Test case sensitivity (exact match required)
+        wb.set_cell_contents('Sheet1', 'D1', '=VLOOKUP("Banana", Sheet1!A1:B2, 2)')
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.TYPE_ERROR)
 
 if __name__ == "__main__":
     cov = coverage.Coverage()

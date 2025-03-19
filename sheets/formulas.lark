@@ -14,9 +14,6 @@
 //========================================
 // Arithmetic expressions
 
-// This generates right-deep trees:  ?add_expr : mul_expr (ADD_OP add_expr)?
-// Instead we would prefer to generate left-deep trees when given a sequence
-// of operators at the same precedence level.
 ?add_expr : (add_expr ADD_OP)? mul_expr
 
 ?mul_expr : (mul_expr MUL_OP)? unary_op
@@ -44,6 +41,7 @@ args : (expression ("," expression)*)?
 // Base values
 
 ?base : cell
+      | cell_range              -> cell_range
       | ERROR_VALUE             -> error
       | NUMBER                  -> number
       | STRING                  -> string
@@ -51,8 +49,16 @@ args : (expression ("," expression)*)?
       | "(" expression ")"      -> parens
       | function_call           -> function
 
+//========================================
+// Cell and cell-range references
+
+// Single cell reference
 cell : (_sheetname "!")? CELLREF
 
+// Cell-range reference
+cell_range : (_sheetname "!")? CELLREF ":" CELLREF
+
+// Sheet name (quoted or unquoted)
 _sheetname : SHEET_NAME | QUOTED_SHEET_NAME
 
 //========================================
@@ -90,5 +96,6 @@ NUMBER: /([0-9]+(\.[0-9]*)?)|(\.[0-9]+)/
 STRING: /\"[^"]*\"/
 
 BOOLEAN: /(?i:true|false)/
+
 // Function names
 FUNCTION_NAME: /(?i:[A-Za-z][A-Za-z0-9_]*)/

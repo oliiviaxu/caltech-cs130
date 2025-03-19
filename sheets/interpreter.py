@@ -1,6 +1,7 @@
 import decimal
 from .CellError import CellError, CellErrorType
 from .CellValue import CellValue
+from .Sheet import Sheet
 import lark
 from .Cell import Cell 
 from lark.visitors import visit_children_decor
@@ -201,13 +202,43 @@ class FormulaEvaluator(lark.visitors.Interpreter):
             return CellValue(True)
         else:
             return CellValue(False)
+        
+    def cell_range(self, tree):
+        curr_tree = tree.children[0]
+        args = curr_tree.children
+        if len(args) == 3:
+            sheet_name, start_location, end_location = args[0].lower(), args[1], args[2]
+        else:
+            sheet_name = self.sheet_name.lower()
+            start_location, end_location = args[0], args[1]
+        
+        if (not is_valid_location(start_location)) \
+        or (not is_valid_location(end_location)):
+            raise ValueError('Spreadsheet cell location is invalid. ZZZZ9999 is the bottom-right-most cell.')
+        
+        start_col, start_row = Sheet.split_cell_ref(start_location)
+        end_col, end_row = Sheet.split_cell_ref(end_location)
+
+        top_left_col = min(start_col, end_col)
+        top_left_row = min(start_row, end_row)
+        bottom_right_col = max(start_col, end_col)
+        bottom_right_row = max(start_row, end_row)
+
+        m = bottom_right_col - top_left_col + 1
+        n = bottom_right_row - top_left_row + 1
+        
+        orig_cells = [[0 for _ in range(m)] for _ in range(n)]
+        for i in range(n):
+            source_row = top_left_row + i
+            for j in range(m):
+                source_col = top_left_col + j
+                orig_loc = Sheet.to_sheet_coords(source_col, source_row)
+                self.refs.add((self.sheet_name.lower(), orig_loc))
+
+                cell = self.workbook.get_cell(sheet_name, orig_loc)
+                orig_cells[i][j] = cell        
     
-    def get_function_name(tree):
-
-        pass
-
-    def get_function_arguments(tree):
-        pass
+        return orig_cells
 
     def function(self, tree):
         # extract the sheet name and the arguments

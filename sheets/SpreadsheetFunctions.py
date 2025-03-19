@@ -261,6 +261,291 @@ def indirect_function(workbook):
     
     return indirect
 
+# EXTRA CREDIT
+def min_function(arg_tree, ev):
+    """
+    MIN(value1, ...) returns the minimum value over the set of inputs. 
+    Arguments may include cell-range references as well as normal expressions; 
+    values from the cell-range are also considered by the function. All non-empty 
+    inputs are converted to numbers; if any input cannot be converted to a number 
+    then the function returns a TYPE_ERROR. Only non-empty cells should be considered; 
+    empty cells should be ignored. 
+    """
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
+
+    converted = []
+    for cell_val in args:
+        if cell_val is None:
+            continue
+        
+        if isinstance(cell_val, list):
+            m, n = len(cell_val), len(cell_val[0])
+            for i in range(m):
+                for j in range(n):
+                    if cell_val[i][j]:
+                        curr = cell_val[i][j].value
+
+                        if curr.val is None:
+                            continue
+
+                        if not isinstance(curr.val, decimal.Decimal):
+                            curr.to_number()
+
+                            if isinstance(curr.val, sheets.CellError):
+                                return curr
+
+                        converted.append(curr.val)
+
+        elif cell_val.val is None:
+            continue
+        else:
+            if not isinstance(cell_val.val, decimal.Decimal):
+                cell_val.to_number()
+
+                if isinstance(cell_val.val, sheets.CellError):
+                    return cell_val
+            
+            converted.append(cell_val.val)
+
+    # print('converted', converted)
+    if not converted:
+        return CellValue(decimal.Decimal('0'))
+
+    return CellValue(min(converted))
+
+def max_function(arg_tree, ev):
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
+
+    converted = []
+    for cell_val in args:
+        if cell_val is None:
+            continue
+        
+        if isinstance(cell_val, list):
+            m, n = len(cell_val), len(cell_val[0])
+            for i in range(m):
+                for j in range(n):
+                    if cell_val[i][j]:
+                        curr = cell_val[i][j].value
+
+                        if curr.val is None:
+                            continue
+
+                        if isinstance(curr.val, sheets.CellError):
+                            return curr
+
+                        if not isinstance(curr.val, decimal.Decimal):
+                            curr.to_number()
+
+                            if isinstance(curr.val, sheets.CellError):
+                                return curr
+
+                        converted.append(curr.val)
+        elif cell_val.val is None:
+            continue
+        else:
+            if not isinstance(cell_val.val, decimal.Decimal):
+                cell_val.to_number()
+
+                if isinstance(cell_val.val, sheets.CellError):
+                    return cell_val
+            
+            converted.append(cell_val.val)
+
+    # print('converted', converted)
+    if not converted:
+        return CellValue(decimal.Decimal('0'))
+
+    return CellValue(max(converted))
+
+def sum_function(arg_tree, ev):
+    """
+    returns the sum of all inputs. Arguments may include cell-range references as well 
+    as normal expressions; values from the cell-range are added into the sum.
+    All non-empty inputs are converted to numbers; if any input cannot be converted 
+    to a number then the function returns a TYPE_ERROR. If the functions inputs only 
+    include empty cells then the functions result is 0. This function requires at least 1 argument.
+    """
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
+    
+    converted = []
+    for cell_val in args:
+        if cell_val is None:
+            continue
+        
+        # cell range arguments
+        if isinstance(cell_val, list):
+            m, n = len(cell_val), len(cell_val[0])
+            for i in range(m):
+                for j in range(n):
+                    if cell_val[i][j]:
+                        curr = cell_val[i][j].value
+
+                        if curr.val is None:
+                            continue
+
+                        if not isinstance(curr.val, decimal.Decimal):
+                            curr.to_number()
+
+                            if isinstance(curr.val, sheets.CellError):
+                                return curr
+
+                        converted.append(curr.val)
+        elif cell_val.val is None:
+            continue
+        else:
+            if not isinstance(cell_val.val, decimal.Decimal):
+                cell_val.to_number()
+
+                if isinstance(cell_val.val, sheets.CellError):
+                    return cell_val
+            
+            converted.append(cell_val.val)
+
+    # print('converted', converted)
+    if not converted:
+        return CellValue(decimal.Decimal('0'))
+
+    return CellValue(sum(converted))
+
+def average_function(arg_tree, ev):
+    args = visit_all(arg_tree, ev)
+    if len(args) == 0:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Expected at least 1 arguments, but got 0 arguments."))
+    
+    converted = []
+    for cell_val in args:
+        if cell_val is None:
+            continue
+        
+        # cell range arguments
+        if isinstance(cell_val, list):
+            m, n = len(cell_val), len(cell_val[0])
+            for i in range(m):
+                for j in range(n):
+                    if cell_val[i][j]:
+                        curr = cell_val[i][j].value
+
+                        if curr.val is None:
+                            continue
+
+                        if not isinstance(curr.val, decimal.Decimal):
+                            curr.to_number()
+
+                            if isinstance(curr.val, sheets.CellError):
+                                return curr
+
+                        converted.append(curr.val)
+        elif cell_val.val is None:
+            continue
+        else:
+            if not isinstance(cell_val.val, decimal.Decimal):
+                cell_val.to_number()
+
+                if isinstance(cell_val.val, sheets.CellError):
+                    return cell_val
+            
+            converted.append(cell_val.val)
+
+    # print('converted', converted)
+    if not converted:
+        return CellValue(CellError(CellErrorType.DIVIDE_BY_ZERO, "All arguments are None."))
+    
+    total = sum(converted)
+    count = len(converted)
+    average = total / count
+
+    return CellValue(average)
+
+def hlookup_function(arg_tree, ev):
+    """
+    HLOOKUP(key, range, index) searches horizontally through a range of cells. 
+    The function searches through the first (i.e. topmost) row in range, looking 
+    for the first column that contains key in the search row (exact match, both 
+    type and value). If such a column is found, the cell in the index-th row of 
+    the found column. The index is 1-based; an index of 1 refers to the search row. 
+    If no column is found, the function returns a TYPE_ERROR.
+    """
+    args = visit_all(arg_tree, ev)
+    if len(args) != 3:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "HLOOKUP requires exactly 3 arguments."))
+    
+    key, cell_range, index = args
+
+    if not int(index.val) == index.val:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index must be an integer."))
+    if index.val < 1:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index must be at least 1."))
+    
+    index = int(index.val)
+    
+    if not isinstance(cell_range, list):
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Range must be a cell range."))
+    
+    first_row = cell_range[0]
+    column_found = False
+
+    for col_idx, cell in enumerate(first_row):
+        print(cell.value.val)
+        print(key.val)
+
+        if cell.value.val == key.val:
+            if index > len(cell_range):
+                return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index is out of range."))
+            column_found = True
+            output_val = cell_range[index - 1][col_idx].value.val
+            return CellValue(output_val)
+
+    if not column_found:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "No such column found."))
+        
+
+def vlookup_function(arg_tree, ev):
+    """
+    VLOOKUP(key, range, index) searches vertically through a range of cells.
+    The function searches through the first (i.e. leftmost) column in range,
+    looking for the first row that contains key in the search column (exact
+    match, both type and value). If such a row is found, the cell in the
+    index-th column of the found row is returned. The index is 1-based; an
+    index of 1 refers to the search column. If no row is found, the function
+    returns a TYPE_ERROR.
+    """
+    args = visit_all(arg_tree, ev)
+    if len(args) != 3:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "VLOOKUP requires exactly 3 arguments."))
+
+    key, cell_range, index = args
+
+    # Validate the index
+    if not int(index.val) == index.val:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index must be an integer."))
+    if index.val < 1:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index must be at least 1."))
+
+    index = int(index.val)
+
+    if not isinstance(cell_range, list):
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Range must be a cell range."))
+
+    row_found = False
+    for row_idx, row in enumerate(cell_range):
+
+        if row[0].value.val == key.val:
+            if index > len(row):
+                return CellValue(CellError(CellErrorType.TYPE_ERROR, "Index is out of range."))
+            row_found = True
+
+            output_val = row[index - 1].value.val
+            return CellValue(output_val)
+
+    if not row_found:
+        return CellValue(CellError(CellErrorType.TYPE_ERROR, "Key not found in the search column."))
 
 def create_function_directory(workbook):
     BUILTIN_SPREADSHEET_FUNCTIONS = {
@@ -285,5 +570,13 @@ def create_function_directory(workbook):
 
         # INDIRECT (is workbook-specific)
         "INDIRECT": indirect_function(workbook),
+
+        # EXTRA CREDIT 
+        "MIN": min_function,
+        "MAX": max_function,
+        "SUM": sum_function,
+        "AVERAGE": average_function,
+        "HLOOKUP": hlookup_function,
+        "VLOOKUP": vlookup_function,
     }
     return BUILTIN_SPREADSHEET_FUNCTIONS
