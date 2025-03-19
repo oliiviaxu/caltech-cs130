@@ -492,8 +492,6 @@ def hlookup_function(arg_tree, ev):
     column_found = False
 
     for col_idx, cell in enumerate(first_row):
-        print(cell.value.val)
-        print(key.val)
 
         if cell.value.val == key.val:
             if index > len(cell_range):
