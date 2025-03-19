@@ -13,6 +13,9 @@ class SheetNameExtractor(lark.visitors.Transformer):
         pattern = r"^[A-Za-z_][A-Za-z0-9_]*$"
         return not bool(re.fullmatch(pattern, sheet_name))
     
+    def compare_expr(self, tree):
+        return str(tree[0]) + ' ' + str(tree[1]) +  ' ' + str(tree[2]) 
+
     def mul_expr(self, tree):
         return str(tree[0]) + ' ' + str(tree[1]) + ' ' + str(tree[2]) 
 
@@ -80,6 +83,9 @@ class FormulaUpdater(lark.visitors.Transformer):
         self.delta_x = delta_x
         self.delta_y = delta_y
         self.sort_region = sort_region
+
+    def compare_expr(self, tree):
+        return str(tree[0]) + ' ' + str(tree[1]) +  ' ' + str(tree[2]) 
     
     def mul_expr(self, tree):
         return str(tree[0]) + ' ' + str(tree[1]) + ' ' + str(tree[2]) 
