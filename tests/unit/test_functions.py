@@ -819,6 +819,22 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('sheet1', 'D3', '=ISBLANK(D2)')  # ISBLANK(TRUE)
         self.assertEqual(wb.get_cell_value('sheet1', 'D3'), False)
 
+        # ISBLANK() function behavior when inside and outside of a cycle.
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        
+        wb.set_cell_contents('sheet1', 'A1', '=A2')
+        wb.set_cell_contents('sheet1', 'A2', '=ISBLANK(A1)')
+
+        # wb = sheets.Workbook()
+        # wb.new_sheet()
+        
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_detail(), "is not blank")
+
+        # TODO: function behavior with various kinds of error inputs (should report "is not blank").
+        # self.assertEqual(wb.get_cell_value('Sheet1', 'A2').get_detail(), "is not blank")
+        # print(wb.get_cell_value('Sheet1', 'A2').get_detail())
+
 
     def test_iserror_function(self):
         # from spec
@@ -1152,6 +1168,24 @@ class FunctionsTests(unittest.TestCase):
 
         wb.rename_sheet('Sheet3', 'Sheet 4')
         self.assertEqual(wb.get_cell_contents('Sheet1', 'A1'), '=IF(\'Sheet 4\'!A1, \'Sheet 4\'!B1, \'Sheet 4\'!C1)')
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet1')
+        wb.new_sheet('Sheet2')
+        wb.set_cell_contents('Sheet2', 'B1', '20')
+        wb.set_cell_contents('Sheet1', 'A1', '=INDIRECT("Sheet2!B1")')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('20'))
+
+        # move indirect function 
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet1')
+        wb.set_cell_contents('Sheet1', 'A1', '10')
+        wb.set_cell_contents('Sheet1', 'B1', '=INDIRECT("A1")')
+
+        # Move cell A1 to C1
+        wb.move_cells('Sheet1', 'B1', 'B1', 'C1')
+
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), decimal.Decimal('10'))
+
 
     def test_general(self):
         wb = sheets.Workbook()
@@ -1209,15 +1243,41 @@ class FunctionsTests(unittest.TestCase):
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'A1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'A1').get_type(), sheets.CellErrorType.CIRCULAR_REFERENCE)
 
+    def test_rename(self):
+        # TODO: failing
+        wb = sheets.Workbook()
+        wb.new_sheet()
+        wb.new_sheet()
+
+        wb.set_cell_contents('Sheet2', 'A1', 'True')
+        wb.set_cell_contents('Sheet1', 'A1', 'True')
+
+        wb.set_cell_contents('Sheet1', 'A1', '=AND(Sheet2!A1, A2)') # True 
+
+        wb.rename_sheet('Sheet2', 'Sheetbla')
+        print(wb.get_cell_contents('Sheet1', 'A1'))
+
 
 
     def test_alt(self):
-        wb = sheets.Workbook()
-        wb.new_sheet()
+        # wb = sheets.Workbook()
+        # wb.new_sheet()
 
-        # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
-        wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
+        # # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
         # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
+        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
+
+        wb = sheets.Workbook()
+        wb.new_sheet('Sheet1')
+        wb.set_cell_contents('Sheet1', 'A1', '10')
+        wb.set_cell_contents('Sheet1', 'B1', '=INDIRECT()')
+
+        # Move cell A1 to C1
+        wb.move_cells('Sheet1', 'B1', 'B1', 'C1')
+
+        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
+        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
