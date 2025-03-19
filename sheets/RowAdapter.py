@@ -16,35 +16,50 @@ class RowAdapter:
         for col in self.sort_cols:
             index = abs(col) - 1
 
-            cell = self.row_data[index]
-            value = self._get_cell_sort_value(cell)
-            
-            reverse_flag = col < 0
-            key.append((value, reverse_flag))
+            cell = self.row_data[index] if index < len(self.row_data) else None
+
+            val_1, val_2 = self._get_cell_sort_value(cell)
+
+            if col < 0:  # Handle descending order
+                if isinstance(val_2, (decimal.Decimal)):
+                    val_2 = -val_2
+                elif isinstance(val_2, str):
+                    val_2 = "".join(chr(255 - ord(c)) for c in val_2) # reverse lexicographically
+
+            key.append((val_1, val_2))
 
         return tuple(key)
 
     def _get_cell_sort_value(self, cell):
-        # establish heirarchy
-        
+        """
+        1. Blank
+        2. Cell error
+        3. Numeric 
+        4. Text
+        5. Bool
+        6. Other
+        """
         if cell is None or cell.value is None:
-            return (5, None)
+            return (0, decimal.Decimal("-Infinity"))
 
         value = cell.value.val
-        
-        if isinstance(value, bool):
-            return (1, value)
+
+        if value is None:
+            return (0, decimal.Decimal("-Infinity"))  # Blank cells sort first
+
+        if isinstance(value, CellError):
+            return (1, value.get_type().value)
+
+        if isinstance(value, decimal.Decimal):
+            return (2, decimal.Decimal(value))
         
         if isinstance(value, str):
-            return (2, value.lower())
-        
-        if isinstance(value, (int, float, decimal.Decimal)):
-            return (3, decimal.Decimal(value))
-        
-        if isinstance(value, CellError):
-            return (4, value.get_type().value)
+            return (3, value.lower())
 
-        return (6, str(value))
+        if isinstance(value, bool):
+            return (4, int(value))
+
+        return (5, str(value))
 
     def __eq__(self, other):
         return self.get_sort_key() == other.get_sort_key()
@@ -52,15 +67,4 @@ class RowAdapter:
     def __lt__(self, other):
         self_key = self.get_sort_key()
         other_key = other.get_sort_key()
-
-        for (self_value, self_reverse), (other_value, other_reverse) in zip(self_key, other_key):
-            if self_value == other_value:
-                continue
-
-            # Sorting direction handling
-            if self_reverse or other_reverse:
-                return self_value > other_value
-            else:
-                return self_value < other_value
-        
-        return False
+        return self_key < other_key

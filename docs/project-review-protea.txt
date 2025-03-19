@@ -1,0 +1,151 @@
+CS130 Project Review
+====================
+
+Team performing review:  daffodil
+Work being reviewed:  protea
+
+The first two sections are for reviewing the `sheets` library code itself,
+excluding the test code and other aspects of the project.  The remaining
+sections are for those other supporting parts of the project.
+
+Feedback comments on design aspects of the `sheets` library
+-----------------------------------------------------------
+
+Consider the overall design and structure of the `sheets` library from
+the perspective of the GRASP principles (Lecture 5) - in particular the
+principles of high cohesion and low coupling.  What areas of the project
+codebase are structured in a highly effective way?  What areas of the
+codebase could be restructured to have higher cohesion and/or lower
+coupling?  Give specific suggestions for how to achieve this in the code.
+
+<your team's feedback here>
+Some areas of the code that are structured in a highly cohesive way include:
+1. The Cell Class in Cell.py (this class has a clear focus on cell-related 
+functionalities, such as errors, types, and managing cell values. It also
+has the cell operations encapsulated in the class which makes it easy 
+and effective to handle the cell logic.)
+
+2. The FormulaEvaluator Class in interpreter.py (the methods used here 
+like add_expr, mul_expr, and compare_expr handle very specific operations
+relating to formulas)
+
+3. The SheetNameExtractor Class in transformer.py (it doesn't overrach by 
+doing tasks unrelated to sheet name extraction. By doing so, it maintains 
+good cohesion.)
+
+Some areas that could be restructured to have higher cohesion and/or lower
+coupling include:
+1. Spliting the FormulaUpdater class into two: one for handling reference
+updates and another for parsing formulas. Currently, this class manages manages
+the transformation of formulas by updating cell references. It mixes concerns 
+related to updating cell references and formula parsing. Spliting the class 
+into two would allow each class to focus more clearly on a single 
+responsibility. 
+
+2. Encapsulating the fucntion is_valid_location within a dedicated class which 
+would handle all cell-related validation. Currently, the function is called in 
+several places across the codebase (for e.g. both in SheetNameExtractor and 
+FormulaEvaluator classes). It is clearly a small function, but its use across 
+multiple parts of the codebase could imply a lack of cohesion. 
+
+3. The FormulaEvaluator class depends on the CellError and CellValue classes for 
+error handling and value wrapping. This could introduce tighter coupling especially
+if the error handling logic changes. 
+
+Feedback comments on implementation aspects of the `sheets` library
+-------------------------------------------------------------------
+
+Consider the actual implementation of the project from the perspectives
+of coding style (naming, commenting, code formatting, decomposition into
+functions, etc.), and idiomatic use of the Python language and language
+features.  What practices are used effectively in the codebase to make
+for concise, readable and maintainable code?  What practices could or
+should be incorporated to improve the quality, expressiveness, readability
+and maintainability of the code?
+
+<your team's feedback here>
+Here are some effective practices in the project:
+1. The naming follows the standard convention in Python where the Class names 
+follow PascalCase while function and variable names use snake_case. 
+
+2. The code is very readable and had consistent indentation, nice line breaks and 
+spacing. There is also logical separation of the code for clarity.
+
+3. The functions and classes have docstrings providing clear explanations of their
+purpose. 
+
+4. The project makes good use of python features like list comprehension, regex 
+for parsing and validation, enums for error types, and exception handling. 
+
+Here are some suggestions for improvement:
+1. Some functions are too large and should be broken down for better readability
+and maintainability, and some functions have too many nested conditions. Using helper 
+functions can help with this. 
+
+2. Being consistent with type hinting. 
+
+3. Reducing code duplication. Some logic is duplicated across different modules. 
+
+
+Feedback comments on testing aspects of the project
+---------------------------------------------------
+
+Consider the testing aspects of the project, from the perspective of "testing
+best practices" (Lectures 6-8):  completeness/thoroughness of testing,
+automation of testing, focus on testing the "most valuable" functionality vs.
+"trivial code," following the Arrange-Act-Assert pattern in individual tests,
+etc.  What testing practices are employed effectively in the project?  What
+testing practices should be incorporated to improve the quality-assurance
+aspects of the project?
+
+<your team's feedback here>
+Some testing practices that are employed effectively in the project are: 
+1. Profiling for performance - using the cProfile to gather profiling data 
+in the tearDown method ensures that the performance of each test is recorded and 
+can be reviewed. 
+
+2. Comprehensive testing with multiple test cases - there are various types of tests
+ranging like functional tests, performance tests, workbook tests, and edge case 
+testing. 
+
+3. Automation of testing - the project makes use of unit tests and profiling to 
+assess performance automatically. The use of unittest and cProfile profiling in 
+the test cases is a good practice for automating the testing process and measuring 
+performance. 
+
+The project's testing can be improved by: 
+1. Handling invalid inputs and errors. 
+2. Conducting load tests and monitoring memory usage/ performance testing under load.
+
+
+Consider the implementation quality of the testing code itself, in the same
+areas described in the previous section.  What practices are used effectively
+in the testing code to make it concise, readable and maintainable?  What
+practices could or should be incorporated to improve the quality of the
+testing code?
+
+<your team's feedback here>
+Some effective practives in the testing code are:
+1. Consistent test naming conventions 
+2. Test profiling for performance
+3. The use of setup and teardown methods 
+
+Some practices for improving the quality of the testing code are:
+1. Adding test code documentation
+2. Improving the clarity of the test assertions
+3. The tests are organized well, but they could be modularized further by creating smaller, 
+more focussed test functions. 
+
+Feedback comments on other aspects of the project
+-------------------------------------------------
+
+If you have any other comments - compliments or suggestions for improvement -
+that aren't covered by previous sections, please include them here.
+
+<your team's feedback here>
+Additional compliments
+1. Clear test intentions 
+2. Good use of profiling 
+3. Well-structured test cases 
+4. Good documentation
+5. Clear structure and modularity 

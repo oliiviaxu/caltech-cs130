@@ -817,6 +817,7 @@ class Workbook:
         
         # self.new_sheet(new_name)
         self.sheets[new_name.lower()] = Sheet(new_name)
+        self.graph.add_sheet(new_name.lower())
 
         sheet_to_copy = self.sheets[sheet_name.lower()]
         self.sheets[new_name.lower()] = copy.deepcopy(sheet_to_copy)
@@ -1131,7 +1132,7 @@ class Workbook:
                 #     # Clear the cell if it's empty
                     contents_grid[i][j] = None
         
-        # print(contents_grid)
+        print(contents_grid)
                 
         for i in range(n):
             source_row = top_left_row + i

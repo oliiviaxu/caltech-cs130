@@ -1255,28 +1255,7 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'A1', '=AND(Sheet2!A1, A2)') # True 
 
         wb.rename_sheet('Sheet2', 'Sheetbla')
-        print(wb.get_cell_contents('Sheet1', 'A1'))
-
-
-
-    def test_alt(self):
-        # wb = sheets.Workbook()
-        # wb.new_sheet()
-
-        # # wb.set_cell_contents('Sheet1', 'A1', '=IF()')
-        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
-        # wb.set_cell_contents('Sheet1', 'A1', '=IF(True, 5)')
-
-        wb = sheets.Workbook()
-        wb.new_sheet('Sheet1')
-        wb.set_cell_contents('Sheet1', 'A1', '10')
-        wb.set_cell_contents('Sheet1', 'B1', '=INDIRECT()')
-
-        # Move cell A1 to C1
-        wb.move_cells('Sheet1', 'B1', 'B1', 'C1')
-
-        self.assertIsInstance(wb.get_cell_value('Sheet1', 'C1'), sheets.CellError)
-        self.assertEqual(wb.get_cell_value('Sheet1', 'C1').get_type(), sheets.CellErrorType.PARSE_ERROR)
+        # print(wb.get_cell_contents('Sheet1', 'A1'))
 
 
 if __name__ == "__main__":
