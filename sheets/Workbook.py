@@ -274,6 +274,7 @@ class Workbook:
                 # feed references and sheet name into interpreter
                 ev = FormulaEvaluator(sheet_name, self, self.func_directory)
                 visit_value = ev.visit(tree)
+
                 if (visit_value is None or visit_value.val is None):
                     cell.value = CellValue(decimal.Decimal('0'))
                 else:
@@ -384,6 +385,7 @@ class Workbook:
         self.evaluate_cell((sheet_name, location), True)
         new_value = self.get_cell_value(sheet_name, location)
         if (prev_value != new_value):
+
             if not (isinstance(prev_value, CellError) and isinstance(new_value, CellError) and prev_value.get_type() == new_value.get_type()):
                 pending_notifications.append((sheet_name, location))
                 if self.in_api_call:

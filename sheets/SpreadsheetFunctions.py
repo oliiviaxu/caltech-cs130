@@ -168,7 +168,12 @@ def choose_function(arg_tree, ev):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, f"Invalid Index."))  
     
     index = int(arg_one.val)
-    return ev.visit(arg_tree.children[index])
+
+    value = get_ith_arg(arg_tree, ev, index)
+
+    if value is None:
+        value = CellValue("")
+    return value
 
 # INFORMATIONAL FUNCTIONS
 def isblank_function(arg_tree, ev):

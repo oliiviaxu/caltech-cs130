@@ -1664,6 +1664,55 @@ class FunctionsTests(unittest.TestCase):
         wb.set_cell_contents('Sheet1', 'D1', '=VLOOKUP("Banana", Sheet1!A1:B2, 2)')
         self.assertIsInstance(wb.get_cell_value('Sheet1', 'D1'), sheets.CellError)
         self.assertEqual(wb.get_cell_value('Sheet1', 'D1').get_type(), sheets.CellErrorType.TYPE_ERROR)
+    
+    def test_alt(self):
+        wb = sheets.Workbook()
+        wb.new_sheet()
+
+        # Set values in the ranges
+        wb.set_cell_contents('Sheet1', 'C1', '1')
+        wb.set_cell_contents('Sheet1', 'C2', '2')
+        wb.set_cell_contents('Sheet1', 'C3', '3')
+        wb.set_cell_contents('Sheet1', 'C4', '4')
+        wb.set_cell_contents('Sheet1', 'C5', '5')
+
+        wb.set_cell_contents('Sheet1', 'D1', '10')
+        wb.set_cell_contents('Sheet1', 'D2', '20')
+        wb.set_cell_contents('Sheet1', 'D3', '30')
+        wb.set_cell_contents('Sheet1', 'D4', '40')
+        wb.set_cell_contents('Sheet1', 'D5', '50')
+        wb.set_cell_contents('Sheet1', 'D6', '60')
+        wb.set_cell_contents('Sheet1', 'D7', '70')
+        wb.set_cell_contents('Sheet1', 'D8', '80')
+        wb.set_cell_contents('Sheet1', 'D9', '90')
+        wb.set_cell_contents('Sheet1', 'D10', '100')
+
+        wb.set_cell_contents('Sheet1', 'B1', 'TRUE')
+        wb.set_cell_contents('Sheet1', 'A1', '=SUM(IF(B1, C1:C5, D1:D10))')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('15'))
+
+        wb.set_cell_contents('Sheet1', 'B1', 'FALSE')
+        wb.set_cell_contents('Sheet1', 'A1', '=SUM(IF(B1, C1:C5, D1:D10))')
+        self.assertEqual(wb.get_cell_value('Sheet1', 'A1'), decimal.Decimal('550'))
+    
+    # def test_choose_basic(self):
+    #     wb = sheets.Workbook()
+    #     wb.new_sheet()
+
+    #     # Set values in the ranges
+    #     wb.set_cell_contents('Sheet1', 'A1', '1')
+    #     wb.set_cell_contents('Sheet1', 'A2', '2')
+    #     wb.set_cell_contents('Sheet1', 'A3', '3')
+    #     wb.set_cell_contents('Sheet1', 'B1', '10')
+    #     wb.set_cell_contents('Sheet1', 'B2', '20')
+    #     wb.set_cell_contents('Sheet1', 'B3', '30')
+
+    #     # Test CHOOSE with cell-range references
+    #     wb.set_cell_contents('Sheet1', 'C1', '=CHOOSE(1, A1:A3, B1:B3)')
+    #     self.assertEqual(wb.get_cell_value('Sheet1', 'C1'), decimal.Decimal('1'))  # First value from A1:A3
+
+    #     wb.set_cell_contents('Sheet1', 'C2', '=CHOOSE(2, A1:A3, B1:B3)')
+    #     self.assertEqual(wb.get_cell_value('Sheet1', 'C2'), decimal.Decimal('10'))  # First value from B1:B3
 
 if __name__ == "__main__":
     cov = coverage.Coverage()
