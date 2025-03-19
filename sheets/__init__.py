@@ -1,5 +1,4 @@
-# TODO: fix this
-__version__ = "3.1"
+__version__ = "3.2"
 
 from .CellError import CellError, CellErrorType
 from .Workbook import Workbook

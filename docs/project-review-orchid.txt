@@ -18,20 +18,20 @@ codebase are structured in a highly effective way?  What areas of the
 codebase could be restructured to have higher cohesion and/or lower
 coupling?  Give specific suggestions for how to achieve this in the code.
 
-Overall, the code is well-structured, with classes like Workbook, Sheets, 
+Areas of the project that are structured in a highly effective way: 
+The code is well-structured, with classes like Workbook, Sheets, 
 Cell, RowAdapter, and FunctionRegistry each following a single, well-defined 
-responsibility. The design effectively demonstrates separation of concerns, 
-ensuring that parsing, dependency graph updates, and formula evaluation are 
-handled independently. Additionally, the dependency graph is well-integrated, 
-though it exhibits (higher) coupling, with logic split between the 
-Sheets and Workbook classes.
+responsibility. Parsing, dependency graph updates, and formula evaluation are 
+handled independently.The dependency graph is integrated well, with logic 
+split between the Sheets and Workbook classes.
 
-With regards to areas of the codebase that could be restructured, we noticed 
-that the spreadsheet class has a workfield field. Since the Sheets class 
-maintains a reference to Workbook, this creates an unnecessary bidirectional 
-dependency. We recommend removing this reference, ensuring a one-way connection 
-where Workbook contains Sheets, but not vice versa. This would reduce coupling
-and eliminate code duplication, particularly for helper functions like:
+With regards to areas of the codebase that could be restructured, 
+We noticed that the spreadsheet class has a workfield field. Since 
+the Sheets class maintains a reference to Workbook, this creates an 
+unnecessary bidirectional dependency. We recommend removing this 
+reference, ensuring a one-way connection where Workbook contains 
+Sheets, but not vice versa. This would reduce coupling and eliminate 
+code duplication, particularly for helper functions like:
 get_dependencies, get_all_dependents, add_dependency, remove_dependency, 
 and clear_dependencies. These functions currently exist in both Workbook 
 and Sheets, leading to excessive referencing of the parent class. Instead, 
@@ -79,24 +79,23 @@ between public and private methods is also highly effective. The use of
 underscored function names for private methods enhances clarity and makes 
 it easier to distinguish between internal and external functionality.
 
-One of the most impressive aspects of the project is its comprehensive 
+One of the most impressive aspects of the project is its 
 documentation. Every function has a clear and concise docstring, which made 
 reviewing the code significantly easier. Comments are also well-placed and 
 meaningful, particularly in complex functions like rename_sheet, where different 
 sections are clearly annotated to improve readability.
 
-The high modularity of the codebase is another strength. Each class is well-defined 
+The codebase is also highly modular. Each class is well-defined 
 and focuses on a specific responsibility, improving maintainability and reducing 
-unnecessary dependencies. Function names are also intuitive and accurately reflect 
-their purpose, making the code easy to follow. Additionally, the project makes 
-use of logging instead of print statements, resulting in a cleaner and more 
-structured debugging process.
+unnecessary dependencies. We also wanted to point out that function names are 
+also intuitive and accurately reflect their purpose, making the code easy to 
+follow. Additionally, the project makes use of logging instead of print statements, 
+resulting in a cleaner debugging process.
 
 While the project is already well-structured, we have two very small suggestions
 for clean-up. In set_cell_contents, there are approximately 100 lines of commented-out 
-code that could be removed to improve clarity and maintainability. Additionally, the
-tests folder lacks an __init__.py, making it unclear how to run the tests. Adding 
-this file would improve usability and ensure smooth execution.
+code that could be removed to improve clarity and maintainability. The
+tests folder lacks an __init__.py, making it unclear how to run the tests.
 
 Overall, the project is highly readable, well-documented, and thoughtfully designed,
 making it easy to maintain and extend.
@@ -121,7 +120,8 @@ The project currently tests core functionality first and then moves into edge ca
 which is a strong approach. Most of the unit tests do follow the Arrange-Act-Assert 
 pattern, such as test_simple_arithmetic_formula in test_spreadsheet_formula. Evidently
 some tests do not follow the pattern, fetching values immediately after setting 
-up, without a clear transition, but in general the quality of the test 
+up, without a clear transition, (but in our case we definitely did not follow that
+pattern for all of our tests as well), so in general the quality of the test 
 suite is good. 
 
 Consider the implementation quality of the testing code itself, in the same
@@ -140,7 +140,7 @@ of the testing framework:
 Test Organization: While the tests are modular, they could be further separated 
 into distinct folders for unit tests and performance tests to improve clarity.
 Missing __init__.py: The tests folder lacks an __init__.py, making it unclear 
-how to run the tests as a package. Adding this file would ensure smooth execution.
+how to run the tests as a package. 
 Use of context.py: The project effectively uses context.py to manage dependencies 
 and reduce code duplication across test modules. 
 
@@ -159,7 +159,7 @@ effective implementation made it easy to follow and understand.
 
 When comparing it to our own implementation, we noticed several key differences, 
 
-Workbook-Sheets Relationship: Unlike this project, our implementation does not 
+Workbook-Sheets Relationship: Unlike theirs, our implementation does not 
 have Sheets referencing Workbook, which we believe reduces coupling.
 
 Cell Representation: We use a CellValue class, whereas this project handles cell 

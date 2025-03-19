@@ -24,6 +24,7 @@ Olivia:
 - sort_region code
 - reviewing other team's code
 - fixing project 4 errors
+- writing tests
 
 Wilson:
 - fixing project 4 errors
@@ -40,13 +41,36 @@ Spreadsheet Engine Design (10 points)
 
 D1.  [4pts] Give an overview of how you implemented sorting.  Do you sort the
      rows directly?  Do you use adapter objects instead?  Some other technique?
-
+     - We did not sort the rows directly, and instead used an adaptor object. 
+     - We created a RowAdapter class to encapsulate the logic for comparing 
+     rows based on the user-specified columns and their sorting order
+     - We first extract the data from the specified region of the spreadsheet 
+     and create a list of RowAdapter objects, one for each row.
+     - We then sort this list of RowAdapter objects using Python's sorted function, 
+     which leverages the __eq__ and __lt__ methods for comparison that relies on 
+     our generated sort key 
+    - After sorting, we update the spreadsheet with the sorted data, ensuring that 
+    formulas are adjusted correctly if they reference cells within the sorted region.
 
 D2.  [3pts] How does your implementation solve the problem of supporting the
      user-specified row ordering based on both the columns and the ordering to
      sort by?  Did you create any classes or functions to help specifically with
      this task?
-
+     - Following the spec, we developed a RowAdapter class
+        - The sort_cols parameter in the RowAdapter constructor
+         specifies the columns to sort on and their order.
+        - The get_sort_key method in the RowAdapter generates a tuple of values 
+        for each row based on the specified columns. This tuple is used for 
+        comparison during sorting.
+        - The _get_cell_sort_value method determines the sort value for each cell, 
+        handling different types of cell contents (e.g., blank cells, errors, numbers, 
+        text, booleans) according to the specified sorting rules.
+            - For descending order, the method adjusts the sort value (e.g., by
+             negating numeric values or reversing the lexicographical order for 
+             strings).
+     - The implementation uses Python's built-in sorted function, which is a stable 
+     sort. This ensures that if two rows compare as "equal" based on the sorting 
+     columns, they retain their original order in the final result.
 
 D3.  [3pts] Briefly describe the changes you made to your spreadsheet engine to
      satisfy the stricter cell-change notification behaviors.  Did you find this
