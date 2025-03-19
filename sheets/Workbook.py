@@ -1132,7 +1132,7 @@ class Workbook:
                 #     # Clear the cell if it's empty
                     contents_grid[i][j] = None
         
-        print(contents_grid)
+        # print(contents_grid)
                 
         for i in range(n):
             source_row = top_left_row + i
