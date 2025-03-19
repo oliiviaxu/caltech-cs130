@@ -537,7 +537,7 @@ def vlookup_function(arg_tree, ev):
         return CellValue(CellError(CellErrorType.TYPE_ERROR, "Range must be a cell range."))
 
     row_found = False
-    for row_idx, row in enumerate(cell_range):
+    for _, row in enumerate(cell_range):
 
         if row[0].value.val == key.val:
             if index > len(row):
