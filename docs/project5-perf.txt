@@ -70,12 +70,3 @@ Outcome - after changing the dependency graph such that it only contains locatio
 if that cell location has outgoing or ingoing edges, we noticed that the same test took 2 seconds
 instead, which is a drastic improvement. This improved the runtime because it lowered the number
 of keys our rename_sheet code had to loop through.
-
-
-fix to rename sheet:
-
-look for all cells with cell references outgoing - set_cell_contents those to empty, and
-set_cell_contents them in the new sheet to the right content
-
-what about ingoing edges?
-simply look through all ingoings and use sheetnameextractor right?
